@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "@supabase/supabase-js": "^2.49.4",
+    "axios": "^1.8.4",
+    "base-64": "^1.0.0",
+    "busboy": "^1.6.0",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "firebase": "^10.14.1",
+    "firebase-admin": "^13.3.0",
+    "helmet": "^8.1.0",
+    "multer": "^1.4.5-lts.1",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.93.0",
+    "pdf-parse": "^1.1.1",
+    "session": "^0.1.0",
+    "stripe": "^18.1.0",
+    "uuid": "^11.1.0"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js"
+  }
+}

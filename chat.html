@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat - Alters.ai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="/enhanced-styles.css" />
+    <script src="/navbar.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <div style="text-align: center; margin-top: 20px">
+        <button onclick="window.location.href='/creator-studio'">Home</button>
+      </div>
+      <div id="content">
+        <h1 class="title">YOUR AI ALTER</h1>
+
+        <div class="main-container">
+          <!-- Left section with video -->
+          <div class="video-section">
+            <div id="video-wrapper">
+              <div id="video-container">
+                <video
+                  id="idle-video"
+                  src="./oracle_Idle.mp4"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                  style="display: block"
+                ></video>
+                <video
+                  id="talk-video"
+                  autoplay
+                  playsinline
+                  style="display: none"
+                ></video>
+                <img
+                  id="avatar-image"
+                  src=""
+                  alt="Custom Avatar"
+                  style="
+                    display: none;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                  "
+                />
+              </div>
+              <button id="upload-avatar-button">Upload Avatar</button>
+            </div>
+          </div>
+
+          <!-- Right section with chat -->
+          <div class="chat-section">
+            <div class="chat-header">
+              <h2>Chat</h2>
+              <div class="chat-options">
+                <button id="customize-button" title="Customize Avatar">
+                  <i class="fa-solid fa-gear"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="chat-history">
+              <!-- Messages will be added here dynamically -->
+              <div class="message assistant-message">
+                <div class="message-content">
+                  Hello! Feel free to ask me anything.
+                </div>
+                <div class="timestamp">12:30</div>
+              </div>
+            </div>
+
+            <div id="input-container">
+              <input
+                type="text"
+                id="user-input-field"
+                placeholder="Type a message..."
+              />
+              <button id="voice-button" title="Voice Input">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+              <button id="enter-button" title="Send message">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="image-upload-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-modal">×</span>
+          <h2 style="color: #00eaff; text-align: center">
+            Upload Custom Alter
+          </h2>
+
+          <div class="image-upload-area" id="drop-area">
+            <p>Drag & drop your image here or click to browse</p>
+            <p style="font-size: 0.9em; color: #ccc">
+              Image must be JPEG/PNG, < 25MB, and ≤ 1920x1080 pixels
+            </p>
+            <input type="file" id="file-input" accept="image/*" />
+          </div>
+
+          <img id="image-preview" src="#" alt="Preview" />
+
+          <div style="text-align: center; margin-top: 20px">
+            <button id="confirm-upload">Confirm</button>
+            <button id="cancel-upload" style="background-color: #444">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <audio id="audio-element" class="hidden-audio" autoplay></audio>
+      <script type="module" src="./streaming-client-api.js"></script>
+      <script type="module" src="./image-upload.js"></script>
+      <script type="module" src="./chat-interface.js"></script>
+      <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/v4-shims.min.js"
+        integrity="sha512-Ny27nj/CA4kOUa/2b2bhjr8YiJ+OfttH2314Wg8drWh4z9JqGO1PVEqPvo/fM+PjN5UEY4gFxo+ADkhXoGiaSg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+      ></script>
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const customizeButton = document.getElementById("customize-button");
+          customizeButton.addEventListener("click", () => {
+            console.log(
+              "chat.html: Customize button clicked, redirecting to /"
+            );
+            window.location.href = "/";
+          });
+        });
+      </script>
+    </main>
+  </body>
+</html>

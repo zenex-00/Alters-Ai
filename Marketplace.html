@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alters Marketplace - AI Digital Twins</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#ff8a2b", secondary: "#1a1a1a" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <script src="navbar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <style>
+      :where([class^="ri-"])::before {
+        content: "\f3c2";
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      .gradient-text {
+        background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-bg {
+        background: radial-gradient(
+            circle at 70% 30%,
+            rgba(255, 138, 43, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            circle at 30% 70%,
+            rgba(255, 138, 43, 0.1),
+            transparent 50%
+          );
+      }
+      .floating {
+        animation: float 6s ease-in-out infinite;
+      }
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 138, 43, 0.3);
+        pointer-events: none;
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
+      }
+      .product-card {
+        transition: all 0.3s ease;
+      }
+      .product-card:hover {
+        transform: translateY(-10px);
+      }
+      .product-card:hover .quick-view {
+        opacity: 1;
+      }
+      .quick-view {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .product-card:hover .add-to-cart {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .add-to-cart {
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all 0.3s ease;
+      }
+      .custom-checkbox {
+        position: relative;
+        padding-left: 28px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .custom-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+      }
+      .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 20px;
+        width: 20px;
+        background-color: transparent;
+        border: 2px solid #666;
+        border-radius: 4px;
+      }
+      .custom-checkbox:hover input ~ .checkmark {
+        border-color: #999;
+      }
+      .custom-checkbox input:checked ~ .checkmark {
+        background-color: #ff8a2b;
+        border-color: #ff8a2b;
+      }
+      .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+      }
+      .custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+      }
+      .custom-checkbox .checkmark:after {
+        left: 6px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .custom-select {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+      .custom-select-selected {
+        background-color: #222;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .custom-select-options {
+        position: absolute;
+        background-color: #222;
+        min-width: 100%;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        border-radius: 8px;
+        margin-top: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+      }
+      .custom-select-option {
+        color: white;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+      }
+      .custom-select-option:hover {
+        background-color: #333;
+      }
+      .custom-select-show {
+        display: block;
+      }
+      .custom-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+      }
+      .custom-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #333;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #ff8a2b;
+      }
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease-in forwards;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+    <script src="/navbar.js" defer></script>
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <div id="navbar"></div>
+    <!-- Hero Section -->
+    <section class="hero-bg pt-28 pb-16 px-6 md:px-12 relative overflow-hidden">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row items-center w-full">
+          <div class="md:w-1/2 mb-10 md:mb-0">
+            <h1 class="text-4xl md:text-5xl font-bold mb-6">
+              Discover & Collect
+              <span class="gradient-text">Unique Digital Alters</span>
+            </h1>
+            <p class="text-xl text-gray-300 mb-8">
+              Explore our marketplace of AI-powered digital twins created by
+              talented designers around the world. Find the perfect alter for
+              your virtual presence.
+            </p>
+            <div class="flex flex-wrap gap-4">
+              <div class="relative w-full md:w-auto">
+                <input
+                  type="text"
+                  placeholder="Search for alters, creators, or categories..."
+                  class="bg-black bg-opacity-50 text-white pl-12 pr-4 py-3 rounded-full w-full md:w-80 border border-gray-700 focus:outline-none focus:border-primary"
+                />
+                <div
+                  class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center"
+                >
+                  <i class="ri-search-line text-gray-400"></i>
+                </div>
+              </div>
+              <button
+                class="bg-primary text-white px-6 py-3 rounded-button hover:bg-opacity-90 transition-all whitespace-nowrap"
+              >
+                Explore Now
+              </button>
+            </div>
+            <div class="flex items-center mt-10 space-x-6">
+              <div class="flex -space-x-3">
+                <div
+                  class="w-10 h-10 rounded-full border-2 border-black overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520diverse%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=2&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div
+                  class="w-10 h-10 rounded-full border-2 border-black overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520diverse%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=3&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div
+                  class="w-10 h-10 rounded-full border-2 border-black overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520asian%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=4&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div
+                  class="w-10 h-10 rounded-full border-2 border-black bg-primary flex items-center justify-center text-xs font-bold"
+                >
+                  +5K
+                </div>
+              </div>
+              <div>
+                <p class="text-sm text-gray-400">Trusted by 5,000+ creators</p>
+                <div class="flex items-center">
+                  <div class="flex text-yellow-400">
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-fill"></i>
+                    <i class="ri-star-half-fill"></i>
+                  </div>
+                  <span class="ml-2 text-sm">4.8/5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="md:w-1/2 relative">
+            <div class="relative z-10 floating">
+              <img
+                src="https://readdy.ai/api/search-image?query=futuristic%2520digital%2520avatar%2520marketplace%2520with%2520multiple%2520realistic%2520human%2520digital%2520twins%2520displayed%2520in%2520holographic%2520interfaces%252C%2520high-tech%2520virtual%2520reality%2520environment%252C%2520glowing%2520orange%2520and%2520blue%2520UI%2520elements%252C%2520dark%2520background%2520with%2520neon%2520accents%252C%2520clean%2520minimal%2520design&width=600&height=500&seq=5&orientation=landscape"
+                alt="Digital Alters Marketplace"
+                class="rounded-xl"
+              />
+            </div>
+            <div
+              class="absolute -bottom-6 -left-6 w-32 h-32 bg-primary bg-opacity-10 rounded-full blur-xl"
+            ></div>
+            <div
+              class="absolute -top-6 -right-6 w-32 h-32 bg-primary bg-opacity-10 rounded-full blur-xl"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div
+        id="particles-container"
+        class="absolute inset-0 pointer-events-none"
+      ></div>
+    </section>
+    <!-- Category Navigation -->
+    <section class="py-10 px-6 md:px-12 bg-black">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-2xl font-bold">Browse Categories</h2>
+          <a href="#" class="text-primary flex items-center hover:underline">
+            <span>View All</span>
+            <div class="w-5 h-5 ml-1 flex items-center justify-center">
+              <i class="ri-arrow-right-line"></i>
+            </div>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <a
+            href="#"
+            class="bg-secondary bg-opacity-50 rounded-lg p-4 text-center hover:bg-opacity-70 transition-all"
+          >
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="ri-user-3-line text-primary text-xl"></i>
+            </div>
+            <span>Professionals</span>
+          </a>
+          <a
+            href="#"
+            class="bg-secondary bg-opacity-50 rounded-lg p-4 text-center hover:bg-opacity-70 transition-all"
+          >
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="ri-game-line text-primary text-xl"></i>
+            </div>
+            <span>Gaming</span>
+          </a>
+          <a
+            href="#"
+            class="bg-secondary bg-opacity-50 rounded-lg p-4 text-center hover:bg-opacity-70 transition-all"
+          >
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="ri-movie-line text-primary text-xl"></i>
+            </div>
+            <span>Entertainment</span>
+          </a>
+          <a
+            href="#"
+            class="bg-secondary bg-opacity-50 rounded-lg p-4 text-center hover:bg-opacity-70 transition-all"
+          >
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="ri-customer-service-line text-primary text-xl"></i>
+            </div>
+            <span>Service</span>
+          </a>
+          <a
+            href="#"
+            class="bg-secondary bg-opacity-50 rounded-lg p-4 text-center hover:bg-opacity-70 transition-all"
+          >
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="ri-education-line text-primary text-xl"></i>
+            </div>
+            <span>Education</span>
+          </a>
+          <a
+            href="#"
+            class="bg-secondary bg-opacity-50 rounded-lg p-4 text-center hover:bg-opacity-70 transition-all"
+          >
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <i class="ri-more-line text-primary text-xl"></i>
+            </div>
+            <span>More</span>
+          </a>
+        </div>
+      </div>
+    </section>
+    <!-- Main Content -->
+    <section class="py-10 px-6 md:px-12 bg-black">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col gap-8">
+          <!-- Products Grid -->
+          <div class="w-full">
+            <!-- Sorting Options -->
+            <div
+              class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 bg-secondary bg-opacity-30 rounded-lg p-4"
+            >
+              <div class="mb-4 md:mb-0">
+                <h3 class="text-xl font-bold">Professional Alters</h3>
+                <p class="text-gray-400 text-sm">Showing 1-12 of 124 results</p>
+              </div>
+              <div class="flex items-center space-x-4">
+                <div class="custom-select" id="sortSelect">
+                  <div class="custom-select-selected">
+                    <span>Sort by: Newest</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                  </div>
+                  <div class="custom-select-options">
+                    <div class="custom-select-option" data-value="newest">
+                      Newest
+                    </div>
+                    <div class="custom-select-option" data-value="popular">
+                      Most Popular
+                    </div>
+                    <div class="custom-select-option" data-value="price-low">
+                      Price: Low to High
+                    </div>
+                    <div class="custom-select-option" data-value="price-high">
+                      Price: High to Low
+                    </div>
+                    <div class="custom-select-option" data-value="rating">
+                      Highest Rated
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button
+                    class="w-10 h-10 bg-secondary rounded flex items-center justify-center"
+                  >
+                    <i class="ri-layout-grid-line text-white"></i>
+                  </button>
+                  <button
+                    class="w-10 h-10 bg-black bg-opacity-50 rounded flex items-center justify-center"
+                  >
+                    <i class="ri-list-check text-gray-400"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Products Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <!-- Product Card 1 -->
+              <div
+                class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden product-card"
+              >
+                <div class="relative">
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish"
+                    alt="Professional Alter"
+                    class="w-full h-64 object-cover"
+                  />
+                  <div class="absolute top-3 right-3 flex space-x-2">
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-heart-line text-white"></i>
+                    </div>
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-share-line text-white"></i>
+                    </div>
+                  </div>
+                  <div class="absolute bottom-3 left-3">
+                    <div
+                      class="bg-primary text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      Professional
+                    </div>
+                  </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center quick-view"
+                  >
+                    <button
+                      class="bg-white text-secondary px-4 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">Executive Emma</h3>
+                    <div class="flex text-yellow-400 text-sm">
+                      <i class="ri-star-fill"></i>
+                      <span class="ml-1">4.9</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center mb-4">
+                    <div class="w-6 h-6 rounded-full overflow-hidden mr-2">
+                      <img
+                        src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=11&orientation=squarish"
+                        alt="Creator"
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span class="text-sm text-gray-400"
+                      >by <span class="text-primary">AlterStudio</span></span
+                    >
+                    <div
+                      class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-check-line text-primary text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-gray-400 text-sm line-through"
+                        >$149.99</span
+                      >
+                      <div class="text-xl font-bold">$119.99</div>
+                    </div>
+                    <button
+                      class="add-to-cart bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-shopping-cart-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Product Card 2 -->
+              <div
+                class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden product-card"
+              >
+                <div class="relative">
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish"
+                    alt="Professional Alter"
+                    class="w-full h-64 object-cover"
+                  />
+                  <div class="absolute top-3 right-3 flex space-x-2">
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-heart-line text-white"></i>
+                    </div>
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-share-line text-white"></i>
+                    </div>
+                  </div>
+                  <div class="absolute bottom-3 left-3">
+                    <div
+                      class="bg-primary text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      Professional
+                    </div>
+                  </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center quick-view"
+                  >
+                    <button
+                      class="bg-white text-secondary px-4 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">Business Blake</h3>
+                    <div class="flex text-yellow-400 text-sm">
+                      <i class="ri-star-fill"></i>
+                      <span class="ml-1">4.8</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center mb-4">
+                    <div class="w-6 h-6 rounded-full overflow-hidden mr-2">
+                      <img
+                        src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=13&orientation=squarish"
+                        alt="Creator"
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span class="text-sm text-gray-400"
+                      >by <span class="text-primary">DigitalTwins</span></span
+                    >
+                    <div
+                      class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-check-line text-primary text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xl font-bold">$129.99</div>
+                    </div>
+                    <button
+                      class="add-to-cart bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-shopping-cart-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Product Card 3 -->
+              <div
+                class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden product-card"
+              >
+                <div class="relative">
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish"
+                    alt="Professional Alter"
+                    class="w-full h-64 object-cover"
+                  />
+                  <div class="absolute top-3 right-3 flex space-x-2">
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-heart-line text-white"></i>
+                    </div>
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-share-line text-white"></i>
+                    </div>
+                  </div>
+                  <div class="absolute bottom-3 left-3">
+                    <div
+                      class="bg-primary text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      Professional
+                    </div>
+                  </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center quick-view"
+                  >
+                    <button
+                      class="bg-white text-secondary px-4 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">Tech Tina</h3>
+                    <div class="flex text-yellow-400 text-sm">
+                      <i class="ri-star-fill"></i>
+                      <span class="ml-1">4.7</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center mb-4">
+                    <div class="w-6 h-6 rounded-full overflow-hidden mr-2">
+                      <img
+                        src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520asian%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=15&orientation=squarish"
+                        alt="Creator"
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span class="text-sm text-gray-400"
+                      >by <span class="text-primary">TechAlters</span></span
+                    >
+                    <div
+                      class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-check-line text-primary text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-gray-400 text-sm line-through"
+                        >$139.99</span
+                      >
+                      <div class="text-xl font-bold">$99.99</div>
+                    </div>
+                    <button
+                      class="add-to-cart bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-shopping-cart-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Product Card 4 -->
+              <div
+                class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden product-card"
+              >
+                <div class="relative">
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520creative%2520director%2520man%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=16&orientation=squarish"
+                    alt="Professional Alter"
+                    class="w-full h-64 object-cover"
+                  />
+                  <div class="absolute top-3 right-3 flex space-x-2">
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-heart-line text-white"></i>
+                    </div>
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-share-line text-white"></i>
+                    </div>
+                  </div>
+                  <div class="absolute bottom-3 left-3">
+                    <div
+                      class="bg-primary text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      Professional
+                    </div>
+                  </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center quick-view"
+                  >
+                    <button
+                      class="bg-white text-secondary px-4 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">Creative Carlos</h3>
+                    <div class="flex text-yellow-400 text-sm">
+                      <i class="ri-star-fill"></i>
+                      <span class="ml-1">4.9</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center mb-4">
+                    <div class="w-6 h-6 rounded-full overflow-hidden mr-2">
+                      <img
+                        src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520hispanic%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=17&orientation=squarish"
+                        alt="Creator"
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span class="text-sm text-gray-400"
+                      >by <span class="text-primary">CreativeMinds</span></span
+                    >
+                    <div
+                      class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-check-line text-primary text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xl font-bold">$149.99</div>
+                    </div>
+                    <button
+                      class="add-to-cart bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-shopping-cart-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Product Card 5 -->
+              <div
+                class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden product-card"
+              >
+                <div class="relative">
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520medical%2520professional%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=18&orientation=squarish"
+                    alt="Professional Alter"
+                    class="w-full h-64 object-cover"
+                  />
+                  <div class="absolute top-3 right-3 flex space-x-2">
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-heart-line text-white"></i>
+                    </div>
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-share-line text-white"></i>
+                    </div>
+                  </div>
+                  <div class="absolute bottom-3 left-3">
+                    <div
+                      class="bg-primary text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      Professional
+                    </div>
+                  </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center quick-view"
+                  >
+                    <button
+                      class="bg-white text-secondary px-4 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">Medical Maya</h3>
+                    <div class="flex text-yellow-400 text-sm">
+                      <i class="ri-star-fill"></i>
+                      <span class="ml-1">4.6</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center mb-4">
+                    <div class="w-6 h-6 rounded-full overflow-hidden mr-2">
+                      <img
+                        src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520middle%2520aged%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=19&orientation=squarish"
+                        alt="Creator"
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span class="text-sm text-gray-400"
+                      >by <span class="text-primary">HealthAlters</span></span
+                    >
+                    <div
+                      class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-check-line text-primary text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xl font-bold">$139.99</div>
+                    </div>
+                    <button
+                      class="add-to-cart bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-shopping-cart-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Product Card 6 -->
+              <div
+                class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden product-card"
+              >
+                <div class="relative">
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520financial%2520advisor%2520man%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=20&orientation=squarish"
+                    alt="Professional Alter"
+                    class="w-full h-64 object-cover"
+                  />
+                  <div class="absolute top-3 right-3 flex space-x-2">
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-heart-line text-white"></i>
+                    </div>
+                    <div
+                      class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <i class="ri-share-line text-white"></i>
+                    </div>
+                  </div>
+                  <div class="absolute bottom-3 left-3">
+                    <div
+                      class="bg-primary text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      Professional
+                    </div>
+                  </div>
+                  <div
+                    class="absolute inset-0 flex items-center justify-center quick-view"
+                  >
+                    <button
+                      class="bg-white text-secondary px-4 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">Finance Frank</h3>
+                    <div class="flex text-yellow-400 text-sm">
+                      <i class="ri-star-fill"></i>
+                      <span class="ml-1">4.8</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center mb-4">
+                    <div class="w-6 h-6 rounded-full overflow-hidden mr-2">
+                      <img
+                        src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520middle%2520aged%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=21&orientation=squarish"
+                        alt="Creator"
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span class="text-sm text-gray-400"
+                      >by <span class="text-primary">FinanceAlters</span></span
+                    >
+                    <div
+                      class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-check-line text-primary text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-gray-400 text-sm line-through"
+                        >$159.99</span
+                      >
+                      <div class="text-xl font-bold">$129.99</div>
+                    </div>
+                    <button
+                      class="add-to-cart bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center"
+                    >
+                      <i class="ri-shopping-cart-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Pagination -->
+            <div class="flex justify-center mt-12">
+              <div class="flex items-center space-x-2">
+                <a
+                  href="#"
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-gray-400 hover:bg-primary hover:text-white transition-all"
+                >
+                  <i class="ri-arrow-left-s-line"></i>
+                </a>
+                <a
+                  href="#"
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white"
+                  >1</a
+                >
+                <a
+                  href="#"
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-white hover:bg-primary transition-all"
+                  >2</a
+                >
+                <a
+                  href="#"
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-white hover:bg-primary transition-all"
+                  >3</a
+                >
+                <span class="text-gray-400">...</span>
+                <a
+                  href="#"
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-white hover:bg-primary transition-all"
+                  >12</a
+                >
+                <a
+                  href="#"
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-gray-400 hover:bg-primary hover:text-white transition-all"
+                >
+                  <i class="ri-arrow-right-s-line"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Featured Creators -->
+    <section
+      class="py-16 px-6 md:px-12 bg-gradient-to-b from-black to-secondary"
+    >
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-10">
+          <h2 class="text-3xl font-bold">Featured Creators</h2>
+          <a href="#" class="text-primary flex items-center hover:underline">
+            <span>View All Creators</span>
+            <div class="w-5 h-5 ml-1 flex items-center justify-center">
+              <i class="ri-arrow-right-line"></i>
+            </div>
+          </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Creator Card 1 -->
+          <div
+            class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover"
+          >
+            <div class="relative h-40">
+              <img
+                src="https://readdy.ai/api/search-image?query=abstract%2520digital%2520art%2520background%2520with%2520orange%2520and%2520blue%2520glowing%2520elements%2520on%2520dark%2520background%2520futuristic%2520tech%2520aesthetic&width=400&height=200&seq=22&orientation=landscape"
+                alt="Creator Banner"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="p-6 text-center relative">
+              <div class="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                <div
+                  class="w-24 h-24 rounded-full border-4 border-secondary overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=200&height=200&seq=23&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div class="mt-12">
+                <div class="flex items-center justify-center mb-1">
+                  <h3 class="font-bold text-xl">Sophia Chen</h3>
+                  <div
+                    class="ml-2 w-5 h-5 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-check-line text-primary text-xs"></i>
+                  </div>
+                </div>
+                <p class="text-gray-400 text-sm mb-4">
+                  Professional Alters Specialist
+                </p>
+                <div class="flex justify-center space-x-2 mb-4">
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-twitter-x-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-instagram-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-behance-line text-white text-sm"></i>
+                  </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <div>
+                    <div class="font-bold">42</div>
+                    <div class="text-gray-400">Alters</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">4.9</div>
+                    <div class="text-gray-400">Rating</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">5.2k</div>
+                    <div class="text-gray-400">Sales</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Creator Card 2 -->
+          <div
+            class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover"
+          >
+            <div class="relative h-40">
+              <img
+                src="https://readdy.ai/api/search-image?query=abstract%2520digital%2520art%2520background%2520with%2520purple%2520and%2520teal%2520glowing%2520elements%2520on%2520dark%2520background%2520futuristic%2520tech%2520aesthetic&width=400&height=200&seq=24&orientation=landscape"
+                alt="Creator Banner"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="p-6 text-center relative">
+              <div class="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                <div
+                  class="w-24 h-24 rounded-full border-4 border-secondary overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=200&height=200&seq=25&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div class="mt-12">
+                <div class="flex items-center justify-center mb-1">
+                  <h3 class="font-bold text-xl">Marcus Johnson</h3>
+                  <div
+                    class="ml-2 w-5 h-5 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-check-line text-primary text-xs"></i>
+                  </div>
+                </div>
+                <p class="text-gray-400 text-sm mb-4">Gaming Alters Creator</p>
+                <div class="flex justify-center space-x-2 mb-4">
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-twitter-x-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-twitch-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-youtube-line text-white text-sm"></i>
+                  </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <div>
+                    <div class="font-bold">38</div>
+                    <div class="text-gray-400">Alters</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">4.8</div>
+                    <div class="text-gray-400">Rating</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">4.7k</div>
+                    <div class="text-gray-400">Sales</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Creator Card 3 -->
+          <div
+            class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover"
+          >
+            <div class="relative h-40">
+              <img
+                src="https://readdy.ai/api/search-image?query=abstract%2520digital%2520art%2520background%2520with%2520green%2520and%2520gold%2520glowing%2520elements%2520on%2520dark%2520background%2520futuristic%2520tech%2520aesthetic&width=400&height=200&seq=26&orientation=landscape"
+                alt="Creator Banner"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="p-6 text-center relative">
+              <div class="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                <div
+                  class="w-24 h-24 rounded-full border-4 border-secondary overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520middle%2520aged%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=200&height=200&seq=27&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div class="mt-12">
+                <div class="flex items-center justify-center mb-1">
+                  <h3 class="font-bold text-xl">Elena Rodriguez</h3>
+                  <div
+                    class="ml-2 w-5 h-5 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-check-line text-primary text-xs"></i>
+                  </div>
+                </div>
+                <p class="text-gray-400 text-sm mb-4">
+                  Educational Alters Expert
+                </p>
+                <div class="flex justify-center space-x-2 mb-4">
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-linkedin-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-facebook-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-instagram-line text-white text-sm"></i>
+                  </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <div>
+                    <div class="font-bold">54</div>
+                    <div class="text-gray-400">Alters</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">4.9</div>
+                    <div class="text-gray-400">Rating</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">6.3k</div>
+                    <div class="text-gray-400">Sales</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Creator Card 4 -->
+          <div
+            class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover"
+          >
+            <div class="relative h-40">
+              <img
+                src="https://readdy.ai/api/search-image?query=abstract%2520digital%2520art%2520background%2520with%2520red%2520and%2520blue%2520glowing%2520elements%2520on%2520dark%2520background%2520futuristic%2520tech%2520aesthetic&width=400&height=200&seq=28&orientation=landscape"
+                alt="Creator Banner"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="p-6 text-center relative">
+              <div class="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                <div
+                  class="w-24 h-24 rounded-full border-4 border-secondary overflow-hidden"
+                >
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520african%2520american%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=200&height=200&seq=29&orientation=squarish"
+                    alt="Creator"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div class="mt-12">
+                <div class="flex items-center justify-center mb-1">
+                  <h3 class="font-bold text-xl">Jamal Williams</h3>
+                  <div
+                    class="ml-2 w-5 h-5 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-check-line text-primary text-xs"></i>
+                  </div>
+                </div>
+                <p class="text-gray-400 text-sm mb-4">
+                  Entertainment Alters Designer
+                </p>
+                <div class="flex justify-center space-x-2 mb-4">
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-twitter-x-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-youtube-line text-white text-sm"></i>
+                  </div>
+                  <div
+                    class="w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                  >
+                    <i class="ri-tiktok-line text-white text-sm"></i>
+                  </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <div>
+                    <div class="font-bold">47</div>
+                    <div class="text-gray-400">Alters</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">4.7</div>
+                    <div class="text-gray-400">Rating</div>
+                  </div>
+                  <div>
+                    <div class="font-bold">5.8k</div>
+                    <div class="text-gray-400">Sales</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Become a Creator -->
+    <section
+      class="py-16 px-6 md:px-12 bg-gradient-to-r from-secondary to-black relative overflow-hidden"
+    >
+      <div class="absolute inset-0 opacity-20">
+        <img
+          src="https://readdy.ai/api/search-image?query=abstract%2520digital%2520network%2520connections%252C%2520futuristic%2520technology%2520background%252C%2520glowing%2520orange%2520and%2520blue%2520nodes%252C%2520high-tech%2520visualization%252C%2520data%2520flow%2520concept%252C%2520minimal%2520clean%2520design&width=1200&height=800&seq=35&orientation=landscape"
+          alt="Digital network background"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <div class="max-w-6xl mx-auto relative z-10">
+        <div class="bg-black bg-opacity-70 p-12 rounded-xl backdrop-blur-sm">
+          <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-2/3 mb-8 md:mb-0 md:pr-12">
+              <h2 class="text-4xl font-bold mb-6">
+                Create and Sell Your Own Alters
+              </h2>
+              <p class="text-xl text-gray-300 mb-6">
+                Join our growing community of creators and start monetizing your
+                digital twin designs. Our platform provides all the tools you
+                need to create, publish, and sell your alters to a global
+                audience.
+              </p>
+              <div class="flex flex-wrap gap-4">
+                <a
+                  href="#"
+                  class="bg-primary text-white px-6 py-3 rounded-button text-lg font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
+                >
+                  <span>Become a Creator</span>
+                  <div class="w-5 h-5 ml-2 flex items-center justify-center">
+                    <i class="ri-arrow-right-line"></i>
+                  </div>
+                </a>
+                <a
+                  href="#"
+                  class="border border-white text-white px-6 py-3 rounded-button text-lg font-medium hover:bg-white hover:text-secondary transition-all whitespace-nowrap"
+                >
+                  Learn More
+                </a>
+              </div>
+            </div>
+            <div class="md:w-1/3">
+              <div class="relative">
+                <div
+                  class="absolute -top-4 -left-4 w-20 h-20 bg-primary bg-opacity-20 rounded-full"
+                ></div>
+                <div
+                  class="absolute -bottom-4 -right-4 w-16 h-16 bg-primary bg-opacity-20 rounded-full"
+                ></div>
+                <img
+                  src="https://readdy.ai/api/search-image?query=professional%2520digital%2520artist%2520working%2520on%25203D%2520character%2520model%2520in%2520futuristic%2520studio%2520environment%2520with%2520multiple%2520screens%2520showing%2520digital%2520twin%2520creation%2520process%2520high%2520tech%2520workspace%2520with%2520orange%2520accent%2520lighting&width=500&height=600&seq=36&orientation=portrait"
+                  alt="Content creator working"
+                  class="rounded-lg relative z-10"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Footer -->
+    <footer class="py-16 px-6 md:px-12 bg-secondary">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div>
+            <a
+              href="#"
+              class="text-3xl font-['Pacifico'] text-white mb-6 inline-block"
+              >alters<span class="text-primary">.ai</span></a
+            >
+            <p class="text-gray-400 mb-6">
+              The leading marketplace for AI-powered digital twins and alters.
+              Create, buy, and sell unique digital identities.
+            </p>
+            <div class="flex space-x-4">
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-twitter-x-line"></i>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-linkedin-fill"></i>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-instagram-line"></i>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-youtube-line"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Marketplace</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >All Alters</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Professional</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Gaming</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Entertainment</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Education</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Company</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Blog</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Press</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Contact</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Resources</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Creator Guidelines</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Help Center</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Community</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Ethics</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Partners</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center"
+        >
+          <p class="text-gray-500 mb-4 md:mb-0">
+            © 2025 Alters.ai. All rights reserved.
+          </p>
+          <div class="flex flex-wrap gap-4 md:gap-6">
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Terms</a
+            >
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Privacy</a
+            >
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Cookies</a
+            >
+            <div class="flex items-center space-x-2">
+              <i class="ri-visa-fill text-gray-400 text-xl"></i>
+              <i class="ri-mastercard-fill text-gray-400 text-xl"></i>
+              <i class="ri-paypal-fill text-gray-400 text-xl"></i>
+              <i class="ri-apple-fill text-gray-400 text-xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <!-- Quick View Modal -->
+    <div
+      id="quickViewModal"
+      class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center backdrop-blur-sm"
+    >
+      <div
+        class="bg-secondary rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex flex-col md:flex-row">
+          <div class="md:w-1/2 p-6">
+            <div class="relative">
+              <img
+                src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=500&height=600&seq=37&orientation=portrait"
+                alt="Professional Alter"
+                class="w-full h-auto rounded-lg"
+              />
+              <button
+                class="absolute top-4 right-4 w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white"
+                id="closeModal"
+              >
+                <i class="ri-close-line text-xl"></i>
+              </button>
+            </div>
+            <div class="grid grid-cols-4 gap-2 mt-4">
+              <div class="rounded-md overflow-hidden border-2 border-primary">
+                <img
+                  src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures%2520front%2520view&width=100&height=100&seq=38&orientation=squarish"
+                  alt="Alter view"
+                  class="w-full h-auto"
+                />
+              </div>
+              <div
+                class="rounded-md overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer"
+              >
+                <img
+                  src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures%2520side%2520view&width=100&height=100&seq=39&orientation=squarish"
+                  alt="Alter view"
+                  class="w-full h-auto"
+                />
+              </div>
+              <div
+                class="rounded-md overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer"
+              >
+                <img
+                  src="https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures%2520three%2520quarter%2520view&width=100&height=100&seq=40&orientation=squarish"
+                  alt="Alter view"
+                  class="w-full h-auto"
+                />
+              </div>
+              <div
+                class="rounded-md overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer bg-black flex items-center justify-center"
+              >
+                <i class="ri-play-circle-line text-white text-3xl"></i>
+              </div>
+            </div>
+          </div>
+          <div
+            class="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-700"
+          >
+            <h2 class="text-2xl font-bold mb-2">Executive Emma</h2>
+            <div class="flex items-center mb-4">
+              <div class="flex text-yellow-400">
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+              </div>
+              <span class="ml-2 text-sm">4.9 (128 reviews)</span>
+            </div>
+            <div class="flex items-center mb-6">
+              <div class="w-8 h-8 rounded-full overflow-hidden mr-2">
+                <img
+                  src="https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=41&orientation=squarish"
+                  alt="Creator"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <span class="text-gray-400"
+                >by <span class="text-primary">AlterStudio</span></span
+              >
+              <div
+                class="ml-2 w-5 h-5 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"
+              >
+                <i class="ri-check-line text-primary text-xs"></i>
+              </div>
+            </div>
+            <div class="mb-6">
+              <span class="text-gray-400 text-sm line-through">$149.99</span>
+              <div class="text-3xl font-bold">$119.99</div>
+              <div
+                class="bg-primary bg-opacity-20 text-primary text-sm px-3 py-1 rounded-full inline-block mt-2"
+              >
+                20% OFF
+              </div>
+            </div>
+            <div class="mb-6">
+              <h3 class="font-bold mb-2">Description</h3>
+              <p class="text-gray-300">
+                Executive Emma is a premium professional alter designed for
+                business presentations, meetings, and corporate communications.
+                With natural facial expressions, fluid movements, and a
+                professional demeanor, Emma helps you maintain a polished
+                presence across all your business interactions.
+              </p>
+            </div>
+            <div class="mb-6">
+              <h3 class="font-bold mb-2">Specifications</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-gray-400 text-sm">Resolution</p>
+                  <p>4K Ultra HD</p>
+                </div>
+                <div>
+                  <p class="text-gray-400 text-sm">Format</p>
+                  <p>MP4, WebM</p>
+                </div>
+                <div>
+                  <p class="text-gray-400 text-sm">Voice</p>
+                  <p>Natural TTS Included</p>
+                </div>
+                <div>
+                  <p class="text-gray-400 text-sm">Customization</p>
+                  <p>Moderate</p>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <button
+                class="bg-primary text-white py-3 px-6 rounded-button font-medium hover:bg-opacity-90 transition-all flex-1 flex items-center justify-center whitespace-nowrap"
+              >
+                <i class="ri-shopping-cart-line mr-2"></i>
+                Add to Cart
+              </button>
+              <button
+                class="border border-white text-white py-3 px-6 rounded-button font-medium hover:bg-white hover:text-secondary transition-all flex items-center justify-center whitespace-nowrap"
+              >
+                <i class="ri-heart-line mr-2"></i>
+                Add to Wishlist
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Particle animation
+        const particlesContainer = document.getElementById(
+          "particles-container"
+        );
+        const particleCount = 30;
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.classList.add("particle");
+          // Random size between 2px and 6px
+          const size = Math.random() * 4 + 2;
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          // Random position
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${Math.random() * 100}%`;
+          // Random opacity
+          particle.style.opacity = Math.random() * 0.5 + 0.1;
+          // Animation duration and delay
+          const duration = Math.random() * 20 + 10;
+          const delay = Math.random() * 5;
+          particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+          particlesContainer.appendChild(particle);
+        }
+        // Custom Select
+        const customSelect = document.getElementById("sortSelect");
+        const selectedText = customSelect.querySelector(
+          ".custom-select-selected span"
+        );
+        const options = customSelect.querySelector(".custom-select-options");
+        const optionItems = customSelect.querySelectorAll(
+          ".custom-select-option"
+        );
+        customSelect
+          .querySelector(".custom-select-selected")
+          .addEventListener("click", function () {
+            options.classList.toggle("custom-select-show");
+          });
+        optionItems.forEach((item) => {
+          item.addEventListener("click", function () {
+            selectedText.textContent = `Sort by: ${this.textContent}`;
+            options.classList.remove("custom-select-show");
+            // Here you would normally add logic to sort the products
+          });
+        });
+        // Close the dropdown if clicked outside
+        window.addEventListener("click", function (e) {
+          if (!customSelect.contains(e.target)) {
+            options.classList.remove("custom-select-show");
+          }
+        });
+        // Quick View Modal
+        const quickViewButtons =
+          document.querySelectorAll(".quick-view button");
+        const quickViewModal = document.getElementById("quickViewModal");
+        const closeModalButton = document.getElementById("closeModal");
+        quickViewButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            quickViewModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+          });
+        });
+        closeModalButton.addEventListener("click", function () {
+          quickViewModal.classList.add("hidden");
+          document.body.style.overflow = "auto";
+        });
+        quickViewModal.addEventListener("click", function (e) {
+          if (e.target === quickViewModal) {
+            quickViewModal.classList.add("hidden");
+            document.body.style.overflow = "auto";
+          }
+        });
+        // Mobile menu toggle
+        const menuButton = document.querySelector(".lg\\:hidden");
+        const mobileMenu = document.createElement("div");
+        mobileMenu.classList.add(
+          "fixed",
+          "inset-0",
+          "bg-secondary",
+          "z-50",
+          "p-6",
+          "flex",
+          "flex-col",
+          "transform",
+          "translate-x-full",
+          "transition-transform",
+          "duration-300"
+        );
+        mobileMenu.innerHTML = `
+<div class="flex justify-between items-center mb-8">
+<a href="#" class="text-3xl font-['Pacifico'] text-white">alters<span class="text-primary">.ai</span></a>
+<button class="w-10 h-10 flex items-center justify-center">
+<i class="ri-close-line text-white text-2xl"></i>
+</button>
+</div>
+<div class="flex flex-col space-y-6">
+<a href="#" class="text-white text-xl">Home</a>
+<a href="#" class="text-primary text-xl">Marketplace</a>
+<a href="#" class="text-white text-xl">Create</a>
+<a href="#" class="text-white text-xl">Pricing</a>
+<a href="#" class="text-white text-xl">Community</a>
+</div>
+<div class="mt-auto pt-8">
+<a href="#" class="block w-full bg-primary text-white text-center py-3 rounded-button font-medium mb-4">Become a Creator</a>
+<a href="#" class="block w-full border border-white text-white text-center py-3 rounded-button font-medium">Log In</a>
+</div>
+`;
+        document.body.appendChild(mobileMenu);
+        menuButton.addEventListener("click", function () {
+          mobileMenu.classList.remove("translate-x-full");
+        });
+        const closeButton = mobileMenu.querySelector("button");
+        closeButton.addEventListener("click", function () {
+          mobileMenu.classList.add("translate-x-full");
+        });
+        // Animate elements on scroll
+        const animateElements = document.querySelectorAll(
+          ".product-card, .card-hover"
+        );
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("fade-in");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          {
+            threshold: 0.1,
+          }
+        );
+        animateElements.forEach((element) => observer.observe(element));
+      });
+    </script>
+  </body>
+</html>

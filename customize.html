@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customize Avatar - Alters.ai</title>
+    <link rel="stylesheet" href="/enhanced-styles.css" />
+    <script src="/navbar.js" defer></script>
+  </head>
+  <body>
+    <!-- Updated Home button to use dynamic routing -->
+    <div style="text-align: center; margin-top: 20px">
+      <button onclick="window.location.href='/creator-studio'">Home</button>
+    </div>
+    <main>
+      <h1>Customize Your Avatar</h1>
+      <p>Use our tools to create your perfect digital twin.</p>
+      <div id="content">
+        <div class="nav-bar">
+          <button id="back-button" class="nav-button">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15 19L8 12L15 5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Back
+          </button>
+          <button id="next-button" class="nav-button">
+            Next
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9 5L16 12L9 19"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <h1 class="title">Customize Your Avatar</h1>
+        <div class="timeline">
+          <div class="timeline-step active" data-step="1">
+            <span class="step-number">1</span>
+            <span class="step-label">Basics</span>
+          </div>
+          <div class="timeline-step" data-step="2">
+            <span class="step-number">2</span>
+            <span class="step-label">Personality</span>
+          </div>
+          <div class="timeline-step" data-step="3">
+            <span class="step-number">3</span>
+            <span class="step-label">Knowledge</span>
+          </div>
+          <div class="timeline-step" data-step="4">
+            <span class="step-number">4</span>
+            <span class="step-label">Voice</span>
+          </div>
+        </div>
+        <div class="main-container">
+          <div class="customize-section">
+            <form id="customize-form">
+              <!-- Step 1: Basics -->
+              <div class="step" id="step-1">
+                <div class="form-group">
+                  <label for="avatar-name">Avatar Name</label>
+                  <input
+                    type="text"
+                    id="avatar-name"
+                    placeholder="e.g., Zunair"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Step 2: Personality -->
+              <div class="step" id="step-2" style="display: none">
+                <div class="form-group">
+                  <label for="avatar-personality">Personality</label>
+                  <div class="personality-tags">
+                    <button type="button" class="tag" data-value="Patient">
+                      Patient
+                    </button>
+                    <button type="button" class="tag" data-value="Humorous">
+                      Humorous
+                    </button>
+                    <button
+                      type="button"
+                      class="tag"
+                      data-value="Knowledgeable"
+                    >
+                      Knowledgeable
+                    </button>
+                    <button type="button" class="tag" data-value="Friendly">
+                      Friendly
+                    </button>
+                    <button type="button" class="tag" data-value="Professional">
+                      Professional
+                    </button>
+                    <button type="button" class="tag" data-value="Encouraging">
+                      Encouraging
+                    </button>
+                  </div>
+                  <textarea
+                    id="avatar-personality"
+                    placeholder="e.g., Patient, humorous, knowledgeable"
+                    required
+                  ></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="avatar-prompt">Prompt</label>
+                  <textarea
+                    id="avatar-prompt"
+                    placeholder="e.g., Act as a doctor"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Step 3: Knowledge -->
+              <div class="step" id="step-3" style="display: none">
+                <div class="form-group">
+                  <label>Select Knowledge Context</label>
+                  <div class="knowledge-options">
+                    <div class="knowledge-card" data-value="technology">
+                      <span class="icon">💻</span>
+                      <strong>Technology</strong>
+                      <p>Programming, AI, gadgets, and tech trends</p>
+                    </div>
+                    <div class="knowledge-card" data-value="medical">
+                      <span class="icon">🩺</span>
+                      <strong>Medical</strong>
+                      <p>Health information and medical knowledge</p>
+                    </div>
+                    <div class="knowledge-card" data-value="general">
+                      <span class="icon">🌐</span>
+                      <strong>General Knowledge</strong>
+                      <p>Broad knowledge across many domains</p>
+                    </div>
+                    <div class="knowledge-card" data-value="legal">
+                      <span class="icon">⚖️</span>
+                      <strong>Legal</strong>
+                      <p>Laws, regulations, and legal concepts</p>
+                    </div>
+                    <div class="knowledge-card" data-value="creative">
+                      <span class="icon">✍️</span>
+                      <strong>Creative</strong>
+                      <p>Storytelling and creative content</p>
+                    </div>
+                    <div class="knowledge-card" data-value="education">
+                      <span class="icon">🎓</span>
+                      <strong>Education</strong>
+                      <p>Teaching and educational content</p>
+                    </div>
+                    <div class="knowledge-card" data-value="finance">
+                      <span class="icon">💰</span>
+                      <strong>Finance</strong>
+                      <p>Money, investing, and financial advice</p>
+                    </div>
+                    <div class="knowledge-card" data-value="document">
+                      <span class="icon">📄</span>
+                      <strong>Document-Based</strong>
+                      <p>Upload your own documents</p>
+                    </div>
+                  </div>
+                  <input type="hidden" id="avatar-knowledge" required />
+                </div>
+                <div
+                  class="form-group"
+                  id="document-upload-group"
+                  style="display: none"
+                >
+                  <label for="document-upload"
+                    >Upload Document (PDF, TXT)</label
+                  >
+                  <input
+                    type="file"
+                    id="document-upload"
+                    accept=".pdf,.txt"
+                    style="padding: 16px"
+                  />
+                </div>
+              </div>
+
+              <!-- Step 4: Voice -->
+              <div class="step" id="step-4" style="display: none">
+                <div class="form-group">
+                  <label for="avatar-voice">Select Voice</label>
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <select id="avatar-voice" required>
+                      <option value="">Select a voice</option>
+                      <!-- Populated dynamically -->
+                    </select>
+                    <button type="button" id="preview-voice-button">
+                      Preview Voice
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" id="prev-step" class="action-button">
+                  Back
+                </button>
+                <button type="button" id="next-step" class="action-button">
+                  Continue
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        console.log("customize.html: Script loaded");
+        const form = document.getElementById("customize-form");
+        const prevButton = document.getElementById("prev-step");
+        const nextButton = document.getElementById("next-step");
+        const backButton = document.getElementById("back-button");
+        const nextNavButton = document.getElementById("next-button");
+        const voiceSelect = document.getElementById("avatar-voice");
+        const previewVoiceButton = document.getElementById(
+          "preview-voice-button"
+        );
+        const knowledgeCards = document.querySelectorAll(".knowledge-card");
+        const knowledgeInput = document.getElementById("avatar-knowledge");
+        const documentUploadGroup = document.getElementById(
+          "document-upload-group"
+        );
+        const documentUpload = document.getElementById("document-upload");
+        const personalityTags = document.querySelectorAll(
+          ".personality-tags .tag"
+        );
+        const personalityTextarea =
+          document.getElementById("avatar-personality");
+        const nameInput = document.getElementById("avatar-name");
+
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        // Load saved settings if they exist
+        const savedSettings = JSON.parse(
+          localStorage.getItem("avatarSettings") || "{}"
+        );
+        if (savedSettings.name) {
+          nameInput.value = savedSettings.name;
+        }
+        document.getElementById("avatar-personality").value =
+          savedSettings.personality || "";
+        document.getElementById("avatar-prompt").value =
+          savedSettings.prompt || "";
+        knowledgeInput.value = savedSettings.knowledge || "";
+        const savedVoiceId = savedSettings.voiceId || "";
+        const savedDocumentUrl = savedSettings.documentUrl || "";
+
+        // Highlight selected knowledge card
+        if (knowledgeInput.value) {
+          knowledgeCards.forEach((card) => {
+            if (card.getAttribute("data-value") === knowledgeInput.value) {
+              card.classList.add("selected");
+            }
+          });
+        }
+
+        // Display error messages inline
+        function showError(message, element = null) {
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "error-message";
+          errorDiv.style.color = "red";
+          errorDiv.style.marginTop = "10px";
+          errorDiv.textContent = message;
+          if (element) {
+            element.parentElement.appendChild(errorDiv);
+          } else {
+            form.appendChild(errorDiv);
+          }
+          setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Clear previous error messages
+        function clearErrors() {
+          document
+            .querySelectorAll(".error-message")
+            .forEach((el) => el.remove());
+        }
+
+        // Validate file before upload
+        function validateFile(file) {
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          const allowedTypes = ["application/pdf", "text/plain"];
+          if (!file) return "No file selected.";
+          if (file.size > maxSize) return "File size exceeds 5MB limit.";
+          if (!allowedTypes.includes(file.type))
+            return "Only PDF and TXT files are allowed.";
+          return null;
+        }
+
+        // Toggle document upload field visibility
+        function toggleDocumentUpload() {
+          documentUploadGroup.style.display =
+            knowledgeInput.value === "document" ? "block" : "none";
+          if (knowledgeInput.value !== "document") {
+            documentUpload.value = ""; // Clear file input
+          }
+        }
+
+        // Handle knowledge card selection
+        knowledgeCards.forEach((card) => {
+          card.addEventListener("click", () => {
+            knowledgeCards.forEach((c) => c.classList.remove("selected"));
+            card.classList.add("selected");
+            knowledgeInput.value = card.getAttribute("data-value");
+            toggleDocumentUpload();
+            clearErrors();
+          });
+        });
+
+        toggleDocumentUpload(); // Initial check
+
+        // Handle personality tag selection
+        personalityTags.forEach((tag) => {
+          tag.addEventListener("click", () => {
+            tag.classList.toggle("selected");
+            const selectedTags = Array.from(personalityTags)
+              .filter((t) => t.classList.contains("selected"))
+              .map((t) => t.getAttribute("data-value"))
+              .join(", ");
+            personalityTextarea.value = selectedTags;
+          });
+        });
+
+        // Update timeline and step visibility
+        function updateStep(step) {
+          currentStep = step;
+          document.querySelectorAll(".timeline-step").forEach((s) => {
+            s.classList.remove("active");
+            if (parseInt(s.getAttribute("data-step")) === currentStep) {
+              s.classList.add("active");
+            }
+          });
+          document.querySelectorAll(".step").forEach((s) => {
+            s.style.display = s.id === `step-${currentStep}` ? "block" : "none";
+          });
+          prevButton.style.display = currentStep === 1 ? "none" : "block"; // Hide Back on first step
+          nextButton.textContent =
+            currentStep === totalSteps ? "Save & Start Chat" : "Continue";
+          clearErrors();
+        }
+
+        // Fetch Eleven Labs voices with retry
+        async function loadVoices(attempt = 1, maxAttempts = 3) {
+          try {
+            console.log(`customize.html: Attempt ${attempt} to load voices`);
+            const response = await fetch("./api.json");
+            if (!response.ok) {
+              throw new Error(
+                `Failed to load api.json: ${response.statusText}`
+              );
+            }
+            const config = await response.json();
+            const apiKey = config.elevenlabs_key;
+            if (!apiKey) {
+              throw new Error("Missing Eleven Labs API key in api.json");
+            }
+
+            const voicesResponse = await fetch(
+              "https://api.elevenlabs.io/v1/voices",
+              {
+                headers: {
+                  "xi-api-key": apiKey,
+                  Accept: "application/json",
+                },
+              }
+            );
+            if (!voicesResponse.ok) {
+              const errorData = await voicesResponse.json().catch(() => ({}));
+              throw new Error(
+                `Failed to fetch voices: ${
+                  errorData.message || voicesResponse.statusText
+                }`
+              );
+            }
+            const { voices } = await voicesResponse.json();
+
+            voiceSelect.innerHTML = '<option value="">Select a voice</option>';
+            voices.forEach((voice) => {
+              const option = document.createElement("option");
+              option.value = voice.voice_id;
+              option.textContent = voice.name || voice.voice_id;
+              if (voice.voice_id === savedVoiceId) {
+                option.selected = true;
+              }
+              voiceSelect.appendChild(option);
+            });
+
+            console.log("customize.html: Voices loaded successfully", voices);
+          } catch (error) {
+            console.error(
+              `customize.html: Error loading voices (attempt ${attempt}):`,
+              error
+            );
+            if (attempt < maxAttempts) {
+              console.log(
+                `customize.html: Retrying... (${attempt + 1}/${maxAttempts})`
+              );
+              return loadVoices(attempt + 1, maxAttempts);
+            }
+            voiceSelect.innerHTML =
+              '<option value="">Failed to load voices</option>';
+            showError(
+              `Failed to load voices after ${maxAttempts} attempts: ${error.message}. Please check your Eleven Labs API key or network connection.`,
+              voiceSelect
+            );
+          }
+        }
+
+        // Preview voice functionality
+        async function previewVoice() {
+          const voiceId = voiceSelect.value;
+          if (!voiceId) {
+            showError("Please select a voice to preview.", voiceSelect);
+            return;
+          }
+
+          previewVoiceButton.disabled = true;
+          previewVoiceButton.textContent = "Playing...";
+
+          try {
+            const response = await fetch("./api.json");
+            if (!response.ok) {
+              throw new Error("Failed to load api.json");
+            }
+            const config = await response.json();
+            const apiKey = config.elevenlabs_key;
+            if (!apiKey) {
+              throw new Error("Missing Eleven Labs API key in api.json");
+            }
+
+            const sampleText = "Hello, this is a voice preview.";
+            const audioResponse = await fetch(
+              `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+              {
+                method: "POST",
+                headers: {
+                  "xi-api-key": apiKey,
+                  "Content-Type": "application/json",
+                  Accept: "audio/mpeg",
+                },
+                body: JSON.stringify({
+                  text: sampleText,
+                  model_id: "eleven_monolingual_v1",
+                  voice_settings: {
+                    stability: 0.5,
+                    similarity_boost: 0.5,
+                  },
+                }),
+              }
+            );
+
+            if (!audioResponse.ok) {
+              const errorData = await audioResponse.json().catch(() => ({}));
+              throw new Error(
+                `Failed to generate preview: ${
+                  errorData.detail?.message || audioResponse.statusText
+                }`
+              );
+            }
+
+            const audioBlob = await audioResponse.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+
+            audio.onended = () => {
+              previewVoiceButton.disabled = false;
+              previewVoiceButton.textContent = "Preview Voice";
+              URL.revokeObjectURL(audioUrl);
+            };
+          } catch (error) {
+            console.error("customize.html: Error previewing voice:", error);
+            showError(`Failed to preview voice: ${error.message}`, voiceSelect);
+            previewVoiceButton.disabled = false;
+            previewVoiceButton.textContent = "Preview Voice";
+          }
+        }
+
+        // Load voices on page load
+        await loadVoices();
+
+        // Handle preview voice button click
+        previewVoiceButton.addEventListener("click", previewVoice);
+
+        // Handle navigation
+        prevButton.addEventListener("click", () => {
+          if (currentStep > 1) {
+            updateStep(currentStep - 1);
+          }
+        });
+
+        backButton.addEventListener("click", () => {
+          if (currentStep > 1) {
+            updateStep(currentStep - 1);
+          }
+        });
+
+        nextButton.addEventListener("click", async () => {
+          clearErrors();
+          if (currentStep < totalSteps) {
+            // Validate current step
+            let isValid = true;
+            if (currentStep === 1) {
+              const name = nameInput.value.trim();
+              if (!name) {
+                showError("Please enter an avatar name.", nameInput);
+                isValid = false;
+              }
+            } else if (currentStep === 2) {
+              const personality = document
+                .getElementById("avatar-personality")
+                .value.trim();
+              const prompt = document
+                .getElementById("avatar-prompt")
+                .value.trim();
+              if (!personality) {
+                showError(
+                  "Please select or enter a personality.",
+                  document.getElementById("avatar-personality")
+                );
+                isValid = false;
+              }
+              if (!prompt) {
+                showError(
+                  "Please enter a prompt.",
+                  document.getElementById("avatar-prompt")
+                );
+                isValid = false;
+              }
+            } else if (currentStep === 3) {
+              if (!knowledgeInput.value) {
+                showError(
+                  "Please select a knowledge context.",
+                  document.querySelector(".knowledge-options")
+                );
+                isValid = false;
+              }
+              if (
+                knowledgeInput.value === "document" &&
+                documentUpload.files.length === 0
+              ) {
+                showError("Please upload a document.", documentUpload);
+                isValid = false;
+              }
+              if (
+                knowledgeInput.value === "document" &&
+                documentUpload.files.length > 0
+              ) {
+                const file = documentUpload.files[0];
+                const fileError = validateFile(file);
+                if (fileError) {
+                  showError(fileError, documentUpload);
+                  isValid = false;
+                }
+              }
+            }
+
+            if (isValid) {
+              updateStep(currentStep + 1);
+            }
+          } else {
+            // Final step: save and redirect
+            const name = nameInput.value.trim();
+            const personality = document
+              .getElementById("avatar-personality")
+              .value.trim();
+            const prompt = document
+              .getElementById("avatar-prompt")
+              .value.trim();
+            const knowledge = knowledgeInput.value;
+            const voiceId = voiceSelect.value;
+            let documentUrl = "";
+            let documentName = "";
+            let documentContent = "";
+
+            // Handle document upload to server
+            if (knowledge === "document" && documentUpload.files.length > 0) {
+              const file = documentUpload.files[0];
+              const fileError = validateFile(file);
+              if (fileError) {
+                showError(fileError, documentUpload);
+                return;
+              }
+
+              try {
+                const formData = new FormData();
+                formData.append("document", file);
+                const response = await fetch("/upload-document", {
+                  method: "POST",
+                  body: formData,
+                });
+
+                if (!response.ok) {
+                  let errorData;
+                  try {
+                    errorData = await response.json();
+                  } catch {
+                    errorData = { error: response.statusText };
+                  }
+                  throw new Error(
+                    `Failed to upload document: ${
+                      errorData.error || response.statusText
+                    }`
+                  );
+                }
+
+                const result = await response.json();
+                if (!result.documentUrl || !result.documentContent) {
+                  throw new Error(
+                    "Server response missing documentUrl or documentContent"
+                  );
+                }
+                documentUrl = result.documentUrl;
+                documentName = result.documentName;
+                documentContent = result.documentContent;
+              } catch (error) {
+                console.error(
+                  "customize.html: Error uploading document:",
+                  error
+                );
+                showError(
+                  `Failed to upload document: ${error.message}`,
+                  documentUpload
+                );
+                return;
+              }
+            }
+
+            if (name && personality && prompt && knowledge && voiceId) {
+              localStorage.setItem(
+                "avatarSettings",
+                JSON.stringify({
+                  name,
+                  personality,
+                  prompt,
+                  knowledge,
+                  voiceId,
+                  documentName,
+                  documentUrl,
+                  documentContent,
+                })
+              );
+              console.log(
+                "customize.html: Settings saved, redirecting to /chat"
+              );
+              window.location.href = "/chat";
+            } else {
+              showError(
+                "Please complete all fields, including selecting a voice.",
+                form
+              );
+              console.log("customize.html: Validation failed");
+            }
+          }
+        });
+
+        nextNavButton.addEventListener("click", () => {
+          nextButton.click();
+        });
+
+        // Initialize first step
+        updateStep(1);
+      });
+    </script>
+  </body>
+</html>

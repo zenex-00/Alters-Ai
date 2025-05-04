@@ -1,0 +1,822 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Become a Creator - Alters.ai</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#ff8a2b',secondary:'#1a1a1a'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #0a0a0a;
+color: #ffffff;
+}
+.gradient-text {
+background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
+-webkit-background-clip: text;
+background-clip: text;
+color: transparent;
+}
+.hero-bg {
+background: radial-gradient(circle at 70% 30%, rgba(255, 138, 43, 0.15), transparent 60%),
+radial-gradient(circle at 30% 70%, rgba(255, 138, 43, 0.1), transparent 50%);
+}
+.floating {
+animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+0% { transform: translateY(0px); }
+50% { transform: translateY(-20px); }
+100% { transform: translateY(0px); }
+}
+.particle {
+position: absolute;
+border-radius: 50%;
+background: rgba(255, 138, 43, 0.3);
+pointer-events: none;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+.card-hover {
+transition: all 0.3s ease;
+}
+.card-hover:hover {
+transform: translateY(-8px);
+box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
+}
+.feature-card {
+transition: all 0.3s ease;
+}
+.feature-card:hover {
+transform: translateY(-8px);
+}
+.pricing-card {
+transition: all 0.3s ease;
+}
+.pricing-card:hover {
+transform: translateY(-10px);
+}
+.badge-pulse {
+animation: pulse 2s infinite;
+}
+@keyframes pulse {
+0% { transform: scale(1); opacity: 1; }
+50% { transform: scale(1.05); opacity: 0.8; }
+100% { transform: scale(1); opacity: 1; }
+}
+.fade-in {
+animation: fadeIn 0.8s ease-in forwards;
+}
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.scale-in {
+animation: scaleIn 0.5s ease-out forwards;
+}
+@keyframes scaleIn {
+from { transform: scale(0.9); opacity: 0; }
+to { transform: scale(1); opacity: 1; }
+}
+</style>
+<script src="/navbar.js" defer></script>
+</head>
+<body>
+<div id="navbar"></div>
+<main>
+<section class="hero-bg pt-28 pb-16 px-6 md:px-12 relative overflow-hidden">
+<div class="max-w-6xl mx-auto">
+<div class="flex flex-col md:flex-row items-center w-full">
+<div class="md:w-1/2 mb-10 md:mb-0">
+<h1 class="text-4xl md:text-5xl font-bold mb-6">Become a <span class="gradient-text">Creator</span> and Share Your Digital Twins</h1>
+<p class="text-xl text-gray-300 mb-8">
+Join our exclusive creator community and start monetizing your unique digital alter designs. Unleash your creativity and reach thousands of users worldwide.
+</p>
+<div class="flex flex-wrap gap-4">
+<button id="become-creator-btn" class="bg-primary text-white px-6 py-3 rounded-button hover:bg-opacity-90 transition-all whitespace-nowrap">
+Get Started Now
+</button>
+<button class="border border-white text-white px-6 py-3 rounded-button hover:bg-white hover:text-secondary transition-all whitespace-nowrap">
+Learn More
+</button>
+</div>
+</div>
+<div class="md:w-1/2 relative">
+<div class="relative z-10 floating">
+<img src="https://readdy.ai/api/search-image?query=creative%252520digital%252520artist%252520working%252520on%252520futuristic%252520interface%252520creating%252520digital%252520avatars%25252C%252520holographic%252520displays%252520showing%252520character%252520models%25252C%252520high-tech%252520studio%252520with%252520orange%252520accent%252520lighting%25252C%252520artistic%252520workspace%252520with%252520multiple%252520screens%25252C%252520professional%252520setup&width=600&height=500&seq=100&orientation=landscape" alt="Digital Creator Studio" class="rounded-xl">
+</div>
+<div class="absolute -bottom-6 -left-6 w-32 h-32 bg-primary bg-opacity-10 rounded-full blur-xl"></div>
+<div class="absolute -top-6 -right-6 w-32 h-32 bg-primary bg-opacity-10 rounded-full blur-xl"></div>
+</div>
+</div>
+</div>
+<div id="particles-container" class="absolute inset-0 pointer-events-none"></div>
+</section>
+<!-- Creator Package Section -->
+<section class="py-16 px-6 md:px-12 bg-black">
+<div class="max-w-6xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-6">Creator Studio Package</h2>
+<p class="text-xl text-gray-300 max-w-3xl mx-auto">
+Everything you need to start creating, publishing, and monetizing your digital twins on our marketplace.
+</p>
+</div>
+<div class="flex flex-col lg:flex-row gap-8 items-stretch">
+<div class="lg:w-/JetBrains Mono2/3">
+<div class="bg-secondary bg-opacity-30 rounded-lg p-8 h-full">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-2xl font-bold">Creator Studio</h3>
+</div>
+<div class="flex items-center mb-8">
+<div class="text-4xl font-bold">$50</div>
+<div class="ml-2 text-gray-400">
+<div class="text-sm line-through">$75</div>
+<div class="text-xs">33% OFF</div>
+</div>
+</div>
+<div class="mb-8">
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+<i class="ri-check-line text-primary"></i>
+</div>
+<span>Full access to Creator Studio tools</span>
+</div>
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+<i class="ri-check-line text-primary"></i>
+</div>
+<span>Unlimited alter designs and uploads</span>
+</div>
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+<i class="ri-check-line text-primary"></i>
+</div>
+<span>Priority marketplace placement</span>
+</div>
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+<i class="ri-check-line text-primary"></i>
+</div>
+<span>80% revenue share on all sales</span>
+</div>
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+<i class="ri-check-line text-primary"></i>
+</div>
+<span>Advanced analytics dashboard</span>
+</div>
+<div class="flex items-center">
+<div class="w-8 h-8 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+<i class="ri-check-line text-primary"></i>
+</div>
+<span>Creator community access</span>
+</div>
+</div>
+<div class="mb-8 border-t border-b border-gray-700 py-6">
+<div class="text-lg font-medium mb-4">Exclusive Bonuses</div>
+<div class="flex items-center mb-4">
+<div class="w-6 h-6 text-yellow-400 flex items-center justify-center mr-3">
+<i class="ri-star-fill"></i>
+</div>
+<span>Featured creator spotlight opportunity</span>
+</div>
+<div class="flex items-center mb-4">
+<div class="w-6 h-6 text-yellow-400 flex items-center justify-center mr-3">
+<i class="ri-star-fill"></i>
+</div>
+<span>Early access to new features</span>
+</div>
+<div class="flex items-center">
+<div class="w-6 h-6 text-yellow-400 flex items-center justify-center mr-3">
+<i class="ri-star-fill"></i>
+</div>
+<span>Creator verification badge</span>
+</div>
+</div>
+<button id="become-creator-btn-package" class="w-full bg-primary text-white py-4 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap">
+Become a Creator for $50
+</button>
+<div class="text-center mt-4 text-gray-400 text-sm">
+<span class="flex items-center justify-center">
+<i class="ri-shield-check-line mr-2"></i>
+30-day money-back guarantee
+</span>
+</div>
+</div>
+</div>
+<div class="lg:w-1/3">
+<div class="bg-secondary bg-opacity-30 rounded-lg p-8 h-full">
+<h3 class="text-xl font-bold mb-6">Why Become a Creator?</h3>
+<div class="space-y-6">
+<div class="flex items-start">
+<div class="w-10 h-10 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+<i class="ri-money-dollar-circle-line text-primary text-xl"></i>
+</div>
+<div>
+<h4 class="font-bold mb-2">Monetize Your Skills</h4>
+<p class="text-gray-400 text-sm">Earn passive income from every sale of your digital twins on our marketplace.</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-10 h-10 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+<i class="ri-global-line text-primary text-xl"></i>
+</div>
+<div>
+<h4 class="font-bold mb-2">Global Reach</h4>
+<p class="text-gray-400 text-sm">Connect with thousands of users worldwide looking for unique digital alters.</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-10 h-10 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+<i class="ri-tools-line text-primary text-xl"></i>
+</div>
+<div>
+<h4 class="font-bold mb-2">Professional Tools</h4>
+<p class="text-gray-400 text-sm">Access cutting-edge design tools specifically built for creating digital twins.</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-10 h-10 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+<i class="ri-team-line text-primary text-xl"></i>
+</div>
+<div>
+<h4 class="font-bold mb-2">Creator Community</h4>
+<p class="text-gray-400 text-sm">Join a supportive network of fellow creators to share tips and collaborate.</p>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 bg-primary bg-opacity-10 rounded-lg border border-primary border-opacity-30">
+<div class="flex items-center mb-2">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-information-line text-primary"></i>
+</div>
+<span class="font-medium">Average Creator Earnings</span>
+</div>
+<p class="text-sm text-gray-300">Our top creators earn an average of $2,500/month from their digital twin sales.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Section -->
+<section class="py-16 px-6 md:px-12 bg-gradient-to-b from-black to-secondary">
+<div class="max-w-6xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-6">Powerful Creator Tools</h2>
+<p class="text-xl text-gray-300 max-w-3xl mx-auto">
+Our comprehensive suite of tools makes creating and monetizing digital twins easier than ever.
+</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div class="bg-black bg-opacity-50 rounded-lg p-8 feature-card">
+<div class="w-16 h-16 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+<i class="ri-brush-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Advanced Design Studio</h3>
+<p class="text-gray-300 mb-4">
+Create highly detailed and realistic digital twins with our intuitive design tools. Customize every aspect from facial features to expressions.
+</p>
+<div class="flex items-center text-primary cursor-pointer group">
+<span class="mr-2 group-hover:mr-3 transition-all">Explore studio</span>
+<i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+</div>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-8 feature-card">
+<div class="w-16 h-16 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+<i class="ri-ai-generate text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">AI Enhancement</h3>
+<p class="text-gray-300 mb-4">
+Leverage our AI technology to add realistic movements, expressions, and speech patterns to your digital twins.
+</p>
+<div class="flex items-center text-primary cursor-pointer group">
+<span class="mr-2 group-hover:mr-3 transition-all">Learn about AI</span>
+<i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+</div>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-8 feature-card">
+<div class="w-16 h-16 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+<i class="ri-store-2-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Marketplace Integration</h3>
+<p class="text-gray-300 mb-4">
+Seamlessly publish your creations to our marketplace and set your own pricing. Our platform handles all transactions and delivery.
+</p>
+<div class="flex items-center text-primary cursor-pointer group">
+<span class="mr-2 group-hover:mr-3 transition-all">View marketplace</span>
+<i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+</div>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-8 feature-card">
+<div class="w-16 h-16 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+<i class="ri-line-chart-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Analytics Dashboard</h3>
+<p class="text-gray-300 mb-4">
+Track your sales, views, and customer feedback with detailed analytics. Gain insights to optimize your creations and boost earnings.
+</p>
+<div class="flex items-center text-primary cursor-pointer group">
+<span class="mr-2 group-hover:mr-3 transition-all">See analytics</span>
+<i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+</div>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-8 feature-card">
+<div class="w-16 h-16 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+<i class="ri-customer-service-2-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Creator Support</h3>
+<p class="text-gray-300 mb-4">
+Get dedicated support from our team of experts. We're here to help you maximize your creative potential and earnings.
+</p>
+<div class="flex items-center text-primary cursor-pointer group">
+<span class="mr-2 group-hover:mr-3 transition-all">Contact support</span>
+<i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+</div>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-8 feature-card">
+<div class="w-16 h-16 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+<i class="ri-copyright-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">IP Protection</h3>
+<p class="text-gray-300 mb-4">
+Your creations are protected with our robust IP safeguards. We ensure your digital twins remain your intellectual property.
+</p>
+<div class="flex items-center text-primary cursor-pointer group">
+<span class="mr-2 group-hover:mr-3 transition-all">Learn about IP</span>
+<i class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"></i>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Success Stories Section -->
+<section class="py-16 px-6 md:px-12 bg-black">
+<div class="max-w-6xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-6">Creator Success Stories</h2>
+<p class="text-xl text-gray-300 max-w-3xl mx-auto">
+Hear from creators who have transformed their passion into profit on our platform.
+</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover">
+<div class="relative h-48">
+<img src="https://readdy.ai/api/search-image?query=professional%252520creative%252520studio%252520with%252520digital%252520art%252520displays%252520and%252520orange%252520accent%252520lighting%25252C%252520modern%252520workspace%252520with%252520multiple%252520screens%252520showing%252520digital%252520character%252520designs%25252C%252520artistic%252520environment&width=400&height=200&seq=101&orientation=landscape" alt="Creator Studio" class="w-full h-full object-cover">
+</div>
+<div class="p-6">
+<div class="flex items-center mb-4">
+<div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+<img src="https://readdy.ai/api/search-image?query=professional%252520headshot%252520of%252520young%252520asian%252520woman%252520with%252520neutral%252520expression%252520on%252520dark%252520background%252520high%252520quality%252520portrait&width=100&height=100&seq=102&orientation=squarish" alt="Creator" class="w-full h-full object-cover">
+</div>
+<div>
+<h4 class="font-bold">Mia Zhang</h4>
+<p class="text-gray-400 text-sm">Digital Artist</p>
+</div>
+</div>
+<p class="text-gray-300 mb-4">
+"I started creating digital twins as a side project, but within 6 months I was earning enough to quit my day job. The creator tools make it so easy to bring my designs to life."
+</p>
+<div class="flex items-center justify-between">
+<div class="flex">
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+</div>
+<span class="text-gray-400 text-sm">Monthly earnings: $3,200+</span>
+</div>
+</div>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover">
+<div class="relative h-48">
+<img src="https://readdy.ai/api/search-image?query=professional%252520game%252520development%252520studio%252520with%252520character%252520models%252520on%252520screens%25252C%252520digital%252520design%252520workspace%252520with%252520orange%252520accent%252520lighting%25252C%252520high-tech%252520environment%252520with%252520multiple%252520displays&width=400&height=200&seq=103&orientation=landscape" alt="Game Development Studio" class="w-full h-full object-cover">
+</div>
+<div class="p-6">
+<div class="flex items-center mb-4">
+<div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+<img src="https://readdy.ai/api/search-image?query=professional%252520headshot%252520of%252520young%252520african%252520american%252520man%252520with%252520neutral%252520expression%252520on%252520dark%252520background%252520high%252520quality%252520portrait&width=100&height=100&seq=104&orientation=squarish" alt="Creator" class="w-full h-full object-cover">
+</div>
+<div>
+<h4 class="font-bold">Marcus Johnson</h4>
+<p class="text-gray-400 text-sm">Game Developer</p>
+</div>
+</div>
+<p class="text-gray-300 mb-4">
+"As a game developer, I use the platform to create character models for indie games. The marketplace has connected me with clients I never would have found otherwise."
+</p>
+<div class="flex items-center justify-between">
+<div class="flex">
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-half-fill text-yellow-400"></i>
+</div>
+<span class="text-gray-400 text-sm">Monthly earnings: $2,800+</span>
+</div>
+</div>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg overflow-hidden card-hover">
+<div class="relative h-48">
+<img src="https://readdy.ai/api/search-image?query=professional%252520marketing%252520agency%252520with%252520digital%252520avatars%252520on%252520displays%25252C%252520creative%252520workspace%252520with%252520orange%252520accent%252520lighting%25252C%252520modern%252520office%252520environment%252520with%252520branding%252520materials&width=400&height=200&seq=105&orientation=landscape" alt="Marketing Agency" class="w-full h-full object-cover">
+</div>
+<div class="p-6">
+<div class="flex items-center mb-4">
+<div class="w-12 h-12 rounded-full overflow-hidden mr-4">
+<img src="https://readdy.ai/api/search-image?query=professional%252520headshot%252520of%252520middle%252520aged%252520woman%252520with%252520neutral%252520expression%252520on%252520dark%252520background%252520high%252520quality%252520portrait&width=100&height=100&seq=106&orientation=squarish" alt="Creator" class="w-full h-full object-cover">
+</div>
+<div>
+<h4 class="font-bold">Elena Rodriguez</h4>
+<p class="text-gray-400 text-sm">Marketing Specialist</p>
+</div>
+</div>
+<p class="text-gray-300 mb-4">
+"I create digital twins for marketing campaigns. The demand is incredible, and the platform makes it easy to manage clients and deliver high-quality work consistently."
+</p>
+<div class="flex items-center justify-between">
+<div class="flex">
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+</div>
+<span class="text-gray-400 text-sm">Monthly earnings: $4,100+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- How It Works Section -->
+<section class="py-16 px-6 md:px-12 bg-gradient-to-b from-black to-secondary">
+<div class="max-w-6xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-6">How to Become a Creator</h2>
+<p class="text-xl text-gray-300 max-w-3xl mx-auto">
+Getting started is simple. Follow these steps to begin your journey as an Alters.ai creator.
+</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<div class="bg-black bg-opacity-50 rounded-lg p-6 text-center relative">
+<div class="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold">1</div>
+<div class="w-20 h-20 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+<i class="ri-user-add-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Sign Up</h3>
+<p class="text-gray-300">
+Create your creator account and complete your profile with your skills and portfolio.
+</p>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-6 text-center relative">
+<div class="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold">2</div>
+<div class="w-20 h-20 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+<i class="ri-shopping-bag-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Purchase Package</h3>
+<p class="text-gray-300">
+Get the Creator Studio package to unlock all professional tools and features.
+</p>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-6 text-center relative">
+<div class="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold">3</div>
+<div class="w-20 h-20 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+<i class="ri-palette-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Create & Upload</h3>
+<p class="text-gray-300">
+Design your digital twins using our tools and publish them to the marketplace.
+</p>
+</div>
+<div class="bg-black bg-opacity-50 rounded-lg p-6 text-center relative">
+<div class="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold">4</div>
+<div class="w-20 h-20 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-6">
+<i class="ri-money-dollar-circle-line text-primary text-3xl"></i>
+</div>
+<h3 class="text-xl font-bold mb-4">Earn Revenue</h3>
+<p class="text-gray-300">
+Set your prices and earn 80% of every sale. Payments are processed monthly.
+</p>
+</div>
+</div>
+<div class="mt-16 bg-black bg-opacity-50 rounded-lg p-8">
+<div class="flex flex-col md:flex-row items-center">
+<div class="md:w-2/3 mb-8 md:mb-0 md:pr-8">
+<h3 class="text-2xl font-bold mb-4">Ready to Start Your Creator Journey?</h3>
+<p class="text-gray-300 mb-6">
+Join thousands of creators who are already earning from their digital twin designs. Our platform provides all the tools, support, and marketplace access you need to succeed.
+</p>
+<button id="become-creator-btn-cta" class="bg-primary text-white px-8 py-4 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap">
+Become a Creator for $50
+</button>
+</div>
+<div class="md:w-1/3">
+<img src="https://readdy.ai/api/search-image?query=professional%252520digital%252520artist%252520celebrating%252520success%252520with%252520earnings%252520chart%252520on%252520screen%25252C%252520happy%252520creative%252520professional%252520in%252520modern%252520workspace%252520with%252520orange%252520accent%252520lighting&width=400&height=300&seq=107&orientation=landscape" alt="Successful Creator" class="rounded-lg w-full">
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Section -->
+<section class="py-16 px-6 md:px-12 bg-black">
+<div class="max-w-6xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-6">Frequently Asked Questions</h2>
+<p class="text-xl text-gray-300 max-w-3xl mx-auto">
+Find answers to common questions about becoming a creator on Alters.ai.
+</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="bg-secondary bg-opacity-30 rounded-lg p-6">
+<h3 class="text-xl font-bold mb-4">What's included in the Creator Studio package?</h3>
+<p class="text-gray-300">
+The Creator Studio package includes access to our professional design tools, unlimited uploads to the marketplace, priority placement for your creations, 80% revenue share, detailed analytics, and access to our creator community.
+</p>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg p-6">
+<h3 class="text-xl font-bold mb-4">How do I get paid for my creations?</h3>
+<p class="text-gray-300">
+You'll earn 80% of every sale of your digital twins. Payments are processed monthly via PayPal, Stripe, or bank transfer once you reach the $50 minimum payout threshold.
+</p>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg p-6">
+<h3 class="text-xl font-bold mb-4">Do I need design experience to become a creator?</h3>
+<p class="text-gray-300">
+While design experience is helpful, our tools are designed to be intuitive for creators of all skill levels. We also provide tutorials and support to help you get started and improve your skills.
+</p>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg p-6">
+<h3 class="text-xl font-bold mb-4">Is the Creator Studio package a one-time fee?</h3>
+<p class="text-gray-300">
+Yes, the $50 Creator Studio package is a one-time payment that gives you lifetime access to our creator tools and platform. There are no recurring subscription fees.
+</p>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg p-6">
+<h3 class="text-xl font-bold mb-4">How do I set prices for my digital twins?</h3>
+<p class="text-gray-300">
+You have complete control over pricing your creations. Our analytics tools provide market insights to help you set competitive prices, and you can adjust them at any time.
+</p>
+</div>
+<div class="bg-secondary bg-opacity-30 rounded-lg p-6">
+<h3 class="text-xl font-bold mb-4">What happens if I'm not satisfied with the Creator Studio?</h3>
+<p class="text-gray-300">
+We offer a 30-day money-back guarantee. If you're not completely satisfied with the Creator Studio tools and features, you can request a full refund within 30 days of purchase.
+</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonial Section -->
+<section class="py-16 px-6 md:px-12 bg-gradient-to-b from-black to-secondary">
+<div class="max-w-6xl mx-auto">
+<div class="bg-black bg-opacity-50 rounded-xl p-8 md:p-12">
+<div class="flex flex-col md:flex-row items-center">
+<div class="md:w-1/3 mb-8 md:mb-0">
+<div class="relative">
+<div class="w-64 h-64 mx-auto rounded-full overflow-hidden border-4 border-primary">
+<img src="https://readdy.ai/api/search-image?query=professional%252520headshot%252520of%252520successful%252520looking%252520creative%252520professional%252520smiling%252520on%252520dark%252520background%252520high%252520quality%252520portrait&width=300&height=300&seq=108&orientation=squarish" alt="Featured Creator" class="w-full h-full object-cover">
+</div>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl">
+$5.2K<br>monthly
+</div>
+</div>
+</div>
+<div class="md:w-2/3 md:pl-12">
+<div class="flex mb-6">
+<i class="ri-double-quotes-l text-primary text-4xl"></i>
+</div>
+<p class="text-xl text-gray-200 mb-6">
+"Joining Alters.ai as a creator was the best decision I've made for my career. The tools are incredible, the support is responsive, and the marketplace connects me with clients worldwide. I've been able to turn my passion for digital design into a thriving business that earns me more than my previous full-time job."
+</p>
+<div class="mb-4">
+<h4 class="text-xl font-bold">David Chen</h4>
+<p class="text-gray-400">Full-time Creator since 2024</p>
+</div>
+<div class="flex">
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+<i class="ri-star-fill text-yellow-400"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="py-20 px-6 md:px-12 bg-black relative overflow-hidden">
+<div class="absolute inset-0 opacity-20">
+<img src="https://readdy.ai/api/search-image?query=abstract%252520digital%252520network%252520connections%25252C%252520futuristic%252520technology%252520background%25252C%252520glowing%252520orange%252520nodes%25252C%252520high-tech%252520visualization%25252C%252520data%252520flow%252520concept%25252C%252520minimal%252520clean%252520design&width=1200&height=800&seq=109&orientation=landscape" alt="Digital network background" class="w-full h-full object-cover">
+</div>
+<div class="max-w-6xl mx-auto relative z-10">
+<div class="text-center">
+<h2 class="text-4xl md:text-5xl font-bold mb-6">Start Your Creator Journey Today</h2>
+<p class="text-xl text-gray-300 max-w-3xl mx-auto mb-10">
+Join our growing community of successful creators and turn your creativity into a sustainable income stream.
+</p>
+<div class="flex flex-wrap justify-center gap-6">
+<button id="become-creator-btn-final" class="bg-primary text-white px-8 py-4 rounded-button text-xl font-medium hover:bg-opacity-90 transition-all whitespace-nowrap scale-in">
+Become a Creator for $50
+</button>
+<button class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-button text-xl font-medium hover:bg-white hover:text-secondary transition-all whitespace-nowrap">
+Learn More
+</button>
+</div>
+<div class="mt-8 flex items-center justify-center text-gray-400">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-shield-check-line"></i>
+</div>
+<span>30-day money-back guarantee. No risk to try.</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="py-16 px-6 md:px-12 bg-secondary">
+<div class="max-w-6xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+<div>
+<a href="#" class="text-3xl font-['Pacifico'] text-white mb-6 inline-block">alters<span class="text-primary">.ai</span></a>
+<p class="text-gray-400 mb-6">
+The leading marketplace for AI-powered digital twins and alters. Create, buy, and sell unique digital identities.
+</p>
+<div class="flex space-x-4">
+<a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors">
+<i class="ri-twitter-x-line"></i>
+</a>
+<a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors">
+<i class="ri-linkedin-fill"></i>
+</a>
+<a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors">
+<i class="ri-instagram-line"></i>
+</a>
+<a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors">
+<i class="ri-youtube-line"></i>
+</a>
+</div>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg mb-6">Marketplace</h4>
+<ul class="space-y-3">
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">All Alters</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Professional</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Gaming</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Entertainment</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Education</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg mb-6">Company</h4>
+<ul class="space-y-3">
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">About Us</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Careers</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Blog</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Press</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Contact</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg mb-6">Resources</h4>
+<ul class="space-y-3">
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Creator Guidelines</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Help Center</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Community</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Ethics</a></li>
+<li><a href="#" class="text-gray-400 hover:text-primary transition-colors">Partners</a></li>
+</ul>
+</div>
+</div>
+<div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+<p class="text-gray-500 mb-4 md:mb-0">© 2025 Alters.ai. All rights reserved.</p>
+<div class="flex flex-wrap gap-4 md:gap-6">
+<a href="#" class="text-gray-500 hover:text-primary transition-colors">Terms</a>
+<a href="#" class="text-gray-500 hover:text-primary transition-colors">Privacy</a>
+<a href="#" class="text-gray-500 hover:text-primary transition-colors">Cookies</a>
+<div class="flex items-center space-x-2">
+<i class="ri-visa-fill text-gray-400 text-xl"></i>
+<i class="ri-mastercard-fill text-gray-400 text-xl"></i>
+<i class="ri-paypal-fill text-gray-400 text-xl"></i>
+<i class="ri-apple-fill text-gray-400 text-xl"></i>
+</div>
+</div>
+</div>
+</div>
+</footer>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Stripe
+  const stripe = Stripe('pk_test_51RGlGVI7ArCWlaxqdMKur3Eb3SCI17n6eWHknRzqdSGKjPCYZilKB9wXCIBKdhGWMzDOxMw01b17eSiDl1L5kiap009eiIlIPt'); // Replace with your actual Stripe public key
+
+  // Function to handle checkout
+  async function handleCheckout() {
+    try {
+      const response = await fetch('/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const session = await response.json();
+      if (session.id) {
+        const result = await stripe.redirectToCheckout({ sessionId: session.id });
+        if (result.error) {
+          console.error(result.error.message);
+          alert('Error redirecting to checkout: ' + result.error.message);
+        }
+      } else {
+        console.error('Failed to create checkout session:', session.error);
+        alert('Failed to create checkout session: ' + session.error);
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('An error occurred during checkout. Please try again.');
+    }
+  }
+
+  // Add event listeners to all "Become a Creator" buttons
+  const buttons = document.querySelectorAll('#become-creator-btn, #become-creator-btn-package, #become-creator-btn-cta, #become-creator-btn-final');
+  buttons.forEach(button => {
+    button.addEventListener('click', handleCheckout);
+  });
+
+  // Particle animation
+  const particlesContainer = document.getElementById('particles-container');
+  const particleCount = 30;
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+    const size = Math.random() * 4 + 2;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    particle.style.opacity = Math.random() * 0.5 + 0.1;
+    const duration = Math.random() * 20 + 10;
+    const delay = Math.random() * 5;
+    particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+    particlesContainer.appendChild(particle);
+  }
+
+  // Animate elements on scroll
+  const animateElements = document.querySelectorAll('.feature-card, .card-hover, .pricing-card');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('fade-in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.1
+  });
+  animateElements.forEach(element => observer.observe(element));
+
+  // Mobile menu toggle
+  const menuButton = document.querySelector('.lg\\:hidden');
+  const mobileMenu = document.createElement('div');
+  mobileMenu.classList.add('fixed', 'inset-0', 'bg-secondary', 'z-50', 'p-6', 'flex', 'flex-col', 'transform', 'translate-x-full', 'transition-transform', 'duration-300');
+  mobileMenu.innerHTML = `
+    <div class="flex justify-between items-center mb-8">
+      <a href="#" class="text-3xl font-['Pacifico'] text-white">alters<span class="text-primary">.ai</span></a>
+      <button class="w-10 h-10 flex items-center justify-center">
+        <i class="ri-close-line text-white text-2xl"></i>
+      </button>
+    </div>
+    <div class="flex flex-col space-y-6">
+      <a href="#" class="text-white text-xl">Home</a>
+      <a href="#" class="text-white text-xl">Marketplace</a>
+      <a href="#" class="text-primary text-xl">Create</a>
+      <a href="#" class="text-white text-xl">Pricing</a>
+      <a href="#" class="text-white text-xl">Community</a>
+    </div>
+    <div class="mt-auto pt-8">
+      <a href="#" class="block w-full bg-primary text-white text-center py-3 rounded-button font-medium mb-4">Become a Creator</a>
+      <a href="#" class="block w-full border border-white text-white text-center py-3 rounded-button font-medium">Log In</a>
+    </div>
+  `;
+  document.body.appendChild(mobileMenu);
+  menuButton.addEventListener('click', function() {
+    mobileMenu.classList.remove('translate-x-full');
+  });
+  const closeButton = mobileMenu.querySelector('button');
+  closeButton.addEventListener('click', function() {
+    mobileMenu.classList.add('translate-x-full');
+  });
+});
+</script>
+</body>
+</html>

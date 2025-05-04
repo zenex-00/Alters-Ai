@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - alters.ai</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#ff8a2b", secondary: "#1a1a1a" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <!-- Firebase SDK -->
+    <!-- Firebase SDK - Compatibility Build -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+
+    <style>
+      :where([class^="ri-"])::before {
+        content: "\f3c2";
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      .login-bg {
+        background: radial-gradient(
+            circle at 70% 30%,
+            rgba(255, 138, 43, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            circle at 30% 70%,
+            rgba(255, 138, 43, 0.1),
+            transparent 50%
+          );
+      }
+      .floating-particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 138, 43, 0.2);
+        pointer-events: none;
+        animation: float 15s infinite ease-in-out;
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        25% {
+          transform: translate(50px, 50px) rotate(90deg);
+        }
+        50% {
+          transform: translate(0, 100px) rotate(180deg);
+        }
+        75% {
+          transform: translate(-50px, 50px) rotate(270deg);
+        }
+      }
+      input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #4b5563;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        background-color: transparent;
+      }
+      input[type="checkbox"]:checked {
+        background-color: #ff8a2b;
+        border-color: #ff8a2b;
+      }
+      input[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 5px;
+        width: 6px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      input[type="password"]::-ms-reveal,
+      input[type="password"]::-ms-clear {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="login-bg min-h-screen flex flex-col">
+    <!-- Particles Background -->
+    <div
+      id="particles-container"
+      class="fixed inset-0 pointer-events-none"
+    ></div>
+    <!-- Header -->
+    <header
+      class="w-full py-4 px-6 md:px-12 flex items-center justify-between z-10"
+    >
+      <div class="flex items-center">
+        <a
+          href="/"
+          class="flex items-center text-white hover:text-primary transition-colors"
+        >
+          <div class="w-5 h-5 mr-2 flex items-center justify-center">
+            <i class="ri-arrow-left-line"></i>
+          </div>
+          <span>Back to Home</span>
+        </a>
+      </div>
+      <a href="/" class="text-3xl font-['Pacifico'] text-white"
+        >alters<span class="text-primary">.ai</span></a
+      >
+    </header>
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center px-6 py-12">
+      <div
+        class="w-full max-w-md bg-secondary bg-opacity-60 backdrop-blur-md rounded-xl p-8 md:p-10 shadow-2xl hover:shadow-[0_0_50px_rgba(255,138,43,0.15)] transition-all duration-500 relative overflow-hidden group"
+      >
+        <div class="relative">
+          <div
+            class="text-center mb-12 transform transition-transform duration-500 hover:scale-105"
+          >
+            <div
+              class="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center transform transition-transform hover:rotate-12"
+            >
+              <i class="ri-user-smile-line text-4xl text-primary"></i>
+            </div>
+            <h1
+              class="text-4xl font-bold mb-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent"
+            >
+              Welcome back
+            </h1>
+            <p class="text-gray-400 text-lg">
+              Continue with your Google account
+            </p>
+          </div>
+          <div class="space-y-6 relative">
+            <button
+              id="google-signin-btn"
+              type="button"
+              class="w-full group/btn flex items-center justify-center bg-white text-gray-800 py-4 px-6 rounded-button transition-all duration-300 hover:bg-gray-100 hover:shadow-lg hover:scale-[1.02] active:scale-95 whitespace-nowrap relative overflow-hidden"
+            >
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"
+              ></div>
+              <div
+                class="w-6 h-6 mr-3 flex items-center justify-center relative"
+              >
+                <i
+                  class="ri-google-fill text-xl transition-transform duration-300 group-hover/btn:rotate-12"
+                ></i>
+              </div>
+              <span class="text-lg font-medium relative"
+                >Sign in with Google</span
+              >
+            </button>
+            <button
+              id="signout-btn"
+              type="button"
+              class="w-full group/btn flex items-center justify-center bg-red-600 text-white py-4 px-6 rounded-button transition-all duration-300 hover:bg-red-700 hover:shadow-lg hover:scale-[1.02] active:scale-95 whitespace-nowrap relative overflow-hidden hidden"
+            >
+              <span class="text-lg font-medium relative">Sign Out</span>
+            </button>
+          </div>
+          <!-- Sign Up Link -->
+          <div
+            class="text-center mt-12 transform transition-all duration-500 hover:translate-y-[-2px]"
+          >
+            <p class="text-gray-400 text-lg">
+              Don't have an account?
+              <a
+                href="#"
+                class="text-primary hover:text-white transition-colors duration-300 ml-1 relative group/link"
+              >
+                Sign up
+                <span
+                  class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover/link:w-full transition-all duration-300"
+                ></span>
+              </a>
+            </p>
+          </div>
+          <!-- Home button -->
+          <div style="text-align: center; margin-top: 20px">
+            <button onclick="window.location.href='/'">Home</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Footer -->
+    <footer class="py-6 px-6 md:px-12 text-center text-gray-500 text-sm">
+      <p>© 2025 alters.ai. All rights reserved.</p>
+    </footer>
+    <script>
+      // Initialize Firebase
+      const firebaseConfig = {
+        apiKey: "AIzaSyARWluHL-BRw5jbSzWK_4BW-wxdD-kHRjc",
+        authDomain: "alters-a4acf.firebaseapp.com",
+        projectId: "alters-a4acf",
+        storageBucket: "alters-a4acf.firebasestorage.app",
+        messagingSenderId: "651773427152",
+        appId: "1:651773427152:web:b21737767284588abf8dd5",
+        measurementId: "G-41G219M9M0",
+      };
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const signInButton = document.getElementById("google-signin-btn");
+        const signOutButton = document.getElementById("signout-btn");
+
+        // Handle Google Sign-In
+        signInButton.addEventListener("click", () => {
+          auth
+            .signInWithPopup(googleProvider)
+            .then(async (result) => {
+              const user = result.user;
+              const idToken = await user.getIdToken();
+              // Send ID token to backend
+              fetch("/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ idToken }),
+              })
+                .then((response) => response.json())
+                .then((data) => {
+                  if (data.success) {
+                    signInButton.classList.add("hidden");
+                    signOutButton.classList.remove("hidden");
+                    alert(`Welcome, ${user.displayName}!`);
+                    // Optionally redirect to /customize
+                    window.location.href = "/";
+                  } else {
+                    alert("Authentication failed: " + data.error);
+                  }
+                })
+                .catch((error) => {
+                  console.error("Error sending token to backend:", error);
+                  alert("Authentication error");
+                });
+            })
+            .catch((error) => {
+              console.error("Google Sign-In error:", error);
+              alert("Google Sign-In failed: " + error.message);
+            });
+        });
+
+        // Handle Sign-Out
+        signOutButton.addEventListener("click", () => {
+          auth
+            .signOut()
+            .then(() => {
+              // Clear session on backend
+              fetch("/auth/signout", { method: "POST" })
+                .then(() => {
+                  signInButton.classList.remove("hidden");
+                  signOutButton.classList.add("hidden");
+                  alert("Signed out successfully");
+                })
+                .catch((error) => {
+                  console.error("Sign-out error:", error);
+                  alert("Sign-out failed");
+                });
+            })
+            .catch((error) => {
+              console.error("Firebase sign-out error:", error);
+              alert("Sign-out failed: " + error.message);
+            });
+        });
+
+        // Check auth state
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            signInButton.classList.add("hidden");
+            signOutButton.classList.remove("hidden");
+          } else {
+            signInButton.classList.remove("hidden");
+            signOutButton.classList.add("hidden");
+          }
+        });
+
+        // Create floating particles
+        const particlesContainer = document.getElementById(
+          "particles-container"
+        );
+        const particleCount = 15;
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.classList.add("floating-particle");
+          const size = Math.random() * 5 + 3;
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${Math.random() * 100}%`;
+          particle.style.opacity = Math.random() * 0.3 + 0.1;
+          const duration = Math.random() * 20 + 10;
+          const delay = Math.random() * 5;
+          particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+          particlesContainer.appendChild(particle);
+        }
+      });
+    </script>
+  </body>
+</html>

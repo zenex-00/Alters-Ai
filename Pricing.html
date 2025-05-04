@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pricing - Alters.ai</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#ff8a2b", secondary: "#1a1a1a" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <style>
+      :where([class^="ri-"])::before {
+        content: "\f3c2";
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      .gradient-text {
+        background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-bg {
+        background: radial-gradient(
+            circle at 70% 30%,
+            rgba(255, 138, 43, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            circle at 30% 70%,
+            rgba(255, 138, 43, 0.1),
+            transparent 50%
+          );
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
+      }
+      .pricing-card {
+        transition: all 0.3s ease;
+      }
+      .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
+      }
+      .pricing-toggle-checkbox:checked + .pricing-toggle-label {
+        background-color: #ff8a2b;
+      }
+      .pricing-toggle-checkbox:checked
+        + .pricing-toggle-label
+        .pricing-toggle-switch {
+        transform: translateX(100%);
+      }
+      .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+      .accordion-open .accordion-content {
+        max-height: 500px;
+      }
+      .accordion-icon {
+        transition: transform 0.3s ease;
+      }
+      .accordion-open .accordion-icon {
+        transform: rotate(180deg);
+      }
+    </style>
+    <script src="/navbar.js" defer></script>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <main>
+      <section
+        class="hero-bg pt-32 pb-20 px-6 md:px-12 relative overflow-hidden"
+      >
+        <div
+          class="absolute inset-0 z-0"
+          style="
+            background-image: url('https://readdy.ai/api/search-image?query=futuristic%2520digital%2520network%2520with%2520orange%2520glowing%2520connections%2520on%2520dark%2520background%252C%2520abstract%2520technology%2520background%2520with%2520subtle%2520gradient%252C%2520clean%2520minimal%2520design%252C%2520perfect%2520for%2520pricing%2520page%252C%2520left%2520side%2520has%2520clean%2520area%2520for%2520text%2520with%2520matching%2520background%2520color%2520that%2520blends%2520perfectly%2520with%2520image&width=1920&height=800&seq=18&orientation=landscape');
+            background-position: right;
+            background-size: cover;
+            opacity: 0.8;
+          "
+        ></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black via-black to-transparent z-0"
+        ></div>
+        <div class="max-w-6xl mx-auto relative z-10">
+          <div class="w-full flex flex-col md:flex-row items-center">
+            <div class="w-full md:w-3/5 mb-12 md:mb-0 pr-0 md:pr-12">
+              <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                Pricing <span class="gradient-text">Plans</span>
+              </h1>
+              <p class="text-xl md:text-2xl text-gray-300 mb-8">
+                Choose the perfect plan for your digital identity needs. Scale
+                your presence with intelligent digital twins that represent you
+                authentically.
+              </p>
+              <div class="flex items-center justify-start">
+                <div
+                  class="flex items-center bg-secondary bg-opacity-60 p-1 rounded-full"
+                >
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      id="pricing-toggle"
+                      class="pricing-toggle-checkbox sr-only"
+                    />
+                    <label
+                      for="pricing-toggle"
+                      class="pricing-toggle-label flex items-center w-[200px] h-10 rounded-full bg-gray-800 cursor-pointer relative"
+                    >
+                      <span
+                        class="pricing-toggle-monthly absolute left-3 text-white z-10"
+                        >Monthly</span
+                      >
+                      <span
+                        class="pricing-toggle-annually absolute right-3 text-gray-400 z-10"
+                        >Annually</span
+                      >
+                      <span
+                        class="pricing-toggle-switch absolute left-1 top-1 bg-white w-[98px] h-8 rounded-full transition-transform duration-300 ease-in-out"
+                      ></span>
+                    </label>
+                  </div>
+                  <div
+                    class="ml-4 bg-primary bg-opacity-20 text-primary text-sm px-3 py-1 rounded-full"
+                  >
+                    Save 20%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Tiers Section -->
+      <section class="py-20 px-6 md:px-12 bg-black">
+        <div class="max-w-6xl mx-auto">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Basic Plan -->
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden pricing-card border border-gray-800"
+            >
+              <div class="p-8 border-b border-gray-800">
+                <h3 class="text-2xl font-bold mb-2">Basic</h3>
+                <p class="text-gray-400 mb-6">
+                  Perfect for individuals starting their digital journey
+                </p>
+                <div class="flex items-end">
+                  <div class="pricing-monthly">
+                    <span class="text-4xl font-bold">$29</span>
+                    <span class="text-gray-400">/month</span>
+                  </div>
+                  <div class="pricing-annually hidden">
+                    <span class="text-4xl font-bold">$23</span>
+                    <span class="text-gray-400">/month</span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-8">
+                <ul class="space-y-4 mb-8">
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>1 Digital Alter</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>500 Interactions/month</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Basic Personality Modeling</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Text-based Communication</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Standard Support</span>
+                  </li>
+                </ul>
+                <a
+                  href="#"
+                  class="block w-full text-center bg-transparent border border-primary text-primary py-3 !rounded-button hover:bg-primary hover:text-white transition-all whitespace-nowrap"
+                  >Get Started</a
+                >
+              </div>
+            </div>
+
+            <!-- Professional Plan -->
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden pricing-card border-2 border-primary relative"
+            >
+              <div
+                class="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-sm font-medium"
+              >
+                Popular
+              </div>
+              <div class="p-8 border-b border-gray-800">
+                <h3 class="text-2xl font-bold mb-2">Professional</h3>
+                <p class="text-gray-400 mb-6">
+                  Ideal for professionals and content creators
+                </p>
+                <div class="flex items-end">
+                  <div class="pricing-monthly">
+                    <span class="text-4xl font-bold">$79</span>
+                    <span class="text-gray-400">/month</span>
+                  </div>
+                  <div class="pricing-annually hidden">
+                    <span class="text-4xl font-bold">$63</span>
+                    <span class="text-gray-400">/month</span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-8">
+                <ul class="space-y-4 mb-8">
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>3 Digital Alters</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>2,000 Interactions/month</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Advanced Personality Modeling</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Text & Voice Communication</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>API Access</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Priority Support</span>
+                  </li>
+                </ul>
+                <a
+                  href="#"
+                  class="block w-full text-center bg-primary text-white py-3 !rounded-button hover:bg-opacity-90 transition-all whitespace-nowrap"
+                  >Get Started</a
+                >
+              </div>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden pricing-card border border-gray-800"
+            >
+              <div class="p-8 border-b border-gray-800">
+                <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
+                <p class="text-gray-400 mb-6">
+                  For organizations with advanced requirements
+                </p>
+                <div class="flex items-end">
+                  <div class="pricing-monthly">
+                    <span class="text-4xl font-bold">$249</span>
+                    <span class="text-gray-400">/month</span>
+                  </div>
+                  <div class="pricing-annually hidden">
+                    <span class="text-4xl font-bold">$199</span>
+                    <span class="text-gray-400">/month</span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-8">
+                <ul class="space-y-4 mb-8">
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>10 Digital Alters</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>10,000 Interactions/month</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Premium Personality Modeling</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Multimodal Communication</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Advanced Analytics</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Custom Integrations</span>
+                  </li>
+                  <li class="flex items-start">
+                    <div
+                      class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                    <span>Dedicated Support</span>
+                  </li>
+                </ul>
+                <a
+                  href="#"
+                  class="block w-full text-center bg-transparent border border-primary text-primary py-3 !rounded-button hover:bg-primary hover:text-white transition-all whitespace-nowrap"
+                  >Get Started</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature Comparison Section -->
+      <section
+        class="py-20 px-6 md:px-12 bg-gradient-to-b from-black to-secondary"
+      >
+        <div class="max-w-6xl mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-6">Feature Comparison</h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+              Compare our plans to find the perfect fit for your digital
+              identity needs.
+            </p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[768px]">
+              <thead
+                class="border-b border-gray-800 sticky top-0 bg-black z-10"
+              >
+                <tr>
+                  <th class="py-6 px-4 text-left font-medium text-lg">
+                    Features
+                  </th>
+                  <th class="py-6 px-4 text-center font-medium text-lg">
+                    Basic
+                  </th>
+                  <th class="py-6 px-4 text-center font-medium text-lg">
+                    Professional
+                  </th>
+                  <th class="py-6 px-4 text-center font-medium text-lg">
+                    Enterprise
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-gray-800">
+                  <td class="py-6 px-4 font-medium" colspan="4">
+                    Core Features
+                  </td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Digital Alters</td>
+                  <td class="py-4 px-4 text-center">1</td>
+                  <td class="py-4 px-4 text-center">3</td>
+                  <td class="py-4 px-4 text-center">10</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Monthly Interactions</td>
+                  <td class="py-4 px-4 text-center">500</td>
+                  <td class="py-4 px-4 text-center">2,000</td>
+                  <td class="py-4 px-4 text-center">10,000</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Personality Modeling</td>
+                  <td class="py-4 px-4 text-center">Basic</td>
+                  <td class="py-4 px-4 text-center">Advanced</td>
+                  <td class="py-4 px-4 text-center">Premium</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Communication Channels</td>
+                  <td class="py-4 px-4 text-center">Text</td>
+                  <td class="py-4 px-4 text-center">Text & Voice</td>
+                  <td class="py-4 px-4 text-center">Multimodal</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-6 px-4 font-medium" colspan="4">
+                    Advanced Features
+                  </td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Knowledge Base Integration</td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-gray-500 flex items-center justify-center"
+                    >
+                      <i class="ri-close-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-primary flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-primary flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">API Access</td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-gray-500 flex items-center justify-center"
+                    >
+                      <i class="ri-close-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-primary flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-primary flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Custom Integrations</td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-gray-500 flex items-center justify-center"
+                    >
+                      <i class="ri-close-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-gray-500 flex items-center justify-center"
+                    >
+                      <i class="ri-close-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-primary flex items-center justify-center"
+                    >
+                      <i class="ri-check-line"></i>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Analytics Dashboard</td>
+                  <td class="py-4 px-4 text-center">Basic</td>
+                  <td class="py-4 px-4 text-center">Advanced</td>
+                  <td class="py-4 px-4 text-center">Premium</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-6 px-4 font-medium" colspan="4">Support</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Support Level</td>
+                  <td class="py-4 px-4 text-center">Standard</td>
+                  <td class="py-4 px-4 text-center">Priority</td>
+                  <td class="py-4 px-4 text-center">Dedicated</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Response Time</td>
+                  <td class="py-4 px-4 text-center">48 hours</td>
+                  <td class="py-4 px-4 text-center">24 hours</td>
+                  <td class="py-4 px-4 text-center">4 hours</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-4 px-4">Onboarding</td>
+                  <td class="py-4 px-4 text-center">Self-service</td>
+                  <td class="py-4 px-4 text-center">Guided</td>
+                  <td class="py-4 px-4 text-center">White-glove</td>
+                </tr>
+                <tr>
+                  <td class="py-4 px-4">Training Sessions</td>
+                  <td class="py-4 px-4 text-center">
+                    <div
+                      class="w-6 h-6 mx-auto text-gray-500 flex items-center justify-center"
+                    >
+                      <i class="ri-close-line"></i>
+                    </div>
+                  </td>
+                  <td class="py-4 px-4 text-center">1 session</td>
+                  <td class="py-4 px-4 text-center">Unlimited</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Enterprise Section -->
+      <section class="py-20 px-6 md:px-12 bg-black">
+        <div class="max-w-6xl mx-auto">
+          <div
+            class="flex flex-col md:flex-row items-center bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800"
+          >
+            <div class="w-full md:w-1/2 p-12">
+              <h2 class="text-4xl font-bold mb-6">Enterprise Solutions</h2>
+              <p class="text-xl text-gray-300 mb-8">
+                Need a custom solution for your organization? Our enterprise
+                plans offer flexible options tailored to your specific
+                requirements.
+              </p>
+              <ul class="space-y-4 mb-8">
+                <li class="flex items-start">
+                  <div
+                    class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Custom number of digital alters</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Dedicated account management</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Custom integrations with your existing systems</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Enhanced security and compliance features</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-6 h-6 mr-3 text-primary flex-shrink-0 mt-0.5 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Service level agreements (SLAs)</span>
+                </li>
+              </ul>
+              <a
+                href="#"
+                class="inline-flex items-center bg-primary text-white px-8 py-3 !rounded-button hover:bg-opacity-90 transition-all whitespace-nowrap"
+              >
+                <span>Contact Sales</span>
+                <div class="w-5 h-5 ml-2 flex items-center justify-center">
+                  <i class="ri-arrow-right-line"></i>
+                </div>
+              </a>
+            </div>
+            <div class="w-full md:w-1/2 p-6 md:p-0">
+              <img
+                src="https://readdy.ai/api/search-image?query=business%2520professionals%2520in%2520modern%2520meeting%2520room%2520discussing%2520digital%2520technology%2520solutions%252C%2520diverse%2520team%2520looking%2520at%2520presentation%2520with%2520data%2520visualizations%252C%2520orange%2520accent%2520lighting%252C%2520professional%2520corporate%2520environment%252C%2520clean%2520minimal%2520design&width=600&height=500&seq=19&orientation=landscape"
+                alt="Enterprise solutions"
+                class="w-full h-full object-cover rounded-lg md:rounded-none"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section
+        class="py-20 px-6 md:px-12 bg-gradient-to-b from-secondary to-black"
+      >
+        <div class="max-w-4xl mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-6">Frequently Asked Questions</h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+              Find answers to common questions about our pricing and plans.
+            </p>
+          </div>
+          <div class="space-y-6">
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800 accordion"
+            >
+              <div class="p-6 flex justify-between items-center cursor-pointer">
+                <h3 class="text-xl font-medium">
+                  How do monthly interactions work?
+                </h3>
+                <div
+                  class="w-8 h-8 flex items-center justify-center accordion-icon"
+                >
+                  <i class="ri-arrow-down-s-line text-2xl"></i>
+                </div>
+              </div>
+              <div class="accordion-content px-6 pb-6">
+                <p class="text-gray-300">
+                  An interaction is defined as any exchange between your digital
+                  alter and a user. This includes text messages, voice
+                  conversations, or any other form of communication. Each plan
+                  includes a specific number of interactions per month, and
+                  additional interactions can be purchased if needed.
+                </p>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800 accordion"
+            >
+              <div class="p-6 flex justify-between items-center cursor-pointer">
+                <h3 class="text-xl font-medium">
+                  Can I upgrade or downgrade my plan?
+                </h3>
+                <div
+                  class="w-8 h-8 flex items-center justify-center accordion-icon"
+                >
+                  <i class="ri-arrow-down-s-line text-2xl"></i>
+                </div>
+              </div>
+              <div class="accordion-content px-6 pb-6">
+                <p class="text-gray-300">
+                  Yes, you can upgrade or downgrade your plan at any time. When
+                  upgrading, the new features will be available immediately, and
+                  you'll be charged the prorated difference. When downgrading,
+                  the changes will take effect at the start of your next billing
+                  cycle.
+                </p>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800 accordion"
+            >
+              <div class="p-6 flex justify-between items-center cursor-pointer">
+                <h3 class="text-xl font-medium">
+                  What's the difference between personality modeling levels?
+                </h3>
+                <div
+                  class="w-8 h-8 flex items-center justify-center accordion-icon"
+                >
+                  <i class="ri-arrow-down-s-line text-2xl"></i>
+                </div>
+              </div>
+              <div class="accordion-content px-6 pb-6">
+                <p class="text-gray-300">
+                  Basic personality modeling captures fundamental aspects of
+                  your communication style and preferences. Advanced modeling
+                  includes more nuanced understanding of context, tone, and
+                  expertise areas. Premium modeling offers the most
+                  sophisticated representation, including emotional
+                  intelligence, specialized knowledge domains, and adaptive
+                  learning capabilities.
+                </p>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800 accordion"
+            >
+              <div class="p-6 flex justify-between items-center cursor-pointer">
+                <h3 class="text-xl font-medium">Do you offer refunds?</h3>
+                <div
+                  class="w-8 h-8 flex items-center justify-center accordion-icon"
+                >
+                  <i class="ri-arrow-down-s-line text-2xl"></i>
+                </div>
+              </div>
+              <div class="accordion-content px-6 pb-6">
+                <p class="text-gray-300">
+                  We offer a 14-day money-back guarantee for all new
+                  subscriptions. If you're not satisfied with our service within
+                  the first 14 days, you can request a full refund. After this
+                  period, refunds are handled on a case-by-case basis. Please
+                  contact our support team for assistance.
+                </p>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800 accordion"
+            >
+              <div class="p-6 flex justify-between items-center cursor-pointer">
+                <h3 class="text-xl font-medium">
+                  What payment methods do you accept?
+                </h3>
+                <div
+                  class="w-8 h-8 flex items-center justify-center accordion-icon"
+                >
+                  <i class="ri-arrow-down-s-line text-2xl"></i>
+                </div>
+              </div>
+              <div class="accordion-content px-6 pb-6">
+                <p class="text-gray-300">
+                  We accept all major credit cards (Visa, Mastercard, American
+                  Express, Discover), PayPal, and bank transfers for annual
+                  enterprise plans. All payments are processed securely through
+                  our payment providers.
+                </p>
+                <div class="flex space-x-4 mt-4">
+                  <div class="w-10 h-6 flex items-center justify-center">
+                    <i class="ri-visa-fill text-2xl text-blue-500"></i>
+                  </div>
+                  <div class="w-10 h-6 flex items-center justify-center">
+                    <i class="ri-mastercard-fill text-2xl text-orange-500"></i>
+                  </div>
+                  <div class="w-10 h-6 flex items-center justify-center">
+                    <i class="ri-paypal-fill text-2xl text-blue-600"></i>
+                  </div>
+                  <div class="w-10 h-6 flex items-center justify-center">
+                    <i class="ri-bank-card-fill text-2xl text-gray-400"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-40 rounded-lg overflow-hidden border border-gray-800 accordion"
+            >
+              <div class="p-6 flex justify-between items-center cursor-pointer">
+                <h3 class="text-xl font-medium">
+                  Is there a free trial available?
+                </h3>
+                <div
+                  class="w-8 h-8 flex items-center justify-center accordion-icon"
+                >
+                  <i class="ri-arrow-down-s-line text-2xl"></i>
+                </div>
+              </div>
+              <div class="accordion-content px-6 pb-6">
+                <p class="text-gray-300">
+                  Yes, we offer a 7-day free trial for our Basic and
+                  Professional plans. The trial includes limited access to
+                  features so you can experience the platform before committing.
+                  No credit card is required to start your trial. Enterprise
+                  plans include a personalized demo instead of a self-service
+                  trial.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA Section -->
+      <section
+        class="py-20 px-6 md:px-12 bg-gradient-to-r from-primary to-orange-600 relative"
+      >
+        <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+        <div class="max-w-6xl mx-auto relative z-10">
+          <div class="text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+              Ready to Create Your Digital Alter?
+            </h2>
+            <p
+              class="text-xl text-white text-opacity-90 max-w-3xl mx-auto mb-10"
+            >
+              Join thousands of individuals and organizations who are expanding
+              their digital presence with alters.ai. Get started today with a
+              plan that fits your needs.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+              <a
+                href="#"
+                class="bg-white text-primary px-8 py-4 !rounded-button text-lg font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+              >
+                Start Free Trial
+              </a>
+              <a
+                href="#"
+                class="bg-transparent border-2 border-white text-white px-8 py-4 !rounded-button text-lg font-medium hover:bg-white hover:bg-opacity-10 transition-all whitespace-nowrap"
+              >
+                Schedule a Demo
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="py-16 px-6 md:px-12 bg-secondary">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div>
+            <a
+              href="#"
+              class="text-3xl font-['Pacifico'] text-white mb-6 inline-block"
+              >alters<span class="text-primary">.ai</span></a
+            >
+            <p class="text-gray-400 mb-6">
+              The leading platform for AI-powered digital identity with
+              intelligent digital twins.
+            </p>
+            <div class="flex space-x-4">
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <div class="w-5 h-5 flex items-center justify-center">
+                  <i class="ri-twitter-x-line"></i>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <div class="w-5 h-5 flex items-center justify-center">
+                  <i class="ri-linkedin-fill"></i>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <div class="w-5 h-5 flex items-center justify-center">
+                  <i class="ri-instagram-line"></i>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <div class="w-5 h-5 flex items-center justify-center">
+                  <i class="ri-youtube-line"></i>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Product</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Features</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-primary hover:text-primary transition-colors"
+                  >Pricing</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Use Cases</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Marketplace</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >API</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Company</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="https://readdy.ai/home/c6a5ab58-32fd-4f5d-b1ed-b1a2223e7d4b/bd9bfba7-b9b4-4572-beaa-9e515ae49dc0"
+                  data-readdy="true"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Blog</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Press</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Contact</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Resources</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Documentation</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Help Center</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Community</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Ethics</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Partners</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center"
+        >
+          <p class="text-gray-500 mb-4 md:mb-0">
+            © 2025 alters.ai. All rights reserved.
+          </p>
+          <div class="flex space-x-6">
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Terms</a
+            >
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Privacy</a
+            >
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Cookies</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Mobile menu toggle
+        const menuButton = document.querySelector(".lg\\:hidden");
+        const mobileMenu = document.createElement("div");
+        mobileMenu.classList.add(
+          "fixed",
+          "inset-0",
+          "bg-secondary",
+          "z-50",
+          "p-6",
+          "flex",
+          "flex-col",
+          "transform",
+          "translate-x-full",
+          "transition-transform",
+          "duration-300"
+        );
+        mobileMenu.innerHTML = `
+        <div class="flex justify-between items-center mb-8">
+            <a href="#" class="text-3xl font-['Pacifico'] text-white">alters<span class="text-primary">.ai</span></a>
+            <button class="w-10 h-10 flex items-center justify-center">
+                <i class="ri-close-line text-white text-2xl"></i>
+            </button>
+        </div>
+        <div class="flex flex-col space-y-6">
+            <a href="#" class="text-primary text-xl">Pricing</a>
+            <a href="https://readdy.ai/home/c6a5ab58-32fd-4f5d-b1ed-b1a2223e7d4b/bd9bfba7-b9b4-4572-beaa-9e515ae49dc0" data-readdy="true" class="text-white text-xl">About</a>
+            <a href="#" class="text-white text-xl">Marketplace</a>
+            <a href="#" class="text-white text-xl">Technology</a>
+            <a href="#" class="text-white text-xl">Ethics</a>
+            <a href="#" class="text-white text-xl">Company</a>
+        </div>
+        <div class="mt-auto pt-8">
+            <a href="#" class="block w-full bg-primary text-white text-center py-3 !rounded-button font-medium mb-4">Become a Creator</a>
+            <a href="#" class="block w-full border border-white text-white text-center py-3 !rounded-button font-medium">Log In</a>
+        </div>
+    `;
+        document.body.appendChild(mobileMenu);
+
+        menuButton.addEventListener("click", function () {
+          mobileMenu.classList.remove("translate-x-full");
+        });
+
+        const closeButton = mobileMenu.querySelector("button");
+        closeButton.addEventListener("click", function () {
+          mobileMenu.classList.add("translate-x-full");
+        });
+
+        // Pricing toggle
+        const pricingToggle = document.getElementById("pricing-toggle");
+        const monthlyPrices = document.querySelectorAll(".pricing-monthly");
+        const annualPrices = document.querySelectorAll(".pricing-annually");
+        const monthlyLabel = document.querySelector(".pricing-toggle-monthly");
+        const annuallyLabel = document.querySelector(
+          ".pricing-toggle-annually"
+        );
+
+        pricingToggle.addEventListener("change", function () {
+          if (this.checked) {
+            monthlyPrices.forEach((price) => price.classList.add("hidden"));
+            annualPrices.forEach((price) => price.classList.remove("hidden"));
+            monthlyLabel.classList.add("text-gray-400");
+            monthlyLabel.classList.remove("text-white");
+            annuallyLabel.classList.add("text-white");
+            annuallyLabel.classList.remove("text-gray-400");
+          } else {
+            monthlyPrices.forEach((price) => price.classList.remove("hidden"));
+            annualPrices.forEach((price) => price.classList.add("hidden"));
+            monthlyLabel.classList.add("text-white");
+            monthlyLabel.classList.remove("text-gray-400");
+            annuallyLabel.classList.add("text-gray-400");
+            annuallyLabel.classList.remove("text-white");
+          }
+        });
+
+        // FAQ Accordion
+        const accordions = document.querySelectorAll(".accordion");
+
+        accordions.forEach((accordion) => {
+          const header = accordion.querySelector(".cursor-pointer");
+          header.addEventListener("click", () => {
+            accordion.classList.toggle("accordion-open");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

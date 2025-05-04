@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>D-ID - AI Video Creation Platform</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#ff8a2b", secondary: "#1a1a1a" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <style>
+      :where([class^="ri-"])::before {
+        content: "\f3c2";
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      .gradient-text {
+        background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-bg {
+        background: radial-gradient(
+            circle at 70% 30%,
+            rgba(255, 138, 43, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            circle at 30% 70%,
+            rgba(255, 138, 43, 0.1),
+            transparent 50%
+          );
+      }
+      .floating {
+        animation: float 6s ease-in-out infinite;
+      }
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 138, 43, 0.3);
+        pointer-events: none;
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
+      }
+    </style>
+    <script src="/navbar.js" defer></script>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <main>
+      <!-- Hero Section -->
+      <section
+        class="hero-bg min-h-screen pt-28 pb-16 px-6 md:px-12 flex flex-col items-center justify-center relative overflow-hidden"
+      >
+        <div class="max-w-6xl mx-auto text-center z-10">
+          <div class="mb-4">
+            <a
+              href="#"
+              class="text-4xl md:text-5xl font-['Pacifico'] text-white inline-flex items-center"
+            >
+              <span>alters</span>
+              <span class="text-primary ml-1">.</span>
+              <span class="text-primary text-xl ml-2">ai</span>
+            </a>
+          </div>
+          <h1 class="text-5xl md:text-7xl font-bold mb-6 relative">
+            Create Your Perfect
+            <div class="typing-container overflow-hidden h-[1.2em] relative">
+              <span class="gradient-text typing-text absolute left-0 right-0"
+                >Digital Twin</span
+              >
+              <span class="gradient-text typing-text absolute left-0 right-0"
+                >AI Alter</span
+              >
+              <span class="gradient-text typing-text absolute left-0 right-0"
+                >Virtual You</span
+              >
+            </div>
+          </h1>
+          <p
+            class="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto opacity-0 transform translate-y-4 animate-fade-in"
+          >
+            Experience the next evolution of digital identity. Create your AI
+            alter - an intelligent digital version of yourself that thinks,
+            speaks, and interacts just like you.
+          </p>
+          <div class="flex justify-center gap-8 items-center">
+            <button
+              class="explore-btn group relative overflow-hidden bg-transparent border-2 border-primary text-white px-8 py-4 rounded-button text-lg font-medium transition-all whitespace-nowrap"
+            >
+              <span
+                class="relative z-10 group-hover:text-white transition-colors"
+                >Explore Alters</span
+              >
+              <div
+                class="absolute inset-0 bg-primary transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"
+              ></div>
+            </button>
+            <div
+              class="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+            >
+              <div
+                class="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center"
+              >
+                <i class="ri-play-fill text-2xl"></i>
+              </div>
+              <span>Watch Demo</span>
+            </div>
+          </div>
+          <div class="floating-elements absolute inset-0 pointer-events-none">
+            <div class="floating-circle"></div>
+            <div class="floating-square"></div>
+            <div class="floating-triangle"></div>
+          </div>
+        </div>
+        <style>
+          @keyframes typing {
+            0%,
+            33% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+            34%,
+            66% {
+              opacity: 0;
+              transform: translateY(-100%);
+            }
+            67%,
+            100% {
+              opacity: 0;
+              transform: translateY(-200%);
+            }
+          }
+          .typing-text {
+            animation: typing 9s infinite;
+            white-space: nowrap;
+          }
+          .typing-text:nth-child(2) {
+            animation-delay: 3s;
+          }
+          .typing-text:nth-child(3) {
+            animation-delay: 6s;
+          }
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .animate-fade-in {
+            animation: fadeIn 1s ease-out forwards;
+            animation-delay: 0.5s;
+          }
+          .floating-elements > div {
+            position: absolute;
+            opacity: 0.1;
+            background: linear-gradient(
+              45deg,
+              var(--tw-color-primary),
+              transparent
+            );
+          }
+          .floating-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            top: 10%;
+            left: 10%;
+            animation: float 20s infinite;
+          }
+          .floating-square {
+            width: 150px;
+            height: 150px;
+            top: 20%;
+            right: 15%;
+            animation: float 25s infinite;
+            animation-delay: 2s;
+          }
+          .floating-triangle {
+            width: 0;
+            height: 0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 173px solid rgba(255, 138, 43, 0.1);
+            bottom: 15%;
+            left: 50%;
+            animation: float 22s infinite;
+            animation-delay: 1s;
+          }
+          @keyframes float {
+            0%,
+            100% {
+              transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+              transform: translate(50px, 50px) rotate(90deg);
+            }
+            50% {
+              transform: translate(0, 100px) rotate(180deg);
+            }
+            75% {
+              transform: translate(-50px, 50px) rotate(270deg);
+            }
+          }
+        </style>
+        <!-- Animated background elements -->
+        <div
+          id="particles-container"
+          class="absolute inset-0 pointer-events-none"
+        ></div>
+      </section>
+      <!-- Features Section -->
+      <section class="py-20 px-6 md:px-12 bg-black">
+        <div class="max-w-6xl mx-auto">
+          <div
+            class="text-center mb-16 opacity-0 transform translate-y-4 transition-all duration-700"
+            data-animate="true"
+          >
+            <h2 class="text-4xl font-bold mb-6">
+              Your Digital Alter - Always Available
+            </h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+              Create your intelligent digital twin that works 24/7, handles
+              tasks, and represents you professionally while maintaining your
+              unique personality.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div
+              class="bg-secondary bg-opacity-50 p-8 rounded-lg transform hover:scale-105 transition-all duration-300 opacity-0 translate-y-4"
+              data-animate="true"
+              data-delay="100"
+            >
+              <div
+                class="w-14 h-14 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6 animate-pulse"
+              >
+                <i class="ri-ai-generate text-primary text-2xl"></i>
+              </div>
+              <h3 class="text-2xl font-bold mb-4">
+                Intelligent Representation
+              </h3>
+              <p class="text-gray-300">
+                Your AI alter learns your communication style, preferences, and
+                expertise to represent you authentically in meetings and
+                interactions.
+              </p>
+              <div
+                class="mt-6 flex items-center text-primary cursor-pointer group"
+              >
+                <span class="mr-2 group-hover:mr-3 transition-all"
+                  >Learn more</span
+                >
+                <i
+                  class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"
+                ></i>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-50 p-8 rounded-lg transform hover:scale-105 transition-all duration-300 opacity-0 translate-y-4"
+              data-animate="true"
+              data-delay="200"
+            >
+              <div
+                class="w-14 h-14 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6 animate-pulse"
+              >
+                <i class="ri-24-hours-line text-primary text-2xl"></i>
+              </div>
+              <h3 class="text-2xl font-bold mb-4">Always Available</h3>
+              <p class="text-gray-300">
+                Let your digital twin handle meetings, customer service, and
+                communications across different time zones while you focus on
+                what matters.
+              </p>
+              <div
+                class="mt-6 flex items-center text-primary cursor-pointer group"
+              >
+                <span class="mr-2 group-hover:mr-3 transition-all"
+                  >Learn more</span
+                >
+                <i
+                  class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"
+                ></i>
+              </div>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-50 p-8 rounded-lg transform hover:scale-105 transition-all duration-300 opacity-0 translate-y-4"
+              data-animate="true"
+              data-delay="300"
+            >
+              <div
+                class="w-14 h-14 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-6 animate-pulse"
+              >
+                <i class="ri-shield-user-line text-primary text-2xl"></i>
+              </div>
+              <h3 class="text-2xl font-bold mb-4">Secure & Professional</h3>
+              <p class="text-gray-300">
+                Maintain professional relationships and handle sensitive
+                information with enterprise-grade security while scaling your
+                presence.
+              </p>
+              <div
+                class="mt-6 flex items-center text-primary cursor-pointer group"
+              >
+                <span class="mr-2 group-hover:mr-3 transition-all"
+                  >Learn more</span
+                >
+                <i
+                  class="ri-arrow-right-line transform group-hover:translate-x-1 transition-transform"
+                ></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>
+          document.addEventListener("DOMContentLoaded", function () {
+            const animateElements = document.querySelectorAll(
+              '[data-animate="true"]'
+            );
+            const observer = new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    const delay = entry.target.getAttribute("data-delay") || 0;
+                    setTimeout(() => {
+                      entry.target.style.opacity = "1";
+                      entry.target.style.transform = "translateY(0)";
+                    }, delay);
+                    observer.unobserve(entry.target);
+                  }
+                });
+              },
+              {
+                threshold: 0.1,
+              }
+            );
+            animateElements.forEach((element) => observer.observe(element));
+          });
+        </script>
+      </section>
+      <!-- Use Cases Section -->
+      <section
+        class="py-20 px-6 md:px-12 bg-gradient-to-b from-black to-secondary"
+      >
+        <div class="max-w-6xl mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-6">Endless Possibilities</h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+              From marketing and training to customer service and entertainment,
+              our AI video platform powers content across industries.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div
+              class="bg-black bg-opacity-40 p-8 rounded-lg overflow-hidden relative card-hover"
+            >
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Marketing & Advertising</h3>
+                <p class="text-gray-300 mb-4">
+                  Create personalized video campaigns that resonate with your
+                  target audience. Scale content production for multiple markets
+                  and languages.
+                </p>
+                <a
+                  href="#"
+                  class="text-primary flex items-center hover:underline"
+                >
+                  <span>Learn more</span>
+                  <div class="w-5 h-5 ml-1 flex items-center justify-center">
+                    <i class="ri-arrow-right-line"></i>
+                  </div>
+                </a>
+              </div>
+              <img
+                src="https://readdy.ai/api/search-image?query=professional%20marketing%20team%20reviewing%20digital%20content%20on%20screens%20in%20modern%20office%2C%20sleek%20design%2C%20high-tech%20environment%2C%20digital%20marketing%20campaign%20planning%2C%20creative%20professionals%20collaborating&width=600&height=400&seq=1&orientation=landscape"
+                alt="Marketing team working on digital content"
+                class="w-full h-48 object-cover rounded-md mt-4"
+              />
+            </div>
+            <div
+              class="bg-black bg-opacity-40 p-8 rounded-lg overflow-hidden relative card-hover"
+            >
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Corporate Training</h3>
+                <p class="text-gray-300 mb-4">
+                  Transform your learning and development programs with engaging
+                  AI presenters. Create consistent training content at scale.
+                </p>
+                <a
+                  href="#"
+                  class="text-primary flex items-center hover:underline"
+                >
+                  <span>Learn more</span>
+                  <div class="w-5 h-5 ml-1 flex items-center justify-center">
+                    <i class="ri-arrow-right-line"></i>
+                  </div>
+                </a>
+              </div>
+              <img
+                src="https://readdy.ai/api/search-image?query=corporate%20training%20session%20with%20digital%20presenter%20on%20large%20screen%2C%20modern%20conference%20room%2C%20professional%20setting%2C%20employees%20engaged%20in%20learning%2C%20clean%20minimal%20design%2C%20corporate%20environment&width=600&height=400&seq=2&orientation=landscape"
+                alt="Corporate training with digital presenter"
+                class="w-full h-48 object-cover rounded-md mt-4"
+              />
+            </div>
+            <div
+              class="bg-black bg-opacity-40 p-8 rounded-lg overflow-hidden relative card-hover"
+            >
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Customer Support</h3>
+                <p class="text-gray-300 mb-4">
+                  Enhance your customer experience with personalized video
+                  responses. Address common questions with engaging visual
+                  content.
+                </p>
+                <a
+                  href="#"
+                  class="text-primary flex items-center hover:underline"
+                >
+                  <span>Learn more</span>
+                  <div class="w-5 h-5 ml-1 flex items-center justify-center">
+                    <i class="ri-arrow-right-line"></i>
+                  </div>
+                </a>
+              </div>
+              <img
+                src="https://readdy.ai/api/search-image?query=customer%20support%20representative%20using%20AI%20video%20technology%20to%20assist%20clients%2C%20modern%20customer%20service%20center%2C%20digital%20interface%20with%20customer%20data%2C%20professional%20environment%2C%20clean%20design&width=600&height=400&seq=3&orientation=landscape"
+                alt="Customer support with AI video"
+                class="w-full h-48 object-cover rounded-md mt-4"
+              />
+            </div>
+            <div
+              class="bg-black bg-opacity-40 p-8 rounded-lg overflow-hidden relative card-hover"
+            >
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Content Creation</h3>
+                <p class="text-gray-300 mb-4">
+                  Empower creators to produce more content with less effort.
+                  Scale your content production across platforms and formats.
+                </p>
+                <a
+                  href="#"
+                  class="text-primary flex items-center hover:underline"
+                >
+                  <span>Learn more</span>
+                  <div class="w-5 h-5 ml-1 flex items-center justify-center">
+                    <i class="ri-arrow-right-line"></i>
+                  </div>
+                </a>
+              </div>
+              <img
+                src="https://readdy.ai/api/search-image?query=content%20creator%20working%20with%20AI%20video%20software%20on%20computer%2C%20creative%20studio%20environment%2C%20digital%20content%20production%2C%20professional%20setup%20with%20lighting%2C%20modern%20minimal%20workspace&width=600&height=400&seq=4&orientation=landscape"
+                alt="Content creator using AI video tools"
+                class="w-full h-48 object-cover rounded-md mt-4"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Testimonials Section -->
+      <section class="py-20 px-6 md:px-12 bg-black">
+        <div class="max-w-6xl mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-6">Trusted by Industry Leaders</h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+              See how businesses and creators are transforming their content
+              strategy with our AI video platform.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-secondary bg-opacity-30 p-8 rounded-lg card-hover">
+              <div class="flex items-center mb-6">
+                <div
+                  class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-4"
+                >
+                  <span class="text-white font-bold">TB</span>
+                </div>
+                <div>
+                  <h4 class="font-bold">Thomas Bennett</h4>
+                  <p class="text-gray-400 text-sm">
+                    Marketing Director, TechCorp
+                  </p>
+                </div>
+              </div>
+              <p class="text-gray-300">
+                "We've increased our video content production by 400% while
+                reducing costs by 60%. The AI presenters are indistinguishable
+                from real people, and our engagement metrics have never been
+                better."
+              </p>
+              <div class="mt-6 flex">
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+              </div>
+            </div>
+            <div class="bg-secondary bg-opacity-30 p-8 rounded-lg card-hover">
+              <div class="flex items-center mb-6">
+                <div
+                  class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mr-4"
+                >
+                  <span class="text-white font-bold">SJ</span>
+                </div>
+                <div>
+                  <h4 class="font-bold">Sarah Johnson</h4>
+                  <p class="text-gray-400 text-sm">
+                    Content Creator, 2M+ Subscribers
+                  </p>
+                </div>
+              </div>
+              <p class="text-gray-300">
+                "As a creator, time is my most valuable asset. D-ID has
+                revolutionized my workflow, allowing me to create content in
+                multiple languages and expand my global audience without
+                learning new languages."
+              </p>
+              <div class="mt-6 flex">
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+              </div>
+            </div>
+            <div class="bg-secondary bg-opacity-30 p-8 rounded-lg card-hover">
+              <div class="flex items-center mb-6">
+                <div
+                  class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4"
+                >
+                  <span class="text-white font-bold">RK</span>
+                </div>
+                <div>
+                  <h4 class="font-bold">Robert Kim</h4>
+                  <p class="text-gray-400 text-sm">
+                    L&D Manager, Global Enterprises
+                  </p>
+                </div>
+              </div>
+              <p class="text-gray-300">
+                "We've transformed our corporate training with D-ID. Our
+                employees are more engaged, retention has improved, and we can
+                update content instantly across all our global offices in their
+                native languages."
+              </p>
+              <div class="mt-6 flex">
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-fill text-yellow-400"></i>
+                <i class="ri-star-half-fill text-yellow-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Become a Creator Section -->
+      <section
+        class="py-20 px-6 md:px-12 bg-gradient-to-r from-secondary to-black relative overflow-hidden"
+      >
+        <div class="absolute inset-0 opacity-20">
+          <img
+            src="https://readdy.ai/api/search-image?query=abstract%20digital%20network%20connections%2C%20futuristic%20technology%20background%2C%20glowing%20orange%20and%20blue%20nodes%2C%20high-tech%20visualization%2C%20data%20flow%20concept%2C%20minimal%20clean%20design&width=1200&height=800&seq=5&orientation=landscape"
+            alt="Digital network background"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <div class="max-w-6xl mx-auto relative z-10">
+          <div class="bg-black bg-opacity-70 p-12 rounded-xl backdrop-blur-sm">
+            <div class="flex flex-col md:flex-row items-center">
+              <div class="md:w-2/3 mb-8 md:mb-0 md:pr-12">
+                <h2 class="text-4xl font-bold mb-6">Become a Creator</h2>
+                <p class="text-xl text-gray-300 mb-6">
+                  Join our growing community of content creators and transform
+                  your ideas into engaging AI videos. Scale your content
+                  production, reach new audiences, and monetize your creativity.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                  <a
+                    href="#"
+                    class="bg-primary text-white px-6 py-3 rounded-button text-lg font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
+                  >
+                    <span>Start Creating</span>
+                    <div class="w-5 h-5 ml-2 flex items-center justify-center">
+                      <i class="ri-arrow-right-line"></i>
+                    </div>
+                  </a>
+                  <a
+                    href="#"
+                    class="border border-white text-white px-6 py-3 rounded-button text-lg font-medium hover:bg-white hover:text-secondary transition-all whitespace-nowrap"
+                  >
+                    View Creator Showcase
+                  </a>
+                </div>
+              </div>
+              <div class="md:w-1/3">
+                <div class="relative">
+                  <div
+                    class="absolute -top-4 -left-4 w-20 h-20 bg-primary bg-opacity-20 rounded-full"
+                  ></div>
+                  <div
+                    class="absolute -bottom-4 -right-4 w-16 h-16 bg-primary bg-opacity-20 rounded-full"
+                  ></div>
+                  <img
+                    src="https://readdy.ai/api/search-image?query=professional%20content%20creator%20working%20with%20advanced%20video%20editing%20software%2C%20creative%20digital%20workspace%2C%20high-tech%20studio%20environment%2C%20focused%20on%20computer%20screen%2C%20orange%20accent%20lighting%2C%20minimal%20clean%20setup&width=500&height=600&seq=6&orientation=portrait"
+                    alt="Content creator working"
+                    class="rounded-lg relative z-10"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Pricing Preview -->
+      <section class="py-20 px-6 md:px-12 bg-black">
+        <div class="max-w-6xl mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-6">Simple, Transparent Pricing</h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+              Choose the plan that works for your needs, from individual
+              creators to enterprise solutions.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div
+              class="bg-secondary bg-opacity-30 p-8 rounded-lg border border-gray-800 card-hover"
+            >
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Starter</h3>
+                <p class="text-gray-400">Perfect for individual creators</p>
+              </div>
+              <div class="mb-6">
+                <span class="text-4xl font-bold">$29</span>
+                <span class="text-gray-400">/month</span>
+              </div>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>10 minutes of AI video per month</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>25+ AI presenters</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>720p video quality</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Basic editing tools</span>
+                </li>
+              </ul>
+              <a
+                href="#"
+                class="block w-full bg-white text-secondary text-center py-3 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                >Get Started</a
+              >
+            </div>
+            <div
+              class="bg-primary bg-opacity-10 p-8 rounded-lg border-2 border-primary relative card-hover transform scale-105"
+            >
+              <div
+                class="absolute -top-4 right-8 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium"
+              >
+                Most Popular
+              </div>
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Professional</h3>
+                <p class="text-gray-400">For growing businesses</p>
+              </div>
+              <div class="mb-6">
+                <span class="text-4xl font-bold">$79</span>
+                <span class="text-gray-400">/month</span>
+              </div>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>30 minutes of AI video per month</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>100+ AI presenters</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>1080p video quality</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Advanced editing suite</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Custom backgrounds</span>
+                </li>
+              </ul>
+              <a
+                href="#"
+                class="block w-full bg-primary text-white text-center py-3 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                >Get Started</a
+              >
+            </div>
+            <div
+              class="bg-secondary bg-opacity-30 p-8 rounded-lg border border-gray-800 card-hover"
+            >
+              <div class="mb-6">
+                <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
+                <p class="text-gray-400">For large organizations</p>
+              </div>
+              <div class="mb-6">
+                <span class="text-4xl font-bold">Custom</span>
+              </div>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Unlimited AI video minutes</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Custom AI presenters</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>4K video quality</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>API access</span>
+                </li>
+                <li class="flex items-start">
+                  <div
+                    class="w-5 h-5 mr-2 text-primary flex-shrink-0 mt-1 flex items-center justify-center"
+                  >
+                    <i class="ri-check-line"></i>
+                  </div>
+                  <span>Dedicated support</span>
+                </li>
+              </ul>
+              <a
+                href="#"
+                class="block w-full bg-white text-secondary text-center py-3 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                >Contact Sales</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- CTA Section -->
+      <section
+        class="py-20 px-6 md:px-12 bg-gradient-to-r from-primary to-orange-600 relative"
+      >
+        <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+        <div class="max-w-6xl mx-auto relative z-10">
+          <div class="text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+              Ready to Transform Your Content?
+            </h2>
+            <p
+              class="text-xl text-white text-opacity-90 max-w-3xl mx-auto mb-10"
+            >
+              Join thousands of businesses and creators who are already using
+              our platform to create engaging AI videos.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+              <a
+                href="#"
+                class="bg-white text-primary px-8 py-4 rounded-button text-lg font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+              >
+                Start Free Trial
+              </a>
+              <a
+                href="#"
+                class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-button text-lg font-medium hover:bg-white hover:bg-opacity-10 transition-all whitespace-nowrap"
+              >
+                Schedule Demo
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- Footer -->
+    <footer class="py-16 px-6 md:px-12 bg-secondary">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div>
+            <a
+              href="#"
+              class="text-3xl font-['Pacifico'] text-white mb-6 inline-block"
+              >D-ID</a
+            >
+            <p class="text-gray-400 mb-6">
+              The leading platform for AI-powered video creation with digital
+              humans.
+            </p>
+            <div class="flex space-x-4">
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-twitter-x-line"></i>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-linkedin-fill"></i>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-instagram-line"></i>
+              </a>
+              <a
+                href="#"
+                class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white hover:bg-primary transition-colors"
+              >
+                <i class="ri-youtube-line"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Product</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Features</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Pricing</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Use Cases</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Marketplace</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >API</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Company</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Blog</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Press</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Contact</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg mb-6">Resources</h4>
+            <ul class="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Documentation</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Help Center</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Community</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Ethics</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-primary transition-colors"
+                  >Partners</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center"
+        >
+          <p class="text-gray-500 mb-4 md:mb-0">
+            © 2025 alters.ai. All rights reserved.
+          </p>
+          <div class="flex space-x-6">
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Terms</a
+            >
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Privacy</a
+            >
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+              >Cookies</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Video modal functionality
+        const videoBtn = document.querySelector(".flex.items-center.gap-2");
+        const modal = document.createElement("div");
+        modal.className =
+          "fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-center";
+        modal.innerHTML = `
+<div class="relative w-full max-w-4xl mx-4">
+<button class="absolute -top-12 right-0 text-white text-3xl">&times;</button>
+<div class="relative pt-[56.25%]">
+<iframe class="absolute inset-0 w-full h-full" src="about:blank" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+</div>
+</div>
+`;
+        document.body.appendChild(modal);
+        videoBtn.addEventListener("click", () => {
+          modal.classList.remove("hidden");
+          const iframe = modal.querySelector("iframe");
+          iframe.src = "https://www.youtube.com/embed/your-video-id?autoplay=1";
+        });
+        modal.querySelector("button").addEventListener("click", () => {
+          modal.classList.add("hidden");
+          const iframe = modal.querySelector("iframe");
+          iframe.src = "about:blank";
+        });
+        // Particle animation
+        const particlesContainer = document.getElementById(
+          "particles-container"
+        );
+        const particleCount = 30;
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.classList.add("particle");
+          // Random size between 2px and 6px
+          const size = Math.random() * 4 + 2;
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          // Random position
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${Math.random() * 100}%`;
+          // Random opacity
+          particle.style.opacity = Math.random() * 0.5 + 0.1;
+          // Animation duration and delay
+          const duration = Math.random() * 20 + 10;
+          const delay = Math.random() * 5;
+          particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+          particlesContainer.appendChild(particle);
+        }
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        // Mobile menu toggle
+        const menuButton = document.querySelector(".lg\\:hidden");
+        const mobileMenu = document.createElement("div");
+        mobileMenu.classList.add(
+          "fixed",
+          "inset-0",
+          "bg-secondary",
+          "z-50",
+          "p-6",
+          "flex",
+          "flex-col",
+          "transform",
+          "translate-x-full",
+          "transition-transform",
+          "duration-300"
+        );
+        mobileMenu.innerHTML = `
+<div class="flex justify-between items-center mb-8">
+<a href="#" class="text-3xl font-['Pacifico'] text-white">D-ID</a>
+<button class="w-10 h-10 flex items-center justify-center">
+<i class="ri-close-line text-white text-2xl"></i>
+</button>
+</div>
+<div class="flex flex-col space-y-6">
+<a href="#" class="text-white text-xl">Products</a>
+<a href="#" class="text-white text-xl">Solutions</a>
+<a href="#" class="text-white text-xl">Technology</a>
+<a href="#" class="text-white text-xl">Ethics</a>
+<a href="#" class="text-white text-xl">Pricing</a>
+<a href="#" class="text-white text-xl">Company</a>
+</div>
+<div class="mt-auto pt-8">
+<a href="#" class="block w-full bg-primary text-white text-center py-3 rounded-button font-medium mb-4">START FREE TRIAL</a>
+<a href="#" class="block w-full border border-white text-white text-center py-3 rounded-button font-medium">CONTACT SALES</a>
+</div>
+`;
+        document.body.appendChild(mobileMenu);
+        menuButton.addEventListener("click", function () {
+          mobileMenu.classList.remove("translate-x-full");
+        });
+        const closeButton = mobileMenu.querySelector("button");
+        closeButton.addEventListener("click", function () {
+          mobileMenu.classList.add("translate-x-full");
+        });
+      });
+    </script>
+  </body>
+</html>
