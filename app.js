@@ -8,7 +8,14 @@ const pdfParse = require("pdf-parse");
 const { createClient } = require("@supabase/supabase-js");
 const session = require("express-session");
 const Stripe = require("stripe");
+const admin = require("firebase-admin");
 require("dotenv").config();
+
+// Initialize Firebase Admin with service account
+const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 const port = 3000;
 
@@ -407,6 +414,38 @@ app.post("/upload-document", documentUpload, async (req, res) => {
       .status(500)
       .json({ error: error.message || "Failed to process document." });
   }
+});
+
+// Handle Google Auth
+app.post("/auth/google", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    // Set session
+    req.session.userId = decodedToken.uid;
+    req.session.email = decodedToken.email;
+    req.session.allowedAccess = true;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Auth error:", error);
+    res.status(401).json({
+      success: false,
+      error: "Authentication failed",
+    });
+  }
+});
+
+// Handle Sign Out
+app.post("/auth/signout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Session destruction error:", err);
+      return res.status(500).json({ error: "Failed to sign out" });
+    }
+    res.json({ success: true });
+  });
 });
 
 // API configuration endpoint
