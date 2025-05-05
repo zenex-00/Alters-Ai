@@ -31,19 +31,19 @@ class VideoAgent {
 
   async init() {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-      const response = await fetch("./api.json", { signal: controller.signal });
-      clearTimeout(timeoutId);
-
+      // Fetch API configuration from server
+      const response = await fetch("/api-config");
+      if (!response.ok) {
+        throw new Error("Failed to fetch API configuration");
+      }
       this.API_CONFIG = await response.json();
 
       if (!this.API_CONFIG?.key)
-        throw new Error("Missing D-ID API key in api.json");
+        throw new Error("Missing D-ID API key in configuration");
       if (!this.API_CONFIG?.openai_key)
-        throw new Error("Missing OpenAI API key in api.json");
+        throw new Error("Missing OpenAI API key in configuration");
       if (!this.API_CONFIG?.elevenlabs_key)
-        throw new Error("Missing Eleven Labs API key in api.json");
+        throw new Error("Missing Eleven Labs API key in configuration");
       if (this.API_CONFIG.url) this.DID_API_URL = this.API_CONFIG.url;
 
       this.talkVideo.setAttribute("playsinline", "");

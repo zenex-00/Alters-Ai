@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.8.4",
     "base-64": "^1.0.0",

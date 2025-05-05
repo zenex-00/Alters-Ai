@@ -409,6 +409,16 @@ app.post("/upload-document", documentUpload, async (req, res) => {
   }
 });
 
+// API configuration endpoint
+app.get("/api-config", (req, res) => {
+  res.json({
+    key: process.env.DID_API_KEY,
+    openai_key: process.env.OPEN_AI_API_KEY,
+    elevenlabs_key: process.env.ELEVENLABS_API_KEY,
+    url: "https://api.d-id.com",
+  });
+});
+
 // Serve static files
 app.use("/Uploads", express.static(uploadsDir));
 app.use(express.static(__dirname));

@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     { href: "/creator-page", label: "Become a Creator" },
     { href: "/creator-studio", label: "Creator Studio" },
     { href: "/marketplace", label: "Marketplace" },
+    { href: "/login", label: "Login" },
   ];
 
   // Generate the navigation bar HTML
@@ -29,11 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
               `
             )
             .join("")}
-          <li id="auth-link">
-            <a href="/login" class="text-gray-400 hover:text-primary transition-colors">
-              Login
-            </a>
-          </li>
         </ul>
       </div>
     </nav>
@@ -51,56 +47,4 @@ document.addEventListener("DOMContentLoaded", () => {
       link.classList.remove("text-gray-400");
     }
   });
-
-  // Check if Firebase is available
-  if (typeof firebase !== "undefined" && firebase.auth) {
-    // Update auth link based on authentication state
-    const authLink = document.getElementById("auth-link");
-
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        // User is signed in
-        authLink.innerHTML = `
-          <a href="#" id="logout-btn" class="text-gray-400 hover:text-primary transition-colors">
-            Logout
-          </a>
-        `;
-
-        // Add event listener to logout button
-        document.getElementById("logout-btn").addEventListener("click", (e) => {
-          e.preventDefault();
-
-          // Sign out from Firebase
-          firebase
-            .auth()
-            .signOut()
-            .then(() => {
-              // Clear session on backend
-              fetch("/auth/signout", { method: "POST" })
-                .then(() => {
-                  // Redirect to home page or refresh
-                  window.location.href = "/";
-                })
-                .catch((error) => {
-                  console.error("Sign-out error:", error);
-                });
-            })
-            .catch((error) => {
-              console.error("Firebase sign-out error:", error);
-            });
-        });
-      } else {
-        // User is signed out
-        authLink.innerHTML = `
-          <a href="/login" class="text-gray-400 hover:text-primary transition-colors">
-            Login
-          </a>
-        `;
-      }
-    });
-  } else {
-    console.warn(
-      "Firebase is not initialized. Authentication features will not work."
-    );
-  }
 });

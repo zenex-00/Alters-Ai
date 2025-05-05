@@ -368,16 +368,14 @@
         async function loadVoices(attempt = 1, maxAttempts = 3) {
           try {
             console.log(`customize.html: Attempt ${attempt} to load voices`);
-            const response = await fetch("./api.json");
+            const response = await fetch("/api-config");
             if (!response.ok) {
-              throw new Error(
-                `Failed to load api.json: ${response.statusText}`
-              );
+              throw new Error("Failed to fetch API configuration");
             }
             const config = await response.json();
             const apiKey = config.elevenlabs_key;
             if (!apiKey) {
-              throw new Error("Missing Eleven Labs API key in api.json");
+              throw new Error("Missing Eleven Labs API key in configuration");
             }
 
             const voicesResponse = await fetch(
@@ -443,14 +441,14 @@
           previewVoiceButton.textContent = "Playing...";
 
           try {
-            const response = await fetch("./api.json");
+            const response = await fetch("/api-config");
             if (!response.ok) {
-              throw new Error("Failed to load api.json");
+              throw new Error("Failed to fetch API configuration");
             }
             const config = await response.json();
             const apiKey = config.elevenlabs_key;
             if (!apiKey) {
-              throw new Error("Missing Eleven Labs API key in api.json");
+              throw new Error("Missing Eleven Labs API key in configuration");
             }
 
             const sampleText = "Hello, this is a voice preview.";
