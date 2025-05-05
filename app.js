@@ -158,11 +158,15 @@ app.post("/start-customize", (req, res) => {
 // Stripe checkout session creation
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    // Use localhost for development; warn about production requirements
-    const baseUrl = `http://localhost:${port}`;
-    if (!baseUrl.startsWith("https")) {
+    // Use deployed URL in production, localhost in development
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? process.env.DEPLOYED_URL // You'll need to set this in your render.com environment variables
+      : `http://localhost:${port}`;
+
+    // Warn about HTTPS only in development
+    if (!baseUrl.startsWith("https") && process.env.NODE_ENV !== 'production') {
       console.warn(
-        "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL (e.g., via ngrok).",
+        "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL.",
         baseUrl
       );
     }

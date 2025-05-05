@@ -893,6 +893,7 @@
         createAlterButton.addEventListener("click", async (event) => {
           event.preventDefault();
           try {
+            // Using relative URL which will work in both local and production
             const response = await fetch("/start-customize", {
               method: "POST",
               headers: {
@@ -900,6 +901,7 @@
               },
             });
             if (response.redirected) {
+              // Use the URL from the response which will have the correct host
               window.location.href = response.url;
             } else {
               console.error("Failed to start customization flow.");
