@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CreatorStudio - Alters.ai</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#ff8a2b", secondary: "#1a1a1a" },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <style>
+      :where([class^="ri-"])::before {
+        content: "\f3c2";
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
+        color: #ffffff;
+        height: 100vh;
+        display: flex;
+      }
+      .sidebar {
+        transition: width 0.3s ease;
+      }
+      .sidebar-collapsed {
+        width: 80px;
+      }
+      .sidebar-expanded {
+        width: 260px;
+      }
+      .main-content {
+        transition: margin-left 0.3s ease;
+      }
+      .menu-item-text {
+        transition: opacity 0.2s ease;
+      }
+      .template-card {
+        transition: all 0.3s ease;
+      }
+      .template-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
+      }
+      .create-alter-btn {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .create-alter-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px -10px rgba(255, 138, 43, 0.5);
+      }
+      .create-alter-btn::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        transform: rotate(45deg);
+        animation: shine 3s infinite;
+      }
+      @keyframes shine {
+        0% {
+          top: -50%;
+          left: -50%;
+        }
+        100% {
+          top: 150%;
+          left: 150%;
+        }
+      }
+      .custom-checkbox {
+        position: relative;
+        padding-left: 28px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .custom-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+      }
+      .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 20px;
+        width: 20px;
+        background-color: transparent;
+        border: 2px solid #666;
+        border-radius: 4px;
+      }
+      .custom-checkbox:hover input ~ .checkmark {
+        border-color: #999;
+      }
+      .custom-checkbox input:checked ~ .checkmark {
+        background-color: #ff8a2b;
+        border-color: #ff8a2b;
+      }
+      .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+      }
+      .custom-checkbox input:checked ~ .checkmark:after {
+        display: block;
+      }
+      .custom-checkbox .checkmark:after {
+        left: 6px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .custom-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+      }
+      .custom-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #333;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #ff8a2b;
+      }
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+      .usage-progress {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #333;
+        overflow: hidden;
+      }
+      .usage-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
+      }
+      .notification-dot {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 8px;
+        height: 8px;
+        background-color: #ff8a2b;
+        border-radius: 50%;
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(255, 138, 43, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0);
+        }
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="mainContent" class="flex-1 overflow-y-auto">
+      <!-- Header -->
+      <header
+        class="bg-secondary bg-opacity-95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-10"
+      >
+        <div class="flex items-center justify-between p-6">
+          <div class="flex items-center space-x-6">
+            <a
+              href="./Creator-Page.html"
+              data-readdy="true"
+              class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
+            >
+              <i class="ri-home-line text-xl"></i>
+            </a>
+            <div>
+              <h1 class="text-2xl font-bold">Creator Studio</h1>
+              <p class="text-gray-400">Create and manage your digital alters</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-6">
+            <!-- Create Alter Button -->
+            <button
+              class="create-alter-btn bg-gradient-to-r from-primary to-orange-600 text-white px-6 py-3 rounded-button font-medium flex items-center shadow-lg pulse whitespace-nowrap"
+            >
+              <div class="w-5 h-5 mr-2 flex items-center justify-center">
+                <i class="ri-add-line"></i>
+              </div>
+              <span>Create Your Own Alter</span>
+            </button>
+            <!-- Notification -->
+            <div class="relative">
+              <button
+                class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
+              >
+                <i class="ri-notification-3-line text-xl"></i>
+                <span class="notification-dot"></span>
+              </button>
+            </div>
+            <!-- Help -->
+            <button
+              class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
+            >
+              <i class="ri-question-line text-xl"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+      <!-- Dashboard Content -->
+      <div class="p-6 md:p-10">
+        <!-- Welcome Section -->
+        <div
+          class="bg-gradient-to-r from-secondary to-gray-900 rounded-xl p-8 mb-10"
+        >
+          <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-2/3 mb-8 md:mb-0">
+              <h2 class="text-3xl font-bold mb-4">
+                Welcome to your Creator Studio
+              </h2>
+              <p class="text-gray-300 mb-6">
+                Create, customize, and manage your digital alters. Use our
+                advanced AI tools to bring your digital twin to life with
+                realistic expressions and natural voice.
+              </p>
+              <div class="flex flex-wrap gap-4">
+                <button
+                  class="bg-primary text-white px-5 py-2.5 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
+                >
+                  <div class="w-5 h-5 mr-2 flex items-center justify-center">
+                    <i class="ri-play-line"></i>
+                  </div>
+                  <span>Watch Tutorial</span>
+                </button>
+                <button
+                  class="bg-white bg-opacity-10 text-white px-5 py-2.5 rounded-button font-medium hover:bg-opacity-20 transition-all whitespace-nowrap"
+                >
+                  Explore Templates
+                </button>
+              </div>
+            </div>
+            <div class="md:w-1/3 flex justify-center">
+              <img
+                src="https://readdy.ai/api/search-image?query=futuristic%2520digital%2520avatar%2520creation%2520interface%2520with%2520holographic%2520elements%2520showing%2520face%2520customization%2520options%2520on%2520dark%2520background%2520with%2520orange%2520accents%2520high%2520tech%2520UI%2520design%2520minimal%2520clean%2520aesthetic&width=400&height=300&seq=2&orientation=landscape"
+                alt="Creator Studio Interface"
+                class="rounded-lg max-w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Quick Actions -->
+        <div class="mb-10">
+          <h3 class="text-xl font-bold mb-6">Quick Actions</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+            >
+              <div
+                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-add-circle-line text-primary text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-2">Create New Alter</h4>
+              <p class="text-gray-400 text-sm">
+                Start from scratch with our AI-powered tools
+              </p>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+            >
+              <div
+                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-upload-cloud-line text-primary text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-2">Upload Photos</h4>
+              <p class="text-gray-400 text-sm">
+                Use your photos to create a personalized alter
+              </p>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+            >
+              <div
+                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-voice-recognition-line text-primary text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-2">Voice Training</h4>
+              <p class="text-gray-400 text-sm">
+                Train your alter to sound like you
+              </p>
+            </div>
+            <div
+              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+            >
+              <div
+                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-store-line text-primary text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-2">Browse Marketplace</h4>
+              <p class="text-gray-400 text-sm">
+                Explore pre-made alters from our creators
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- Resource Usage -->
+        <div class="mb-10">
+          <h3 class="text-xl font-bold mb-6">Resource Usage</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Usage Stats -->
+            <div class="bg-secondary bg-opacity-30 rounded-xl p-6">
+              <h4 class="font-bold mb-4">This Month's Usage</h4>
+              <div class="space-y-6">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-400"
+                      >Generation Credits</span
+                    >
+                    <span class="text-sm">78% (780/1000)</span>
+                  </div>
+                  <div class="usage-progress">
+                    <div class="usage-progress-bar" style="width: 78%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-400">Storage Space</span>
+                    <span class="text-sm">45% (4.5GB/10GB)</span>
+                  </div>
+                  <div class="usage-progress">
+                    <div class="usage-progress-bar" style="width: 45%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-400">Voice Generation</span>
+                    <span class="text-sm">62% (310/500 min)</span>
+                  </div>
+                  <div class="usage-progress">
+                    <div class="usage-progress-bar" style="width: 62%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-400">Video Rendering</span>
+                    <span class="text-sm">30% (90/300 min)</span>
+                  </div>
+                  <div class="usage-progress">
+                    <div class="usage-progress-bar" style="width: 30%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 flex justify-between">
+                <button
+                  class="text-primary text-sm flex items-center hover:underline"
+                >
+                  <span>View Detailed Usage</span>
+                  <div class="w-4 h-4 ml-1 flex items-center justify-center">
+                    <i class="ri-arrow-right-line"></i>
+                  </div>
+                </button>
+                <button
+                  class="bg-primary text-white px-4 py-2 rounded-button text-sm font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+                >
+                  Buy More Credits
+                </button>
+              </div>
+            </div>
+            <!-- Activity Log -->
+            <div class="bg-secondary bg-opacity-30 rounded-xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="font-bold">Recent Activity</h4>
+                <button class="text-gray-400 hover:text-white">
+                  <i class="ri-refresh-line"></i>
+                </button>
+              </div>
+              <div class="space-y-4">
+                <div class="flex items-start">
+                  <div
+                    class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
+                  >
+                    <i class="ri-edit-line text-primary"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium">Updated "Executive Emma"</p>
+                    <p class="text-sm text-gray-400">
+                      Modified voice settings and expressions
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Today, 10:23 AM</p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-500 bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
+                  >
+                    <i class="ri-movie-line text-green-500"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium">Generated Video</p>
+                    <p class="text-sm text-gray-400">
+                      Created 2-minute product presentation
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Yesterday, 4:45 PM</p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div
+                    class="w-10 h-10 rounded-full bg-blue-500 bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
+                  >
+                    <i class="ri-voice-recognition-line text-blue-500"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium">Voice Training Completed</p>
+                    <p class="text-sm text-gray-400">
+                      Finished voice training for "Tech Thomas"
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Apr 22, 2025, 2:30 PM
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div
+                    class="w-10 h-10 rounded-full bg-purple-500 bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
+                  >
+                    <i class="ri-add-circle-line text-purple-500"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium">Created New Project</p>
+                    <p class="text-sm text-gray-400">
+                      Started "Tech Thomas" project
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Apr 22, 2025, 11:15 AM
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                class="mt-6 w-full border border-gray-700 text-white py-2 rounded-button font-medium hover:bg-white hover:bg-opacity-5 transition-all whitespace-nowrap"
+              >
+                View All Activity
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Create Alter Modal -->
+    <div
+      id="createAlterModal"
+      class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center backdrop-blur-sm"
+    >
+      <div
+        class="bg-secondary rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      >
+        <div
+          class="p-6 border-b border-gray-800 flex justify-between items-center"
+        >
+          <h2 class="text-2xl font-bold">Create Your Own Alter</h2>
+          <button
+            id="closeModal"
+            class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white"
+          >
+            <i class="ri-close-line text-xl"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <div class="mb-8">
+            <h3 class="text-lg font-bold mb-4">Choose Creation Method</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div
+                class="bg-black bg-opacity-50 p-4 rounded-lg border-2 border-primary cursor-pointer"
+              >
+                <div
+                  class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="ri-upload-cloud-line text-primary text-xl"></i>
+                </div>
+                <h4 class="font-bold mb-1">Upload Photos</h4>
+                <p class="text-sm text-gray-400">
+                  Use your photos to create a personalized alter
+                </p>
+              </div>
+              <div
+                class="bg-black bg-opacity-50 p-4 rounded-lg border border-gray-700 hover:border-primary cursor-pointer"
+              >
+                <div
+                  class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="ri-layout-grid-line text-gray-300 text-xl"></i>
+                </div>
+                <h4 class="font-bold mb-1">Use Template</h4>
+                <p class="text-sm text-gray-400">
+                  Start with a pre-designed template
+                </p>
+              </div>
+              <div
+                class="bg-black bg-opacity-50 p-4 rounded-lg border border-gray-700 hover:border-primary cursor-pointer"
+              >
+                <div
+                  class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="ri-brush-line text-gray-300 text-xl"></i>
+                </div>
+                <h4 class="font-bold mb-1">AI Designer</h4>
+                <p class="text-sm text-gray-400">
+                  Let AI create an alter based on your description
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="mb-8">
+            <h3 class="text-lg font-bold mb-4">Upload Photos</h3>
+            <p class="text-gray-400 mb-4">
+              For best results, upload 5-10 clear photos of your face from
+              different angles
+            </p>
+            <div
+              class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-primary transition-colors"
+            >
+              <div
+                class="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <i class="ri-upload-cloud-line text-primary text-2xl"></i>
+              </div>
+              <p class="mb-2">Drag and drop photos here</p>
+              <p class="text-sm text-gray-400 mb-4">or</p>
+              <button
+                class="bg-primary text-white px-6 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
+              >
+                Browse Files
+              </button>
+              <p class="text-xs text-gray-500 mt-4">
+                Supported formats: JPG, PNG, HEIC (Max 10MB each)
+              </p>
+            </div>
+          </div>
+          <div class="mb-8">
+            <h3 class="text-lg font-bold mb-4">Basic Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium mb-2">Alter Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Professional Alex"
+                  class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Category</label>
+                <div class="relative">
+                  <select
+                    class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary appearance-none pr-8"
+                  >
+                    <option>Professional</option>
+                    <option>Casual</option>
+                    <option>Educational</option>
+                    <option>Entertainment</option>
+                    <option>Customer Service</option>
+                    <option>Other</option>
+                  </select>
+                  <div
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                  >
+                    <i class="ri-arrow-down-s-line text-gray-400"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-2"
+                  >Description (optional)</label
+                >
+                <textarea
+                  placeholder="Describe your alter's purpose and characteristics"
+                  rows="3"
+                  class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="mb-8">
+            <h3 class="text-lg font-bold mb-4">Voice Settings</h3>
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <p class="font-medium">Use Voice Training</p>
+                <p class="text-sm text-gray-400">
+                  Train the AI to sound like you
+                </p>
+              </div>
+              <label class="custom-switch">
+                <input type="checkbox" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium mb-2">Voice Type</label>
+                <div class="relative">
+                  <select
+                    class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary appearance-none pr-8"
+                  >
+                    <option>Natural (Recommended)</option>
+                    <option>Professional</option>
+                    <option>Casual</option>
+                    <option>Energetic</option>
+                    <option>Calm</option>
+                  </select>
+                  <div
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                  >
+                    <i class="ri-arrow-down-s-line text-gray-400"></i>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2"
+                  >Speech Rate</label
+                >
+                <div class="flex items-center">
+                  <span class="text-sm text-gray-400 mr-3">Slow</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value="5"
+                    class="flex-1 h-2 bg-gray-700 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+                  />
+                  <span class="text-sm text-gray-400 ml-3">Fast</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-6">
+              <label class="block text-sm font-medium mb-2"
+                >Voice Sample (optional)</label
+              >
+              <p class="text-sm text-gray-400 mb-3">
+                Record a sample of your voice for better results
+              </p>
+              <div
+                class="bg-black bg-opacity-50 p-4 rounded-lg border border-gray-700 flex items-center justify-between"
+              >
+                <div class="flex items-center">
+                  <button
+                    class="w-12 h-12 rounded-full bg-primary flex items-center justify-center mr-4"
+                  >
+                    <i class="ri-mic-line text-white text-xl"></i>
+                  </button>
+                  <div>
+                    <p class="font-medium">Record Voice Sample</p>
+                    <p class="text-sm text-gray-400">
+                      Min 30 seconds recommended
+                    </p>
+                  </div>
+                </div>
+                <button class="text-primary hover:underline">
+                  Upload Audio
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="mb-8">
+            <h3 class="text-lg font-bold mb-4">Advanced Settings</h3>
+            <div class="space-y-4">
+              <label class="custom-checkbox flex items-center">
+                <input type="checkbox" checked />
+                <span class="checkmark"></span>
+                <div class="ml-2">
+                  <p class="font-medium">Enable Emotions</p>
+                  <p class="text-sm text-gray-400">
+                    Allow your alter to display emotions based on context
+                  </p>
+                </div>
+              </label>
+              <label class="custom-checkbox flex items-center">
+                <input type="checkbox" checked />
+                <span class="checkmark"></span>
+                <div class="ml-2">
+                  <p class="font-medium">Natural Hand Gestures</p>
+                  <p class="text-sm text-gray-400">
+                    Enable realistic hand movements during speech
+                  </p>
+                </div>
+              </label>
+              <label class="custom-checkbox flex items-center">
+                <input type="checkbox" />
+                <span class="checkmark"></span>
+                <div class="ml-2">
+                  <p class="font-medium">Background Removal</p>
+                  <p class="text-sm text-gray-400">
+                    Automatically remove background from your alter
+                  </p>
+                </div>
+              </label>
+              <label class="custom-checkbox flex items-center">
+                <input type="checkbox" checked />
+                <span class="checkmark"></span>
+                <div class="ml-2">
+                  <p class="font-medium">High Definition Rendering</p>
+                  <p class="text-sm text-gray-400">
+                    Create videos in 1080p resolution (uses more credits)
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div class="flex justify-between pt-6 border-t border-gray-800">
+            <button
+              class="border border-gray-700 text-white px-6 py-3 rounded-button font-medium hover:bg-white hover:bg-opacity-5 transition-all whitespace-nowrap"
+            >
+              Save as Draft
+            </button>
+            <button
+              class="bg-primary text-white px-8 py-3 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
+            >
+              <span>Continue</span>
+              <div class="w-5 h-5 ml-2 flex items-center justify-center">
+                <i class="ri-arrow-right-line"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Sidebar toggle functionality
+        const sidebar = document.getElementById("sidebar");
+        const mainContent = document.getElementById("mainContent");
+        const toggleButton = document.getElementById("toggleSidebar");
+        const menuTexts = document.querySelectorAll(".menu-item-text");
+        toggleButton.addEventListener("click", function () {
+          if (sidebar.classList.contains("sidebar-expanded")) {
+            // Collapse sidebar
+            sidebar.classList.remove("sidebar-expanded");
+            sidebar.classList.add("sidebar-collapsed");
+            mainContent.style.marginLeft = "80px";
+            toggleButton.innerHTML =
+              '<i class="ri-menu-unfold-line text-xl"></i>';
+            // Hide menu text
+            menuTexts.forEach((text) => {
+              text.style.opacity = "0";
+              text.style.display = "none";
+            });
+          } else {
+            // Expand sidebar
+            sidebar.classList.remove("sidebar-collapsed");
+            sidebar.classList.add("sidebar-expanded");
+            mainContent.style.marginLeft = "260px";
+            toggleButton.innerHTML =
+              '<i class="ri-menu-fold-line text-xl"></i>';
+            // Show menu text
+            menuTexts.forEach((text) => {
+              text.style.display = "block";
+              setTimeout(() => {
+                text.style.opacity = "1";
+              }, 100);
+            });
+          }
+        });
+        // Modal functionality
+        const createAlterBtn = document.querySelector(".create-alter-btn");
+        const createAlterModal = document.getElementById("createAlterModal");
+        const closeModalBtn = document.getElementById("closeModal");
+        createAlterBtn.addEventListener("click", function () {
+          createAlterModal.classList.remove("hidden");
+          document.body.style.overflow = "hidden";
+        });
+        closeModalBtn.addEventListener("click", function () {
+          createAlterModal.classList.add("hidden");
+          document.body.style.overflow = "auto";
+        });
+        createAlterModal.addEventListener("click", function (e) {
+          if (e.target === createAlterModal) {
+            createAlterModal.classList.add("hidden");
+            document.body.style.overflow = "auto";
+          }
+        });
+        // Animate elements on scroll
+        const animateElements = document.querySelectorAll(
+          ".template-card, .bg-secondary.bg-opacity-30"
+        );
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("fade-in");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          {
+            threshold: 0.1,
+          }
+        );
+        animateElements.forEach((element) => observer.observe(element));
+      });
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const createAlterButton = document.querySelector(".create-alter-btn");
+        createAlterButton.addEventListener("click", async (event) => {
+          event.preventDefault();
+          try {
+            // Using relative URL which will work in both local and production
+            const response = await fetch("/start-customize", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+            if (response.redirected) {
+              // Use the URL from the response which will have the correct host
+              window.location.href = response.url;
+            } else {
+              console.error("Failed to start customization flow.");
+            }
+          } catch (error) {
+            console.error("Error starting customization flow:", error);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -134,6 +134,7 @@ app.get("/creator-page", (req, res) => {
 });
 
 app.get("/creator-studio", guardRoute, (req, res) => {
+  // Serve the Creator Studio page without the space in filename
   res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
@@ -159,12 +160,13 @@ app.post("/start-customize", (req, res) => {
 app.post("/create-checkout-session", async (req, res) => {
   try {
     // Use deployed URL in production, localhost in development
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? process.env.DEPLOYED_URL // You'll need to set this in your render.com environment variables
-      : `http://localhost:${port}`;
+    const baseUrl =
+      process.env.NODE_ENV === "production"
+        ? process.env.DEPLOYED_URL // You'll need to set this in your render.com environment variables
+        : `http://localhost:${port}`;
 
     // Warn about HTTPS only in development
-    if (!baseUrl.startsWith("https") && process.env.NODE_ENV !== 'production') {
+    if (!baseUrl.startsWith("https") && process.env.NODE_ENV !== "production") {
       console.warn(
         "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL.",
         baseUrl
@@ -203,8 +205,18 @@ app.get("/payment-success", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
+      // Set the creator status in session
       req.session.isCreator = true;
-      res.redirect("/creator-studio");
+
+      // Save session before redirect
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/creator-page");
+        }
+        // Redirect to Creator Studio (now without the space in filename)
+        res.redirect("/creator-studio");
+      });
     } else {
       res.redirect("/creator-page");
     }
