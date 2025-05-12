@@ -134,7 +134,7 @@ app.get("/creator-page", (req, res) => {
 });
 
 app.get("/creator-studio", guardRoute, (req, res) => {
-  res.sendFile(path.join(__dirname, "Creator-Studio .h tml"));
+  res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
 app.get("/customize", guardRoute, (req, res) => {
