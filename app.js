@@ -99,10 +99,12 @@ const documentUpload = multer({
 // PostgreSQL pool for session storage
 const pool = new Pool({
   connectionString: process.env.SUPABASE_DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // Session middleware
@@ -111,16 +113,18 @@ app.use(
     store: new PgSession({
       pool: pool,
       tableName: "session",
+      createTableIfMissing: true, // This will create the session table if it doesn't exist
     }),
     secret: process.env.SESSION_SECRET || "alter-session-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // HTTPS in production
+      secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
+    proxy: process.env.NODE_ENV === "production" // trust the reverse proxy
   })
 );
 
