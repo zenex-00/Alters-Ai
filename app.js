@@ -9,6 +9,8 @@ const { createClient } = require("@supabase/supabase-js");
 const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
+const PgSession = require("connect-pg-simple")(session);
+const { Pool } = require("pg");
 require("dotenv").config();
 
 // Initialize Firebase Admin with service account
@@ -17,21 +19,22 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const app = express();
+app.set("trust proxy", 1); // Trust Render's proxy
 app.use(express.json());
 
-// Initialize Stripe with secret key from environment variables
+// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Initialize Supabase client with environment variables
+// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory
 const uploadsDir = path.join(__dirname, "Uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -93,21 +96,44 @@ const documentUpload = multer({
   },
 }).single("document");
 
-// Middleware to track session state
+// PostgreSQL pool for session storage
+const pool = new Pool({
+  connectionString: process.env.SUPABASE_DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+});
+
+// Session   Session middleware
 app.use(
   session({
+    store: new PgSession({
+      pool: pool,
+      tableName: "session",
+    }),
     secret: process.env.SESSION_SECRET || "alter-session-secret",
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === "production" },
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "lax",
+    },
   })
 );
 
 // Middleware to protect premium routes
 function guardRoute(req, res, next) {
+  console.log("GuardRoute: Checking session", req.sessionID, {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   if (req.session.isCreator || req.session.allowedAccess) {
     next();
   } else {
+    console.log("GuardRoute: No access, redirecting to /login");
     res.redirect("/login");
   }
 }
@@ -149,23 +175,31 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "Login-Page.html"));
 });
 
-// Handle "Create Your Own Alter" button click
+// Handle "Create Your Own Alter" button
 app.post("/start-customize", (req, res) => {
   req.session.allowedAccess = true;
   res.redirect("/customize");
 });
 
-// Stripe checkout session creation
+// Stripe checkout session
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    // Use localhost for development; warn about production requirements
-    const baseUrl = `http://localhost:${port}`;
-    if (!baseUrl.startsWith("https")) {
-      console.warn(
-        "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL (e.g., via ngrok).",
-        baseUrl
-      );
+    // Determine base URL
+    let baseUrl;
+    if (process.env.NODE_ENV === "production" && process.env.BASE_URL) {
+      baseUrl = process.env.BASE_URL;
+    } else {
+      const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+      const host = req.headers.host;
+      baseUrl = `${protocol}://${host}`;
     }
+    console.log("create-checkout-session: Constructing baseUrl", {
+      nodeEnv: process.env.NODE_ENV,
+      baseUrlEnv: process.env.BASE_URL,
+      protocol: req.headers["x-forwarded-proto"] || req.protocol,
+      host: req.headers.host,
+      baseUrl,
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -176,7 +210,7 @@ app.post("/create-checkout-session", async (req, res) => {
             product_data: {
               name: "Creator Studio Package",
             },
-            unit_amount: 5000, // $50.00 in cents
+            unit_amount: 5000,
           },
           quantity: 1,
         },
@@ -200,8 +234,15 @@ app.get("/payment-success", async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
       req.session.isCreator = true;
+      console.log(
+        "Payment success: Set isCreator=true for session",
+        req.sessionID,
+        req.session
+      );
+      await req.session.save();
       res.redirect("/creator-studio");
     } else {
+      console.log("Payment not completed, redirecting to creator-page");
       res.redirect("/creator-page");
     }
   } catch (error) {
@@ -210,20 +251,7 @@ app.get("/payment-success", async (req, res) => {
   }
 });
 
-// Return the ngrok URL
-app.get("/ngrok-url", (req, res) => {
-  const ngrokUrl = process.env.NGROK_URL;
-  if (!ngrokUrl || ngrokUrl.includes("localhost")) {
-    console.error("ERROR: Invalid or missing NGROK_URL in .env file");
-    return res
-      .status(500)
-      .json({ error: "NGROK_URL not configured correctly" });
-  }
-  console.log("Ngrok URL requested:", ngrokUrl);
-  res.json({ ngrok_url: ngrokUrl });
-});
-
-// Test route to confirm server is running
+// Test route
 app.get("/test", (req, res) => {
   console.log("Test route accessed");
   res.json({ message: "Server is running correctly" });
@@ -238,7 +266,6 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
   }
 
   try {
-    // Upload to Supabase Storage
     const filePath = `avatars/public/${req.file.filename}`;
     const fileBuffer = await fsPromises.readFile(req.file.path);
 
@@ -252,7 +279,7 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
           cacheControl: "3600",
         });
       if (!error) break;
-      updateError = error;
+      uploadError = error;
       console.warn(`Supabase upload attempt ${attempt} failed:`, error);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -261,12 +288,10 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
       throw uploadError;
     }
 
-    // Get public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from("images").getPublicUrl(filePath);
 
-    // Clean up local file
     await fsPromises.unlink(req.file.path);
 
     console.log("Image uploaded to Supabase:", publicUrl);
@@ -293,7 +318,6 @@ app.post("/upload-audio", audioUpload, async (req, res) => {
   }
 
   try {
-    // Upload to Supabase Storage
     const filePath = `files/public/${req.file.filename}`;
     const fileBuffer = await fsPromises.readFile(req.file.path);
 
@@ -316,12 +340,10 @@ app.post("/upload-audio", audioUpload, async (req, res) => {
       throw uploadError;
     }
 
-    // Get public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from("images").getPublicUrl(filePath);
 
-    // Clean up local file
     await fsPromises.unlink(req.file.path);
 
     console.log("Audio uploaded to Supabase:", publicUrl);
@@ -348,7 +370,6 @@ app.post("/upload-document", documentUpload, async (req, res) => {
   }
 
   try {
-    // Parse document content
     const filePath = path.join(__dirname, "Uploads", req.file.filename);
     let documentContent = "";
 
@@ -364,7 +385,6 @@ app.post("/upload-document", documentUpload, async (req, res) => {
       throw new Error("Failed to extract content from the file.");
     }
 
-    // Upload to Supabase Storage
     const supabaseFilePath = `documents/public/${req.file.filename}`;
     const fileBuffer = await fsPromises.readFile(filePath);
 
@@ -387,12 +407,10 @@ app.post("/upload-document", documentUpload, async (req, res) => {
       throw uploadError;
     }
 
-    // Get public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from("images").getPublicUrl(supabaseFilePath);
 
-    // Clean up local file
     await fsPromises.unlink(filePath);
 
     console.log("Document uploaded to Supabase:", publicUrl);
@@ -422,7 +440,6 @@ app.post("/auth/google", async (req, res) => {
     const { idToken } = req.body;
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // Set session
     req.session.userId = decodedToken.uid;
     req.session.email = decodedToken.email;
     req.session.allowedAccess = true;
@@ -473,6 +490,5 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 
 server.listen(port, () => {
-  console.log(`Server started on port localhost:${port}`);
-  console.log("NGROK_URL from .env:", process.env.NGROK_URL || "Not set");
+  console.log(`Server started on port ${port}`);
 });
