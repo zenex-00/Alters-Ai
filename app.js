@@ -19,16 +19,16 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; // Use Render's PORT or default to 3000
 
 const app = express();
-app.set("trust proxy", 1); // Trust Render's proxy
+app.set("trust proxy", 1); // Trust Render's proxy for x-forwarded-* headers
 app.use(express.json());
 
-// Initialize Stripe
+// Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Initialize Supabase
+// Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
@@ -86,7 +86,7 @@ const audioUpload = multer({
 // Multer for document uploads
 const documentUpload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf" || file.mimetype === "text/plain") {
       cb(null, true);
@@ -105,7 +105,7 @@ const pool = new Pool({
       : false,
 });
 
-// Session   Session middleware
+// Session middleware
 app.use(
   session({
     store: new PgSession({
@@ -116,8 +116,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production", // HTTPS in production
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
       sameSite: "lax",
     },
@@ -184,22 +184,10 @@ app.post("/start-customize", (req, res) => {
 // Stripe checkout session
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    // Determine base URL
-    let baseUrl;
-    if (process.env.NODE_ENV === "production" && process.env.BASE_URL) {
-      baseUrl = process.env.BASE_URL;
-    } else {
-      const protocol = req.headers["x-forwarded-proto"] || req.protocol;
-      const host = req.headers.host;
-      baseUrl = `${protocol}://${host}`;
-    }
-    console.log("create-checkout-session: Constructing baseUrl", {
-      nodeEnv: process.env.NODE_ENV,
-      baseUrlEnv: process.env.BASE_URL,
-      protocol: req.headers["x-forwarded-proto"] || req.protocol,
-      host: req.headers.host,
-      baseUrl,
-    });
+    // Dynamically determine base URL
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers.host;
+    const baseUrl = `${protocol}://${host}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -210,7 +198,7 @@ app.post("/create-checkout-session", async (req, res) => {
             product_data: {
               name: "Creator Studio Package",
             },
-            unit_amount: 5000,
+            unit_amount: 5000, // $50.00
           },
           quantity: 1,
         },
@@ -239,7 +227,7 @@ app.get("/payment-success", async (req, res) => {
         req.sessionID,
         req.session
       );
-      await req.session.save();
+      await req.session.save(); // Explicitly save session
       res.redirect("/creator-studio");
     } else {
       console.log("Payment not completed, redirecting to creator-page");
