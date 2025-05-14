@@ -7,6 +7,7 @@ const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const { createClient } = require("@supabase/supabase-js");
 const session = require("express-session");
+const FirebaseStore = require("connect-session-firebase")(session);
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 require("dotenv").config();
@@ -35,6 +36,7 @@ requiredEnvVars.forEach((envVar) => {
 const serviceAccount = require("./serviceAccountKey.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.FIREBASE_DATABASE_URL, // Required for session store
 });
 
 const port = process.env.PORT || 3000;
@@ -54,7 +56,7 @@ const supabase = createClient(
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "Uploads");
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+  fs.mkdirSync(UploadsDir);
 }
 
 // Configure multer for file uploads
@@ -63,7 +65,7 @@ const storage = multer.diskStorage({
     cb(null, "Uploads/");
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random * 1e9);
     const ext =
       file.mimetype === "audio/mpeg"
         ? ".mp3"
@@ -117,15 +119,28 @@ const documentUpload = multer({
 const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
+    store: new FirebaseStore({
+      database: admin.database(),
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: isProduction }, // Secure cookies in production
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: isProduction ? "none" : "lax", // Required for cross-origin in production
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
   })
 );
 
 // Middleware to protect premium routes
 function guardRoute(req, res, next) {
+  console.log("guardRoute: Session state:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+    sessionId: req.sessionID,
+  });
   if (req.session.isCreator || req.session.allowedAccess) {
     next();
   } else {
@@ -173,7 +188,13 @@ app.get("/login", (req, res) => {
 // Handle "Create Your Own Alter" button click
 app.post("/start-customize", (req, res) => {
   req.session.allowedAccess = true;
-  res.redirect("/customize");
+  req.session.save((err) => {
+    if (err) {
+      console.error("Session save error in start-customize:", err);
+      return res.status(500).json({ error: "Failed to save session" });
+    }
+    res.redirect("/customize");
+  });
 });
 
 // Stripe checkout session creation
@@ -228,8 +249,21 @@ app.get("/payment-success", async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
       req.session.isCreator = true;
-      res.redirect("/creator-studio");
+      console.log("payment-success: Set isCreator to true, session:", {
+        sessionId: req.sessionID,
+        isCreator: req.session.isCreator,
+      });
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error in payment-success:", err);
+          return res.status(500).json({ error: "Failed to save session" });
+        }
+        res.redirect("/creator-studio");
+      });
     } else {
+      console.log(
+        "payment-success: Payment not paid, redirecting to creator-page"
+      );
       res.redirect("/creator-page");
     }
   } catch (error) {
@@ -441,8 +475,13 @@ app.post("/auth/google", async (req, res) => {
     req.session.userId = decodedToken.uid;
     req.session.email = decodedToken.email;
     req.session.allowedAccess = true;
-
-    res.json({ success: true });
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error in auth/google:", err);
+        return res.status(500).json({ error: "Failed to save session" });
+      }
+      res.json({ success: true });
+    });
   } catch (error) {
     console.error("Auth error:", error);
     res.status(401).json({
