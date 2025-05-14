@@ -21,7 +21,6 @@ const requiredEnvVars = [
   "DID_API_KEY",
   "OPEN_AI_API_KEY",
   "ELEVENLABS_API_KEY",
-  "FIREBASE_SERVICE_ACCOUNT",
 ];
 if (process.env.NODE_ENV === "production") {
   requiredEnvVars.push("RENDER_EXTERNAL_URL");
@@ -34,13 +33,18 @@ requiredEnvVars.forEach((envVar) => {
 });
 
 // Initialize Firebase Admin with service account
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'serviceAccountKey.json'), 'utf8')
+);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com` // Add database URL
 });
 
-// Initialize Firestore
+// Initialize Firestore and Realtime Database
 const db = admin.firestore();
+const rtdb = admin.database();
 
 const port = process.env.PORT || 3000;
 
@@ -123,7 +127,9 @@ const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
     store: new FirebaseStore({
-      database: db,
+      database: rtdb,
+      sessions: 'sessions',
+      reapInterval: 24 * 60 * 60 * 1000
     }),
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -132,7 +138,7 @@ app.use(
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000
     },
   })
 );
