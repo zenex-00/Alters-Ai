@@ -9,6 +9,7 @@ const { createClient } = require("@supabase/supabase-js");
 const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
+const FirebaseStore = require("connect-session-firebase")(session);
 require("dotenv").config();
 
 // Validate required environment variables
@@ -20,6 +21,7 @@ const requiredEnvVars = [
   "DID_API_KEY",
   "OPEN_AI_API_KEY",
   "ELEVENLABS_API_KEY",
+  "FIREBASE_SERVICE_ACCOUNT",
 ];
 if (process.env.NODE_ENV === "production") {
   requiredEnvVars.push("RENDER_EXTERNAL_URL");
@@ -32,10 +34,13 @@ requiredEnvVars.forEach((envVar) => {
 });
 
 // Initialize Firebase Admin with service account
-const serviceAccount = require("./serviceAccountKey.json");
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+
+// Initialize Firestore
+const db = admin.firestore();
 
 const port = process.env.PORT || 3000;
 
@@ -117,20 +122,59 @@ const documentUpload = multer({
 const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
+    store: new FirebaseStore({
+      database: db,
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: isProduction }, // Secure cookies in production
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
   })
 );
 
 // Middleware to protect premium routes
-function guardRoute(req, res, next) {
+async function guardRoute(req, res, next) {
+  console.log("guardRoute: Session data:", {
+    userId: req.session.userId,
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
+
+  // Check session
   if (req.session.isCreator || req.session.allowedAccess) {
-    next();
-  } else {
-    res.redirect("/login");
+    console.log("guardRoute: Access granted via session");
+    return next();
   }
+
+  // Check Firestore for creator status
+  if (req.session.userId) {
+    try {
+      const userDoc = await db
+        .collection("users")
+        .doc(req.session.userId)
+        .get();
+      console.log(
+        "guardRoute: Firestore user data:",
+        userDoc.exists ? userDoc.data() : "Not found"
+      );
+      if (userDoc.exists && userDoc.data().isCreator) {
+        req.session.isCreator = true; // Sync session
+        await req.session.save(); // Ensure session is saved
+        console.log("guardRoute: Access granted via Firestore");
+        return next();
+      }
+    } catch (error) {
+      console.error("guardRoute: Error checking Firestore:", error);
+    }
+  }
+
+  console.log("guardRoute: Redirecting to /login");
+  res.redirect("/login");
 }
 
 // Routes
@@ -171,8 +215,9 @@ app.get("/login", (req, res) => {
 });
 
 // Handle "Create Your Own Alter" button click
-app.post("/start-customize", (req, res) => {
+app.post("/start-customize", async (req, res) => {
   req.session.allowedAccess = true;
+  await req.session.save();
   res.redirect("/customize");
 });
 
@@ -224,16 +269,63 @@ app.post("/create-checkout-session", async (req, res) => {
 // Handle successful payment
 app.get("/payment-success", async (req, res) => {
   const sessionId = req.query.session_id;
+  console.log("payment-success: Processing session ID:", sessionId);
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
+      console.log(
+        "payment-success: Payment confirmed, userId:",
+        req.session.userId
+      );
+      // Set session flag
       req.session.isCreator = true;
+
+      // Store creator status in Firestore if user is authenticated
+      if (req.session.userId) {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            await db.collection("users").doc(req.session.userId).set(
+              {
+                isCreator: true,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true }
+            );
+            console.log("payment-success: Firestore updated, isCreator: true");
+            break;
+          } catch (error) {
+            console.warn(
+              `payment-success: Firestore attempt ${attempt} failed:`,
+              error
+            );
+            if (attempt === 3) throw error;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+      }
+
+      // Save session before redirect
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("payment-success: Session save error:", err);
+            reject(err);
+          } else {
+            console.log("payment-success: Session saved");
+            resolve();
+          }
+        });
+      });
+
       res.redirect("/creator-studio");
     } else {
+      console.log(
+        "payment-success: Payment not confirmed, redirecting to creator-page"
+      );
       res.redirect("/creator-page");
     }
   } catch (error) {
-    console.error("Payment verification error:", error);
+    console.error("payment-success: Error:", error);
     res.redirect("/creator-page");
   }
 });
@@ -442,9 +534,22 @@ app.post("/auth/google", async (req, res) => {
     req.session.email = decodedToken.email;
     req.session.allowedAccess = true;
 
+    // Initialize user in Firestore if not exists
+    const userRef = db.collection("users").doc(decodedToken.uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      await userRef.set({
+        email: decodedToken.email,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        isCreator: false,
+      });
+    }
+
+    await req.session.save();
+    console.log("auth/google: Session saved for user:", decodedToken.uid);
     res.json({ success: true });
   } catch (error) {
-    console.error("Auth error:", error);
+    console.error("auth/google: Error:", error);
     res.status(401).json({
       success: false,
       error: "Authentication failed",
@@ -453,12 +558,13 @@ app.post("/auth/google", async (req, res) => {
 });
 
 // Handle Sign Out
-app.post("/auth/signout", (req, res) => {
+app.post("/auth/signout", async (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error("Session destruction error:", err);
+      console.error("auth/signout: Session destruction error:", err);
       return res.status(500).json({ error: "Failed to sign out" });
     }
+    console.log("auth/signout: Session destroyed");
     res.json({ success: true });
   });
 });
