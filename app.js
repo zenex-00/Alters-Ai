@@ -17,7 +17,6 @@ const requiredEnvVars = [
   "SESSION_SECRET",
   "SUPABASE_URL",
   "SUPABASE_ANON_KEY",
-  "FIREBASE_SERVICE_ACCOUNT",
   "DID_API_KEY",
   "OPEN_AI_API_KEY",
   "ELEVENLABS_API_KEY",
@@ -33,7 +32,7 @@ requiredEnvVars.forEach((envVar) => {
 });
 
 // Initialize Firebase Admin with service account
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = require("./serviceAccountKey.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
