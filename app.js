@@ -11,13 +11,34 @@ const Stripe = require("stripe");
 const admin = require("firebase-admin");
 require("dotenv").config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  "STRIPE_SECRET_KEY",
+  "SESSION_SECRET",
+  "SUPABASE_URL",
+  "SUPABASE_ANON_KEY",
+  "FIREBASE_SERVICE_ACCOUNT",
+  "DID_API_KEY",
+  "OPEN_AI_API_KEY",
+  "ELEVENLABS_API_KEY",
+];
+if (process.env.NODE_ENV === "production") {
+  requiredEnvVars.push("RENDER_EXTERNAL_URL");
+}
+requiredEnvVars.forEach((envVar) => {
+  if (!process.env[envVar]) {
+    console.error(`ERROR: Missing required environment variable: ${envVar}`);
+    process.exit(1);
+  }
+});
+
 // Initialize Firebase Admin with service account
-const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
@@ -94,12 +115,13 @@ const documentUpload = multer({
 }).single("document");
 
 // Middleware to track session state
+const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "alter-session-secret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === "production" },
+    cookie: { secure: isProduction }, // Secure cookies in production
   })
 );
 
@@ -158,13 +180,20 @@ app.post("/start-customize", (req, res) => {
 // Stripe checkout session creation
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    // Use localhost for development; warn about production requirements
-    const baseUrl = `http://localhost:${port}`;
-    if (!baseUrl.startsWith("https")) {
-      console.warn(
-        "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL (e.g., via ngrok).",
-        baseUrl
-      );
+    // Determine the base URL based on the environment
+    const baseUrl = isProduction
+      ? process.env.RENDER_EXTERNAL_URL
+      : `http://localhost:${port}`;
+
+    // Validate baseUrl
+    if (!baseUrl) {
+      console.error("ERROR: RENDER_EXTERNAL_URL not set in production");
+      return res.status(500).json({ error: "Server configuration error" });
+    }
+
+    if (isProduction && !baseUrl.startsWith("https")) {
+      console.error("ERROR: Non-HTTPS URL (%s) used in production", baseUrl);
+      return res.status(500).json({ error: "HTTPS required in production" });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -210,19 +239,6 @@ app.get("/payment-success", async (req, res) => {
   }
 });
 
-// Return the ngrok URL
-app.get("/ngrok-url", (req, res) => {
-  const ngrokUrl = process.env.NGROK_URL;
-  if (!ngrokUrl || ngrokUrl.includes("localhost")) {
-    console.error("ERROR: Invalid or missing NGROK_URL in .env file");
-    return res
-      .status(500)
-      .json({ error: "NGROK_URL not configured correctly" });
-  }
-  console.log("Ngrok URL requested:", ngrokUrl);
-  res.json({ ngrok_url: ngrokUrl });
-});
-
 // Test route to confirm server is running
 app.get("/test", (req, res) => {
   console.log("Test route accessed");
@@ -252,7 +268,7 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
           cacheControl: "3600",
         });
       if (!error) break;
-      updateError = error;
+      uploadError = error;
       console.warn(`Supabase upload attempt ${attempt} failed:`, error);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -473,6 +489,11 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 
 server.listen(port, () => {
-  console.log(`Server started on port localhost:${port}`);
-  console.log("NGROK_URL from .env:", process.env.NGROK_URL || "Not set");
+  console.log(
+    `Server started on port ${isProduction ? "Render" : "localhost"}:${port}`
+  );
+  console.log(
+    "Base URL:",
+    isProduction ? process.env.RENDER_EXTERNAL_URL : `http://localhost:${port}`
+  );
 });
