@@ -34,12 +34,12 @@ requiredEnvVars.forEach((envVar) => {
 
 // Initialize Firebase Admin with service account
 const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'serviceAccountKey.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, "serviceAccountKey.json"), "utf8")
 );
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com` // Add database URL
+  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`, // Add database URL
 });
 
 // Initialize Firestore and Realtime Database
@@ -128,8 +128,8 @@ app.use(
   session({
     store: new FirebaseStore({
       database: rtdb,
-      sessions: 'sessions',
-      reapInterval: 24 * 60 * 60 * 1000
+      sessions: "sessions",
+      reapInterval: 24 * 60 * 60 * 1000,
     }),
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -138,7 +138,7 @@ app.use(
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
