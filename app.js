@@ -6,7 +6,8 @@ const path = require("path");
 const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const { createClient } = require("@supabase/supabase-js");
-const session = require("express-session");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 require("dotenv").config();
@@ -41,6 +42,7 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
 // Initialize Stripe with secret key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -113,23 +115,35 @@ const documentUpload = multer({
   },
 }).single("document");
 
-// Middleware to track session state
-const isProduction = process.env.NODE_ENV === "production";
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: isProduction }, // Secure cookies in production
-  })
-);
+// Middleware to verify Firebase token and check creator status
+async function guardRoute(req, res, next) {
+  try {
+    // Check for auth cookie
+    const authCookie = req.cookies.authToken;
+    if (!authCookie) {
+      return res.redirect('/login');
+    }
 
-// Middleware to protect premium routes
-function guardRoute(req, res, next) {
-  if (req.session.isCreator || req.session.allowedAccess) {
-    next();
-  } else {
-    res.redirect("/login");
+    // Verify Firebase token
+    const decodedToken = await admin.auth().verifyIdToken(authCookie);
+    req.user = decodedToken;
+
+    // Check if user is a creator in Supabase
+    const { data: creator } = await supabase
+      .from('creators')
+      .select('*')
+      .eq('user_id', decodedToken.uid)
+      .single();
+
+    if (creator) {
+      req.isCreator = true;
+      next();
+    } else {
+      res.redirect('/login');
+    }
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.redirect('/login');
   }
 }
 
@@ -171,8 +185,7 @@ app.get("/login", (req, res) => {
 });
 
 // Handle "Create Your Own Alter" button click
-app.post("/start-customize", (req, res) => {
-  req.session.allowedAccess = true;
+app.post("/start-customize", guardRoute, (req, res) => {
   res.redirect("/customize");
 });
 
@@ -225,16 +238,40 @@ app.post("/create-checkout-session", async (req, res) => {
 app.get("/payment-success", async (req, res) => {
   const sessionId = req.query.session_id;
   try {
+    // Verify payment with Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
-      req.session.isCreator = true;
-      res.redirect("/creator-studio");
+      const authCookie = req.cookies.authToken;
+      if (!authCookie) {
+        return res.redirect('/login');
+      }
+
+      // Get user ID from Firebase token
+      const decodedToken = await admin.auth().verifyIdToken(authCookie);
+      const userId = decodedToken.uid;
+
+      // Store creator status in Supabase
+      const { error } = await supabase
+        .from('creators')
+        .upsert({ 
+          user_id: userId,
+          created_at: new Date().toISOString(),
+          payment_id: sessionId,
+          email: decodedToken.email
+        });
+
+      if (error) {
+        console.error('Error storing creator status:', error);
+        return res.redirect('/creator-page');
+      }
+
+      res.redirect('/creator-studio');
     } else {
-      res.redirect("/creator-page");
+      res.redirect('/creator-page');
     }
   } catch (error) {
     console.error("Payment verification error:", error);
-    res.redirect("/creator-page");
+    res.redirect('/creator-page');
   }
 });
 
@@ -437,10 +474,13 @@ app.post("/auth/google", async (req, res) => {
     const { idToken } = req.body;
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // Set session
-    req.session.userId = decodedToken.uid;
-    req.session.email = decodedToken.email;
-    req.session.allowedAccess = true;
+    // Set secure cookie with Firebase token
+    res.cookie('authToken', idToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.json({ success: true });
   } catch (error) {
@@ -454,13 +494,8 @@ app.post("/auth/google", async (req, res) => {
 
 // Handle Sign Out
 app.post("/auth/signout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Session destruction error:", err);
-      return res.status(500).json({ error: "Failed to sign out" });
-    }
-    res.json({ success: true });
-  });
+  res.clearCookie('authToken');
+  res.json({ success: true });
 });
 
 // API configuration endpoint
