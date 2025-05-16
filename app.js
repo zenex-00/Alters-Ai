@@ -12,6 +12,10 @@ const Stripe = require("stripe");
 const admin = require("firebase-admin");
 require("dotenv").config();
 
+// Environment configuration
+const isProduction = process.env.NODE_ENV === "production";
+const port = process.env.PORT || 3000;
+
 // Validate required environment variables
 const requiredEnvVars = [
   "STRIPE_SECRET_KEY",
@@ -37,8 +41,6 @@ const serviceAccount = require("./serviceAccountKey.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-
-const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
@@ -121,7 +123,7 @@ async function guardRoute(req, res, next) {
     // Check for auth cookie
     const authCookie = req.cookies.authToken;
     if (!authCookie) {
-      return res.redirect('/login');
+      return res.redirect("/login");
     }
 
     // Verify Firebase token
@@ -130,20 +132,20 @@ async function guardRoute(req, res, next) {
 
     // Check if user is a creator in Supabase
     const { data: creator } = await supabase
-      .from('creators')
-      .select('*')
-      .eq('user_id', decodedToken.uid)
+      .from("creators")
+      .select("*")
+      .eq("user_id", decodedToken.uid)
       .single();
 
     if (creator) {
       req.isCreator = true;
       next();
     } else {
-      res.redirect('/login');
+      res.redirect("/login");
     }
   } catch (error) {
-    console.error('Auth error:', error);
-    res.redirect('/login');
+    console.error("Auth error:", error);
+    res.redirect("/login");
   }
 }
 
@@ -243,7 +245,7 @@ app.get("/payment-success", async (req, res) => {
     if (session.payment_status === "paid") {
       const authCookie = req.cookies.authToken;
       if (!authCookie) {
-        return res.redirect('/login');
+        return res.redirect("/login");
       }
 
       // Get user ID from Firebase token
@@ -251,27 +253,25 @@ app.get("/payment-success", async (req, res) => {
       const userId = decodedToken.uid;
 
       // Store creator status in Supabase
-      const { error } = await supabase
-        .from('creators')
-        .upsert({ 
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          payment_id: sessionId,
-          email: decodedToken.email
-        });
+      const { error } = await supabase.from("creators").upsert({
+        user_id: userId,
+        created_at: new Date().toISOString(),
+        payment_id: sessionId,
+        email: decodedToken.email,
+      });
 
       if (error) {
-        console.error('Error storing creator status:', error);
-        return res.redirect('/creator-page');
+        console.error("Error storing creator status:", error);
+        return res.redirect("/creator-page");
       }
 
-      res.redirect('/creator-studio');
+      res.redirect("/creator-studio");
     } else {
-      res.redirect('/creator-page');
+      res.redirect("/creator-page");
     }
   } catch (error) {
     console.error("Payment verification error:", error);
-    res.redirect('/creator-page');
+    res.redirect("/creator-page");
   }
 });
 
@@ -475,11 +475,11 @@ app.post("/auth/google", async (req, res) => {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
     // Set secure cookie with Firebase token
-    res.cookie('authToken', idToken, {
+    res.cookie("authToken", idToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.json({ success: true });
@@ -494,7 +494,7 @@ app.post("/auth/google", async (req, res) => {
 
 // Handle Sign Out
 app.post("/auth/signout", (req, res) => {
-  res.clearCookie('authToken');
+  res.clearCookie("authToken");
   res.json({ success: true });
 });
 
