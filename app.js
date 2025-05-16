@@ -37,7 +37,10 @@ requiredEnvVars.forEach((envVar) => {
 });
 
 // Initialize Firebase Admin with service account
-const serviceAccount = require("./serviceAccountKey.json");
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  : require("./serviceAccountKey.json");
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
