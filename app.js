@@ -6,48 +6,21 @@ const path = require("path");
 const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const { createClient } = require("@supabase/supabase-js");
-const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
+const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 require("dotenv").config();
 
-// Environment configuration
-const isProduction = process.env.NODE_ENV === "production";
-const port = process.env.PORT || 3000;
-
-// Validate required environment variables
-const requiredEnvVars = [
-  "STRIPE_SECRET_KEY",
-  "SESSION_SECRET",
-  "SUPABASE_URL",
-  "SUPABASE_ANON_KEY",
-  "DID_API_KEY",
-  "OPEN_AI_API_KEY",
-  "ELEVENLABS_API_KEY",
-];
-if (process.env.NODE_ENV === "production") {
-  requiredEnvVars.push("RENDER_EXTERNAL_URL");
-}
-requiredEnvVars.forEach((envVar) => {
-  if (!process.env[envVar]) {
-    console.error(`ERROR: Missing required environment variable: ${envVar}`);
-    process.exit(1);
-  }
-});
-
 // Initialize Firebase Admin with service account
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-  : require("./serviceAccountKey.json");
-
+const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+const port = 3000;
+
 const app = express();
 app.use(express.json());
-app.use(cookieParser());
 
 // Initialize Stripe with secret key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -120,34 +93,21 @@ const documentUpload = multer({
   },
 }).single("document");
 
-// Middleware to verify Firebase token and check creator status
-async function guardRoute(req, res, next) {
-  try {
-    // Check for auth cookie
-    const authCookie = req.cookies.authToken;
-    if (!authCookie) {
-      return res.redirect("/login");
-    }
+// Middleware to track session state
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "alter-session-secret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === "production" },
+  })
+);
 
-    // Verify Firebase token
-    const decodedToken = await admin.auth().verifyIdToken(authCookie);
-    req.user = decodedToken;
-
-    // Check if user is a creator in Supabase
-    const { data: creator } = await supabase
-      .from("creators")
-      .select("*")
-      .eq("user_id", decodedToken.uid)
-      .single();
-
-    if (creator) {
-      req.isCreator = true;
-      next();
-    } else {
-      res.redirect("/login");
-    }
-  } catch (error) {
-    console.error("Auth error:", error);
+// Middleware to protect premium routes
+function guardRoute(req, res, next) {
+  if (req.session.isCreator || req.session.allowedAccess) {
+    next();
+  } else {
     res.redirect("/login");
   }
 }
@@ -190,27 +150,21 @@ app.get("/login", (req, res) => {
 });
 
 // Handle "Create Your Own Alter" button click
-app.post("/start-customize", guardRoute, (req, res) => {
+app.post("/start-customize", (req, res) => {
+  req.session.allowedAccess = true;
   res.redirect("/customize");
 });
 
 // Stripe checkout session creation
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    // Determine the base URL based on the environment
-    const baseUrl = isProduction
-      ? process.env.RENDER_EXTERNAL_URL
-      : `http://localhost:${port}`;
-
-    // Validate baseUrl
-    if (!baseUrl) {
-      console.error("ERROR: RENDER_EXTERNAL_URL not set in production");
-      return res.status(500).json({ error: "Server configuration error" });
-    }
-
-    if (isProduction && !baseUrl.startsWith("https")) {
-      console.error("ERROR: Non-HTTPS URL (%s) used in production", baseUrl);
-      return res.status(500).json({ error: "HTTPS required in production" });
+    // Use localhost for development; warn about production requirements
+    const baseUrl = `http://localhost:${port}`;
+    if (!baseUrl.startsWith("https")) {
+      console.warn(
+        "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL (e.g., via ngrok).",
+        baseUrl
+      );
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -243,31 +197,9 @@ app.post("/create-checkout-session", async (req, res) => {
 app.get("/payment-success", async (req, res) => {
   const sessionId = req.query.session_id;
   try {
-    // Verify payment with Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
-      const authCookie = req.cookies.authToken;
-      if (!authCookie) {
-        return res.redirect("/login");
-      }
-
-      // Get user ID from Firebase token
-      const decodedToken = await admin.auth().verifyIdToken(authCookie);
-      const userId = decodedToken.uid;
-
-      // Store creator status in Supabase
-      const { error } = await supabase.from("creators").upsert({
-        user_id: userId,
-        created_at: new Date().toISOString(),
-        payment_id: sessionId,
-        email: decodedToken.email,
-      });
-
-      if (error) {
-        console.error("Error storing creator status:", error);
-        return res.redirect("/creator-page");
-      }
-
+      req.session.isCreator = true;
       res.redirect("/creator-studio");
     } else {
       res.redirect("/creator-page");
@@ -276,6 +208,19 @@ app.get("/payment-success", async (req, res) => {
     console.error("Payment verification error:", error);
     res.redirect("/creator-page");
   }
+});
+
+// Return the ngrok URL
+app.get("/ngrok-url", (req, res) => {
+  const ngrokUrl = process.env.NGROK_URL;
+  if (!ngrokUrl || ngrokUrl.includes("localhost")) {
+    console.error("ERROR: Invalid or missing NGROK_URL in .env file");
+    return res
+      .status(500)
+      .json({ error: "NGROK_URL not configured correctly" });
+  }
+  console.log("Ngrok URL requested:", ngrokUrl);
+  res.json({ ngrok_url: ngrokUrl });
 });
 
 // Test route to confirm server is running
@@ -307,7 +252,7 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
           cacheControl: "3600",
         });
       if (!error) break;
-      uploadError = error;
+      updateError = error;
       console.warn(`Supabase upload attempt ${attempt} failed:`, error);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -477,13 +422,10 @@ app.post("/auth/google", async (req, res) => {
     const { idToken } = req.body;
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    // Set secure cookie with Firebase token
-    res.cookie("authToken", idToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    // Set session
+    req.session.userId = decodedToken.uid;
+    req.session.email = decodedToken.email;
+    req.session.allowedAccess = true;
 
     res.json({ success: true });
   } catch (error) {
@@ -497,8 +439,13 @@ app.post("/auth/google", async (req, res) => {
 
 // Handle Sign Out
 app.post("/auth/signout", (req, res) => {
-  res.clearCookie("authToken");
-  res.json({ success: true });
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Session destruction error:", err);
+      return res.status(500).json({ error: "Failed to sign out" });
+    }
+    res.json({ success: true });
+  });
 });
 
 // API configuration endpoint
@@ -526,11 +473,6 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 
 server.listen(port, () => {
-  console.log(
-    `Server started on port ${isProduction ? "Render" : "localhost"}:${port}`
-  );
-  console.log(
-    "Base URL:",
-    isProduction ? process.env.RENDER_EXTERNAL_URL : `http://localhost:${port}`
-  );
+  console.log(`Server started on port localhost:${port}`);
+  console.log("NGROK_URL from .env:", process.env.NGROK_URL || "Not set");
 });
