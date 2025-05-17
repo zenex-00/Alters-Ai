@@ -323,7 +323,7 @@ app.post(
             if (supabaseUserId) {
               // Upsert creator record in creators table
               const { error: upsertError } = await supabaseAdmin
-                .from("creatorsusers")
+                .from("creatorsuser")
                 .upsert(
                   {
                     id: supabaseUserId,
@@ -501,11 +501,11 @@ app.post("/upload-document", documentUpload, async (req, res) => {
     filePath = path.join(__dirname, "Uploads", req.file.filename);
     // Parse document content
     let documentContent = "";
-    if (file.mimetype === "application/pdf") {
+    if (req.file.mimetype === "application/pdf") {
       const dataBuffer = await fsPromises.readFile(filePath);
       const pdfData = await pdfParse(dataBuffer);
       documentContent = pdfData.text;
-    } else if (file.mimetype === "text/plain") {
+    } else if (req.file.mimetype === "text/plain") {
       documentContent = await fsPromises.readFile(filePath, "utf-8");
     }
 
