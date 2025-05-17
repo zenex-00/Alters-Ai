@@ -17,7 +17,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const port = 3000;
+const port = process.env.PORT || 3000; // Use Render.com PORT or default to 3000
 
 const app = express();
 app.use(express.json());
@@ -158,14 +158,13 @@ app.post("/start-customize", (req, res) => {
 // Stripe checkout session creation
 app.post("/create-checkout-session", async (req, res) => {
   try {
-    // Use localhost for development; warn about production requirements
-    const baseUrl = `http://localhost:${port}`;
-    if (!baseUrl.startsWith("https")) {
-      console.warn(
-        "Using non-HTTPS URL (%s) for Stripe checkout. For production or real transactions, use a public HTTPS URL (e.g., via ngrok).",
-        baseUrl
-      );
-    }
+    // Dynamically determine baseUrl based on environment
+    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+    const host =
+      process.env.NODE_ENV === "production"
+        ? req.headers.host
+        : `localhost:${port}`;
+    const baseUrl = `${protocol}://${host}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -200,7 +199,7 @@ app.get("/payment-success", async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
       req.session.isCreator = true;
-      res.redirect("/creator-studio");
+      res.redirect("/creator-studio"); // Redirects to Creator-Studio.html
     } else {
       res.redirect("/creator-page");
     }
@@ -208,19 +207,6 @@ app.get("/payment-success", async (req, res) => {
     console.error("Payment verification error:", error);
     res.redirect("/creator-page");
   }
-});
-
-// Return the ngrok URL
-app.get("/ngrok-url", (req, res) => {
-  const ngrokUrl = process.env.NGROK_URL;
-  if (!ngrokUrl || ngrokUrl.includes("localhost")) {
-    console.error("ERROR: Invalid or missing NGROK_URL in .env file");
-    return res
-      .status(500)
-      .json({ error: "NGROK_URL not configured correctly" });
-  }
-  console.log("Ngrok URL requested:", ngrokUrl);
-  res.json({ ngrok_url: ngrokUrl });
 });
 
 // Test route to confirm server is running
@@ -237,22 +223,24 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
     return res.status(400).json({ error: "No image uploaded." });
   }
 
+  let filePath;
   try {
+    filePath = req.file.path;
     // Upload to Supabase Storage
-    const filePath = `avatars/public/${req.file.filename}`;
-    const fileBuffer = await fsPromises.readFile(req.file.path);
+    const supabaseFilePath = `avatars/public/${req.file.filename}`;
+    const fileBuffer = await fsPromises.readFile(filePath);
 
     let uploadError;
     for (let attempt = 1; attempt <= 3; attempt++) {
       const { data, error } = await supabase.storage
         .from("images")
-        .upload(filePath, fileBuffer, {
+        .upload(supabaseFilePath, fileBuffer, {
           contentType: req.file.mimetype,
           upsert: true,
           cacheControl: "3600",
         });
       if (!error) break;
-      updateError = error;
+      uploadError = error;
       console.warn(`Supabase upload attempt ${attempt} failed:`, error);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -264,18 +252,18 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
     // Get public URL
     const {
       data: { publicUrl },
-    } = supabase.storage.from("images").getPublicUrl(filePath);
+    } = supabase.storage.from("images").getPublicUrl(supabaseFilePath);
 
     // Clean up local file
-    await fsPromises.unlink(req.file.path);
+    await fsPromises.unlink(filePath);
 
     console.log("Image uploaded to Supabase:", publicUrl);
     res.json({ url: publicUrl });
   } catch (error) {
     console.error("Image upload error:", error);
-    if (req.file?.path) {
+    if (filePath) {
       try {
-        await fsPromises.unlink(req.file.path);
+        await fsPromises.unlink(filePath);
       } catch (cleanupError) {
         console.error("Cleanup error:", cleanupError);
       }
@@ -292,16 +280,18 @@ app.post("/upload-audio", audioUpload, async (req, res) => {
     return res.status(400).json({ error: "No audio file uploaded." });
   }
 
+  let filePath;
   try {
+    filePath = req.file.path;
     // Upload to Supabase Storage
-    const filePath = `files/public/${req.file.filename}`;
-    const fileBuffer = await fsPromises.readFile(req.file.path);
+    const supabaseFilePath = `files/public/${req.file.filename}`;
+    const fileBuffer = await fsPromises.readFile(filePath);
 
     let uploadError;
     for (let attempt = 1; attempt <= 3; attempt++) {
       const { data, error } = await supabase.storage
         .from("images")
-        .upload(filePath, fileBuffer, {
+        .upload(supabaseFilePath, fileBuffer, {
           contentType: req.file.mimetype,
           upsert: true,
           cacheControl: "3600",
@@ -319,18 +309,18 @@ app.post("/upload-audio", audioUpload, async (req, res) => {
     // Get public URL
     const {
       data: { publicUrl },
-    } = supabase.storage.from("images").getPublicUrl(filePath);
+    } = supabase.storage.from("images").getPublicUrl(supabaseFilePath);
 
     // Clean up local file
-    await fsPromises.unlink(req.file.path);
+    await fsPromises.unlink(filePath);
 
     console.log("Audio uploaded to Supabase:", publicUrl);
     res.json({ url: publicUrl });
   } catch (error) {
     console.error("Audio upload error:", error);
-    if (req.file?.path) {
+    if (filePath) {
       try {
-        await fsPromises.unlink(req.file.path);
+        await fsPromises.unlink(filePath);
       } catch (cleanupError) {
         console.error("Cleanup error:", cleanupError);
       }
@@ -347,11 +337,11 @@ app.post("/upload-document", documentUpload, async (req, res) => {
     return res.status(400).json({ error: "No document uploaded." });
   }
 
+  let filePath;
   try {
+    filePath = path.join(__dirname, "Uploads", req.file.filename);
     // Parse document content
-    const filePath = path.join(__dirname, "Uploads", req.file.filename);
     let documentContent = "";
-
     if (req.file.mimetype === "application/pdf") {
       const dataBuffer = await fsPromises.readFile(filePath);
       const pdfData = await pdfParse(dataBuffer);
@@ -403,9 +393,9 @@ app.post("/upload-document", documentUpload, async (req, res) => {
     });
   } catch (error) {
     console.error("Document upload error:", error);
-    if (req.file?.path) {
+    if (filePath) {
       try {
-        await fsPromises.unlink(req.file.path);
+        await fsPromises.unlink(filePath);
       } catch (cleanupError) {
         console.error("Cleanup error:", cleanupError);
       }
@@ -472,7 +462,19 @@ app.use((err, req, res, next) => {
 
 const server = http.createServer(app);
 
+// Graceful shutdown to prevent memory leaks
+const gracefulShutdown = () => {
+  console.log("Shutting down server...");
+  server.close(() => {
+    console.log("Server closed.");
+    process.exit(0);
+  });
+};
+
+// Handle process termination
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
+
 server.listen(port, () => {
-  console.log(`Server started on port localhost:${port}`);
-  console.log("NGROK_URL from .env:", process.env.NGROK_URL || "Not set");
+  console.log(`Server started on port ${port}`);
 });
