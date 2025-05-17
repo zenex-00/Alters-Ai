@@ -41,7 +41,7 @@ const supabaseAdmin = createClient(
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "Uploads");
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(UploadsDir);
+  fs.mkdirSync(uploadsDir);
 }
 
 // Configure multer for file uploads
