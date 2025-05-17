@@ -103,7 +103,7 @@ app.use(
   })
 );
 
-// Middleware to protect premium routes
+// Middleware to protect premium routes (not used for creator-studio, customize, or chat)
 function guardRoute(req, res, next) {
   if (req.session.isCreator || req.session.allowedAccess) {
     next();
@@ -141,11 +141,19 @@ app.get("/creator-studio", (req, res) => {
   res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
-app.get("/customize", guardRoute, (req, res) => {
+app.get("/customize", (req, res) => {
+  console.log("Accessing /customize, session:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   res.sendFile(path.join(__dirname, "customize.html"));
 });
 
-app.get("/chat", guardRoute, (req, res) => {
+app.get("/chat", (req, res) => {
+  console.log("Accessing /chat, session:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   res.sendFile(path.join(__dirname, "chat.html"));
 });
 
