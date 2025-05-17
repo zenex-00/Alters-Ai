@@ -39,7 +39,7 @@ const supabaseAdmin = createClient(
 );
 
 // Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, "Uploads");
+const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
@@ -185,7 +185,7 @@ app.post("/create-checkout-session", async (req, res) => {
         : `localhost:${port}`;
     const baseUrl = `${protocol}://${host}`;
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig = {
       payment_method_types: ["card"],
       line_items: [
         {
@@ -202,12 +202,18 @@ app.post("/create-checkout-session", async (req, res) => {
       mode: "payment",
       success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/creator-page`,
-      client_reference_id: req.session.userId || null, // Pass userId for webhook
-    });
+    };
+
+    // Only include client_reference_id if userId is a non-empty string
+    if (req.session.userId && req.session.userId.trim() !== "") {
+      sessionConfig.client_reference_id = req.session.userId;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     res.json({ id: session.id });
   } catch (error) {
-    console.error("Stripe checkout error:", error);
+    console.error("Stripe checkout error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -237,7 +243,7 @@ app.get("/payment-success", async (req, res) => {
       res.redirect("/creator-page");
     }
   } catch (error) {
-    console.error("Payment verification error:", error);
+    console.error("Payment verification error:", error.message);
     res.redirect("/creator-page");
   }
 });
@@ -321,7 +327,7 @@ app.post(
             }
 
             if (supabaseUserId) {
-              // Upsert creator record in creators table
+              // Upsert creator record in creatorsuser table
               const { error: upsertError } = await supabaseAdmin
                 .from("creatorsuser")
                 .upsert(
