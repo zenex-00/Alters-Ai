@@ -34,7 +34,7 @@ const supabase = createClient(
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "Uploads");
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+  fs.mkdirSync(UploadsDir);
 }
 
 // Configure multer for file uploads
@@ -133,7 +133,11 @@ app.get("/creator-page", (req, res) => {
   res.sendFile(path.join(__dirname, "Creator-Page.html"));
 });
 
-app.get("/creator-studio", guardRoute, (req, res) => {
+app.get("/creator-studio", (req, res) => {
+  console.log("Accessing /creator-studio, session:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
@@ -199,8 +203,21 @@ app.get("/payment-success", async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
       req.session.isCreator = true;
-      res.redirect("/creator-studio"); // Redirects to Creator-Studio.html
+      console.log(
+        "Payment successful, setting isCreator:",
+        req.session.isCreator
+      );
+      // Explicitly save session before redirect
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/creator-page");
+        }
+        console.log("Session saved, redirecting to /creator-studio");
+        res.redirect("/creator-studio"); // Redirects to Creator-Studio.html
+      });
     } else {
+      console.log("Payment not paid, redirecting to /creator-page");
       res.redirect("/creator-page");
     }
   } catch (error) {
