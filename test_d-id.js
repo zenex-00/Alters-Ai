@@ -1,11 +1,13 @@
 const fetch = require('node-fetch');
 const base64 = require('base-64');
-const fs = require('fs');
+require('dotenv').config();
 
-async function getDidCredits(apiKey) {
-  const url = "https://api.d-id.com/credits";
-  const authString = apiKey + ":";
-  const base64AuthString = base64.encode(authString);
+async function getDidCredits() {  const url = "https://api.d-id.com/credits";
+  const apiKey = process.env.DID_API_KEY;
+  if (!apiKey) {
+    throw new Error('D-ID API key not found in environment variables');
+  }
+  const base64AuthString = base64.encode(apiKey);
 
   const headers = {
     "accept": "application/json",
@@ -19,11 +21,7 @@ async function getDidCredits(apiKey) {
 
 async function main() {
   try {
-    // Read the API key from api.json file
-    const apiKeyJson = JSON.parse(fs.readFileSync('api.json', 'utf8'));
-    const apiKey = apiKeyJson.key;
-
-    const didCredits = await getDidCredits(apiKey);
+    const didCredits = await getDidCredits();
     // Extracting just the 'remaining' and 'total' values
     const creditsSummary = {
       remaining: didCredits.remaining,
