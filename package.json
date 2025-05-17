@@ -21,6 +21,7 @@
     "openai": "^4.93.0",
     "pdf-parse": "^1.1.1",
     "postgres": "^3.4.5",
+    "raw-body": "^3.0.0",
     "session": "^0.1.0",
     "stripe": "^18.1.0",
     "uuid": "^11.1.0"

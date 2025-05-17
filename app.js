@@ -9,6 +9,7 @@ const { createClient } = require("@supabase/supabase-js");
 const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
+const getRawBody = require("raw-body");
 require("dotenv").config();
 
 // Initialize Firebase Admin with service account
@@ -25,16 +26,22 @@ app.use(express.json());
 // Initialize Stripe with secret key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Initialize Supabase client with environment variables
+// Initialize Supabase client with anon key for general use
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
+// Initialize Supabase client with service_role key for server-side operations
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "Uploads");
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+  fs.mkdirSync(UploadsDir);
 }
 
 // Configure multer for file uploads
@@ -195,6 +202,7 @@ app.post("/create-checkout-session", async (req, res) => {
       mode: "payment",
       success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/creator-page`,
+      client_reference_id: req.session.userId || null, // Pass userId for webhook
     });
 
     res.json({ id: session.id });
@@ -233,6 +241,132 @@ app.get("/payment-success", async (req, res) => {
     res.redirect("/creator-page");
   }
 });
+
+// Stripe webhook handler
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }), // Parse raw body for webhook signature
+  async (req, res) => {
+    const signature = req.headers["stripe-signature"];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event;
+    try {
+      // Verify webhook signature
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        webhookSecret
+      );
+      console.log("Webhook received:", {
+        type: event.type,
+        id: event.id,
+        timestamp: new Date(event.created * 1000).toISOString(),
+      });
+    } catch (error) {
+      console.error("Webhook signature verification failed:", error.message);
+      return res
+        .status(400)
+        .json({ error: "Webhook signature verification failed" });
+    }
+
+    try {
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object;
+          console.log("Processing checkout.session.completed:", {
+            sessionId: session.id,
+            paymentStatus: session.payment_status,
+            customerId: session.customer,
+            clientReferenceId: session.client_reference_id,
+          });
+
+          if (session.payment_status === "paid") {
+            const customerId = session.customer;
+            const userId = session.client_reference_id; // From create-checkout-session
+            const email = session.customer_details?.email;
+
+            let supabaseUserId = userId;
+            if (email) {
+              // Try to find or create user in Supabase auth
+              const { data: authUser, error: userError } =
+                await supabaseAdmin.auth.admin.getUserByEmail(email);
+              if (userError) {
+                console.warn(
+                  "Error fetching user by email:",
+                  userError.message
+                );
+              }
+
+              if (authUser?.user) {
+                supabaseUserId = authUser.user.id;
+              } else {
+                // Create a new user in Supabase auth
+                const { data: newUser, error: createError } =
+                  await supabaseAdmin.auth.admin.createUser({
+                    email,
+                    email_confirm: true,
+                    user_metadata: { stripe_customer_id: customerId },
+                  });
+                if (createError) {
+                  console.error(
+                    "Error creating Supabase user:",
+                    createError.message
+                  );
+                  throw createError;
+                }
+                supabaseUserId = newUser.user.id;
+                console.log("Created new Supabase user:", supabaseUserId);
+              }
+            }
+
+            if (supabaseUserId) {
+              // Upsert creator record in creators table
+              const { error: upsertError } = await supabaseAdmin
+                .from("creatorsusers")
+                .upsert(
+                  {
+                    id: supabaseUserId,
+                    stripe_customer_id: customerId,
+                    is_creator: true,
+                    created_at: new Date().toISOString(),
+                  },
+                  { onConflict: "id" }
+                );
+
+              if (upsertError) {
+                console.error("Error upserting creator:", upsertError.message);
+                throw upsertError;
+              }
+
+              console.log(
+                `Creator saved for user ${supabaseUserId}, customer ${customerId}`
+              );
+            } else {
+              console.warn(
+                "No user ID or email available for creator creation",
+                {
+                  customerId,
+                  email,
+                  userId,
+                }
+              );
+            }
+          } else {
+            console.log("Payment not paid, skipping creator creation");
+          }
+          break;
+        }
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Webhook processing error:", error.message);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  }
+);
 
 // Test route to confirm server is running
 app.get("/test", (req, res) => {
@@ -367,11 +501,11 @@ app.post("/upload-document", documentUpload, async (req, res) => {
     filePath = path.join(__dirname, "Uploads", req.file.filename);
     // Parse document content
     let documentContent = "";
-    if (req.file.mimetype === "application/pdf") {
+    if (file.mimetype === "application/pdf") {
       const dataBuffer = await fsPromises.readFile(filePath);
       const pdfData = await pdfParse(dataBuffer);
       documentContent = pdfData.text;
-    } else if (req.file.mimetype === "text/plain") {
+    } else if (file.mimetype === "text/plain") {
       documentContent = await fsPromises.readFile(filePath, "utf-8");
     }
 
