@@ -5,228 +5,287 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Customize Avatar - Alters.ai</title>
     <link rel="stylesheet" href="/enhanced-styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
     <script src="/navbar.js" defer></script>
   </head>
-  <body>
-    <!-- Updated Home button to use dynamic routing -->
-    <div style="text-align: center; margin-top: 20px">
-      <button onclick="window.location.href='/creator-studio'">Home</button>
-    </div>
+  <body class="hero-bg">
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <a href="/" class="logo-text"
+            >alters<span class="accent-text">.</span
+            ><span class="accent-text small-text">ai</span></a
+          >
+        </div>
+        <div class="nav-links">
+          <a href="/creator-studio" class="nav-link">Home</a>
+          <a href="/marketplace" class="nav-link">Marketplace</a>
+          <a href="/chat" class="nav-link">Chat</a>
+        </div>
+      </div>
+    </nav>
+
     <main>
-      <h1>Customize Your Avatar</h1>
-      <p>Use our tools to create your perfect digital twin.</p>
       <div id="content">
-        <div class="nav-bar">
-          <button id="back-button" class="nav-button">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M15 19L8 12L15 5"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            Back
-          </button>
-          <button id="next-button" class="nav-button">
-            Next
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 5L16 12L9 19"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
         <h1 class="title">Customize Your Avatar</h1>
-        <div class="timeline">
-          <div class="timeline-step active" data-step="1">
-            <span class="step-number">1</span>
-            <span class="step-label">Basics</span>
+        <p class="subtitle">
+          Use our tools to create your perfect digital twin.
+        </p>
+        <div id="content">
+          <div class="nav-bar">
+            <button id="back-button" class="nav-button">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 19L8 12L15 5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Back
+            </button>
+            <button id="next-button" class="nav-button">
+              Next
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9 5L16 12L9 19"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
           </div>
-          <div class="timeline-step" data-step="2">
-            <span class="step-number">2</span>
-            <span class="step-label">Personality</span>
+          <div class="timeline">
+            <div class="timeline-step active" data-step="1">
+              <span class="step-number">1</span>
+              <span class="step-label">Basics</span>
+            </div>
+            <div class="timeline-step" data-step="2">
+              <span class="step-number">2</span>
+              <span class="step-label">Personality</span>
+            </div>
+            <div class="timeline-step" data-step="3">
+              <span class="step-number">3</span>
+              <span class="step-label">Knowledge</span>
+            </div>
+            <div class="timeline-step" data-step="4">
+              <span class="step-number">4</span>
+              <span class="step-label">Voice</span>
+            </div>
           </div>
-          <div class="timeline-step" data-step="3">
-            <span class="step-number">3</span>
-            <span class="step-label">Knowledge</span>
-          </div>
-          <div class="timeline-step" data-step="4">
-            <span class="step-number">4</span>
-            <span class="step-label">Voice</span>
-          </div>
-        </div>
-        <div class="main-container">
-          <div class="customize-section">
-            <form id="customize-form">
-              <!-- Step 1: Basics -->
-              <div class="step" id="step-1">
-                <div class="form-group">
-                  <label for="avatar-name">Avatar Name</label>
-                  <input
-                    type="text"
-                    id="avatar-name"
-                    placeholder="e.g., Zunair"
-                    required
-                  />
-                </div>
-              </div>
-
-              <!-- Step 2: Personality -->
-              <div class="step" id="step-2" style="display: none">
-                <div class="form-group">
-                  <label for="avatar-personality">Personality</label>
-                  <div class="personality-tags">
-                    <button type="button" class="tag" data-value="Patient">
-                      Patient
-                    </button>
-                    <button type="button" class="tag" data-value="Humorous">
-                      Humorous
-                    </button>
-                    <button
-                      type="button"
-                      class="tag"
-                      data-value="Knowledgeable"
-                    >
-                      Knowledgeable
-                    </button>
-                    <button type="button" class="tag" data-value="Friendly">
-                      Friendly
-                    </button>
-                    <button type="button" class="tag" data-value="Professional">
-                      Professional
-                    </button>
-                    <button type="button" class="tag" data-value="Encouraging">
-                      Encouraging
-                    </button>
+          <div class="main-container">
+            <div class="customize-section">
+              <form id="customize-form">
+                <!-- Step 1: Basics -->
+                <div class="step" id="step-1">
+                  <div class="form-group">
+                    <label for="avatar-name">Avatar Name</label>
+                    <input
+                      type="text"
+                      id="avatar-name"
+                      placeholder="e.g., Zunair"
+                      required
+                    />
                   </div>
-                  <textarea
-                    id="avatar-personality"
-                    placeholder="e.g., Patient, humorous, knowledgeable"
-                    required
-                  ></textarea>
                 </div>
-                <div class="form-group">
-                  <label for="avatar-prompt">Prompt</label>
-                  <textarea
-                    id="avatar-prompt"
-                    placeholder="e.g., Act as a doctor"
-                    required
-                  ></textarea>
-                </div>
-              </div>
 
-              <!-- Step 3: Knowledge -->
-              <div class="step" id="step-3" style="display: none">
-                <div class="form-group">
-                  <label>Select Knowledge Context</label>
-                  <div class="knowledge-options">
-                    <div class="knowledge-card" data-value="technology">
-                      <span class="icon">💻</span>
-                      <strong>Technology</strong>
-                      <p>Programming, AI, gadgets, and tech trends</p>
+                <!-- Step 2: Personality -->
+                <div class="step" id="step-2" style="display: none">
+                  <div class="form-group">
+                    <label for="avatar-personality">Personality</label>
+                    <div class="personality-tags">
+                      <button type="button" class="tag" data-value="Patient">
+                        Patient
+                      </button>
+                      <button type="button" class="tag" data-value="Humorous">
+                        Humorous
+                      </button>
+                      <button
+                        type="button"
+                        class="tag"
+                        data-value="Knowledgeable"
+                      >
+                        Knowledgeable
+                      </button>
+                      <button type="button" class="tag" data-value="Friendly">
+                        Friendly
+                      </button>
+                      <button
+                        type="button"
+                        class="tag"
+                        data-value="Professional"
+                      >
+                        Professional
+                      </button>
+                      <button
+                        type="button"
+                        class="tag"
+                        data-value="Encouraging"
+                      >
+                        Encouraging
+                      </button>
                     </div>
-                    <div class="knowledge-card" data-value="medical">
-                      <span class="icon">🩺</span>
-                      <strong>Medical</strong>
-                      <p>Health information and medical knowledge</p>
-                    </div>
-                    <div class="knowledge-card" data-value="general">
-                      <span class="icon">🌐</span>
-                      <strong>General Knowledge</strong>
-                      <p>Broad knowledge across many domains</p>
-                    </div>
-                    <div class="knowledge-card" data-value="legal">
-                      <span class="icon">⚖️</span>
-                      <strong>Legal</strong>
-                      <p>Laws, regulations, and legal concepts</p>
-                    </div>
-                    <div class="knowledge-card" data-value="creative">
-                      <span class="icon">✍️</span>
-                      <strong>Creative</strong>
-                      <p>Storytelling and creative content</p>
-                    </div>
-                    <div class="knowledge-card" data-value="education">
-                      <span class="icon">🎓</span>
-                      <strong>Education</strong>
-                      <p>Teaching and educational content</p>
-                    </div>
-                    <div class="knowledge-card" data-value="finance">
-                      <span class="icon">💰</span>
-                      <strong>Finance</strong>
-                      <p>Money, investing, and financial advice</p>
-                    </div>
-                    <div class="knowledge-card" data-value="document">
-                      <span class="icon">📄</span>
-                      <strong>Document-Based</strong>
-                      <p>Upload your own documents</p>
-                    </div>
+                    <textarea
+                      id="avatar-personality"
+                      placeholder="e.g., Patient, humorous, knowledgeable"
+                      required
+                    ></textarea>
                   </div>
-                  <input type="hidden" id="avatar-knowledge" required />
+                  <div class="form-group">
+                    <label for="avatar-prompt">Prompt</label>
+                    <textarea
+                      id="avatar-prompt"
+                      placeholder="e.g., Act as a doctor"
+                      required
+                    ></textarea>
+                  </div>
                 </div>
-                <div
-                  class="form-group"
-                  id="document-upload-group"
-                  style="display: none"
-                >
-                  <label for="document-upload"
-                    >Upload Document (PDF, TXT)</label
+
+                <!-- Step 3: Knowledge -->
+                <div class="step" id="step-3" style="display: none">
+                  <div class="form-group">
+                    <label>Select Knowledge Context</label>
+                    <div class="knowledge-options">
+                      <div class="knowledge-card" data-value="technology">
+                        <span class="icon">💻</span>
+                        <strong>Technology</strong>
+                        <p>Programming, AI, gadgets, and tech trends</p>
+                      </div>
+                      <div class="knowledge-card" data-value="medical">
+                        <span class="icon">🩺</span>
+                        <strong>Medical</strong>
+                        <p>Health information and medical knowledge</p>
+                      </div>
+                      <div class="knowledge-card" data-value="general">
+                        <span class="icon">🌐</span>
+                        <strong>General Knowledge</strong>
+                        <p>Broad knowledge across many domains</p>
+                      </div>
+                      <div class="knowledge-card" data-value="legal">
+                        <span class="icon">⚖️</span>
+                        <strong>Legal</strong>
+                        <p>Laws, regulations, and legal concepts</p>
+                      </div>
+                      <div class="knowledge-card" data-value="creative">
+                        <span class="icon">✍️</span>
+                        <strong>Creative</strong>
+                        <p>Storytelling and creative content</p>
+                      </div>
+                      <div class="knowledge-card" data-value="education">
+                        <span class="icon">🎓</span>
+                        <strong>Education</strong>
+                        <p>Teaching and educational content</p>
+                      </div>
+                      <div class="knowledge-card" data-value="finance">
+                        <span class="icon">💰</span>
+                        <strong>Finance</strong>
+                        <p>Money, investing, and financial advice</p>
+                      </div>
+                      <div class="knowledge-card" data-value="document">
+                        <span class="icon">📄</span>
+                        <strong>Document-Based</strong>
+                        <p>Upload your own documents</p>
+                      </div>
+                    </div>
+                    <input type="hidden" id="avatar-knowledge" required />
+                  </div>
+                  <div
+                    class="form-group"
+                    id="document-upload-group"
+                    style="display: none"
                   >
-                  <input
-                    type="file"
-                    id="document-upload"
-                    accept=".pdf,.txt"
-                    style="padding: 16px"
-                  />
-                </div>
-              </div>
-
-              <!-- Step 4: Voice -->
-              <div class="step" id="step-4" style="display: none">
-                <div class="form-group">
-                  <label for="avatar-voice">Select Voice</label>
-                  <div style="display: flex; align-items: center; gap: 10px">
-                    <select id="avatar-voice" required>
-                      <option value="">Select a voice</option>
-                      <!-- Populated dynamically -->
-                    </select>
-                    <button type="button" id="preview-voice-button">
-                      Preview Voice
-                    </button>
+                    <label for="document-upload"
+                      >Upload Document (PDF, TXT)</label
+                    >
+                    <div class="document-upload-area" id="doc-drop-area">
+                      <p><i class="fa-solid fa-cloud-arrow-up"></i></p>
+                      <p>Drag & drop your document here or click to browse</p>
+                      <p class="file-info">PDF or TXT, max 5MB</p>
+                      <input
+                        type="file"
+                        id="document-upload"
+                        accept=".pdf,.txt"
+                        style="display: none"
+                      />
+                    </div>
+                    <div id="document-preview" class="file-preview">
+                      <div class="file-preview-info">
+                        <i class="fa-solid fa-file-pdf document-icon"></i>
+                        <span id="document-name">No file selected</span>
+                      </div>
+                      <button
+                        type="button"
+                        id="remove-document"
+                        class="remove-file"
+                      >
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="form-actions">
-                <button type="button" id="prev-step" class="action-button">
-                  Back
-                </button>
-                <button type="button" id="next-step" class="action-button">
-                  Continue
-                </button>
-              </div>
-            </form>
+                <!-- Step 4: Voice -->
+                <div class="step" id="step-4" style="display: none">
+                  <div class="form-group">
+                    <label for="avatar-voice">Select Voice</label>
+                    <div style="display: flex; align-items: center; gap: 10px">
+                      <select id="avatar-voice" required>
+                        <option value="">Select a voice</option>
+                        <!-- Populated dynamically -->
+                      </select>
+                      <button type="button" id="preview-voice-button">
+                        <i class="fa-solid fa-play"></i> Preview
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" id="prev-step" class="action-button">
+                    Back
+                  </button>
+                  <button type="button" id="next-step" class="action-button">
+                    Continue
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
     </main>
+
+    <!-- Floating particles background -->
+    <div id="particles-container" class="particles-container"></div>
+
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
         console.log("customize.html: Script loaded");
@@ -251,6 +310,10 @@
         const personalityTextarea =
           document.getElementById("avatar-personality");
         const nameInput = document.getElementById("avatar-name");
+        const docDropArea = document.getElementById("doc-drop-area");
+        const documentPreview = document.getElementById("document-preview");
+        const documentName = document.getElementById("document-name");
+        const removeDocument = document.getElementById("remove-document");
 
         let currentStep = 1;
         const totalSteps = 4;
@@ -277,6 +340,64 @@
               card.classList.add("selected");
             }
           });
+        }
+
+        // Initialize document upload area
+        documentPreview.style.display = "none";
+
+        // Document drop area event listeners
+        docDropArea.addEventListener("click", () => {
+          documentUpload.click();
+        });
+
+        docDropArea.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          docDropArea.classList.add("drag-over");
+        });
+
+        docDropArea.addEventListener("dragleave", () => {
+          docDropArea.classList.remove("drag-over");
+        });
+
+        docDropArea.addEventListener("drop", (e) => {
+          e.preventDefault();
+          docDropArea.classList.remove("drag-over");
+          if (e.dataTransfer.files.length) {
+            handleDocumentSelection(e.dataTransfer.files[0]);
+          }
+        });
+
+        documentUpload.addEventListener("change", (e) => {
+          if (e.target.files.length) {
+            handleDocumentSelection(e.target.files[0]);
+          }
+        });
+
+        removeDocument.addEventListener("click", () => {
+          documentUpload.value = "";
+          documentPreview.style.display = "none";
+          docDropArea.style.display = "block";
+          documentName.textContent = "No file selected";
+        });
+
+        function handleDocumentSelection(file) {
+          const fileError = validateFile(file);
+          if (fileError) {
+            showError(fileError, documentUpload);
+            return;
+          }
+
+          documentName.textContent = file.name;
+          documentPreview.style.display = "flex";
+          docDropArea.style.display = "none";
+
+          // Update icon based on file type
+          const documentIcon = documentPreview.querySelector(".document-icon");
+          if (file.type === "application/pdf") {
+            documentIcon.className = "fa-solid fa-file-pdf document-icon";
+          } else {
+            documentIcon.className = "fa-solid fa-file-lines document-icon";
+          }
         }
 
         // Display error messages inline
@@ -318,6 +439,8 @@
             knowledgeInput.value === "document" ? "block" : "none";
           if (knowledgeInput.value !== "document") {
             documentUpload.value = ""; // Clear file input
+            documentPreview.style.display = "none";
+            docDropArea.style.display = "block";
           }
         }
 
@@ -438,7 +561,8 @@
           }
 
           previewVoiceButton.disabled = true;
-          previewVoiceButton.textContent = "Playing...";
+          previewVoiceButton.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Playing...';
 
           try {
             const response = await fetch("/api-config");
@@ -488,14 +612,16 @@
 
             audio.onended = () => {
               previewVoiceButton.disabled = false;
-              previewVoiceButton.textContent = "Preview Voice";
+              previewVoiceButton.innerHTML =
+                '<i class="fa-solid fa-play"></i> Preview';
               URL.revokeObjectURL(audioUrl);
             };
           } catch (error) {
             console.error("customize.html: Error previewing voice:", error);
             showError(`Failed to preview voice: ${error.message}`, voiceSelect);
             previewVoiceButton.disabled = false;
-            previewVoiceButton.textContent = "Preview Voice";
+            previewVoiceButton.innerHTML =
+              '<i class="fa-solid fa-play"></i> Preview';
           }
         }
 
@@ -683,7 +809,42 @@
 
         // Initialize first step
         updateStep(1);
+
+        // Create particles for background effect
+        createParticles();
       });
+
+      // Create floating particles
+      function createParticles() {
+        const particlesContainer = document.getElementById(
+          "particles-container"
+        );
+        const particleCount = 30;
+
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.classList.add("particle");
+
+          // Random size between 2px and 6px
+          const size = Math.random() * 4 + 2;
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+
+          // Random position
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${Math.random() * 100}%`;
+
+          // Random opacity
+          particle.style.opacity = Math.random() * 0.5 + 0.1;
+
+          // Animation duration and delay
+          const duration = Math.random() * 20 + 10;
+          const delay = Math.random() * 5;
+          particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+
+          particlesContainer.appendChild(particle);
+        }
+      }
     </script>
   </body>
 </html>

@@ -20,11 +20,25 @@
     <link rel="stylesheet" href="/enhanced-styles.css" />
     <script src="/navbar.js" defer></script>
   </head>
-  <body>
-    <main>
-      <div style="text-align: center; margin-top: 20px">
-        <button onclick="window.location.href='/creator-studio'">Home</button>
+  <body class="hero-bg">
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <a href="/" class="logo-text"
+            >alters<span class="accent-text">.</span
+            ><span class="accent-text small-text">ai</span></a
+          >
+        </div>
+        <div class="nav-links">
+          <a href="/creator-studio" class="nav-link">Home</a>
+          <a href="/marketplace" class="nav-link">Marketplace</a>
+          <a href="/customize" class="nav-link">Customize</a>
+        </div>
       </div>
+    </nav>
+
+    <main>
       <div id="content">
         <h1 class="title">YOUR AI ALTER</h1>
 
@@ -50,7 +64,7 @@
                 ></video>
                 <img
                   id="avatar-image"
-                  src=""
+                  src="/placeholder.svg"
                   alt="Custom Avatar"
                   style="
                     display: none;
@@ -105,13 +119,14 @@
       <div id="image-upload-modal" class="modal">
         <div class="modal-content">
           <span class="close-modal">×</span>
-          <h2 style="color: #00eaff; text-align: center">
+          <h2 style="color: #ff8a2b; text-align: center">
             Upload Custom Alter
           </h2>
 
           <div class="image-upload-area" id="drop-area">
+            <p><i class="fa-solid fa-cloud-arrow-up fa-2x"></i></p>
             <p>Drag & drop your image here or click to browse</p>
-            <p style="font-size: 0.9em; color: #ccc">
+            <p class="file-info">
               Image must be JPEG/PNG, < 25MB, and ≤ 1920x1080 pixels
             </p>
             <input type="file" id="file-input" accept="image/*" />
@@ -119,11 +134,9 @@
 
           <img id="image-preview" src="#" alt="Preview" />
 
-          <div style="text-align: center; margin-top: 20px">
+          <div class="modal-actions">
             <button id="confirm-upload">Confirm</button>
-            <button id="cancel-upload" style="background-color: #444">
-              Cancel
-            </button>
+            <button id="cancel-upload">Cancel</button>
           </div>
         </div>
       </div>
@@ -143,11 +156,48 @@
           const customizeButton = document.getElementById("customize-button");
           customizeButton.addEventListener("click", () => {
             console.log(
-              "chat.html: Customize button clicked, redirecting to /"
+              "chat.html: Customize button clicked, redirecting to /customize"
             );
-            window.location.href = "/";
+            window.location.href = "/customize";
           });
+
+          // Create particles for background effect
+          createParticles();
         });
+
+        // Create floating particles
+        function createParticles() {
+          const particlesContainer = document.createElement("div");
+          particlesContainer.id = "particles-container";
+          particlesContainer.className = "particles-container";
+          document.body.appendChild(particlesContainer);
+
+          const particleCount = 30;
+
+          for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement("div");
+            particle.classList.add("particle");
+
+            // Random size between 2px and 6px
+            const size = Math.random() * 4 + 2;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+
+            // Random position
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+
+            // Random opacity
+            particle.style.opacity = Math.random() * 0.5 + 0.1;
+
+            // Animation duration and delay
+            const duration = Math.random() * 20 + 10;
+            const delay = Math.random() * 5;
+            particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+
+            particlesContainer.appendChild(particle);
+          }
+        }
       </script>
     </main>
   </body>
