@@ -390,9 +390,22 @@ app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
 
   let filePath;
   try {
-    filePath = req.file.path;
-    // Upload to Supabase Storage
-    const supabaseFilePath = `avatars/public/${req.file.filename}`;
+    filePath = req.file.path; // Upload to Supabase Storage with page-specific path
+    // Get the referrer URL to determine which page the upload came from
+    const referrer = req.get("Referer") || "";
+    let folder = "general";
+
+    if (referrer.includes("chat.html")) {
+      folder = "chat";
+    } else if (referrer.includes("business-alter.html")) {
+      folder = "business";
+    } else if (referrer.includes("doctor-alter.html")) {
+      folder = "doctor";
+    } else if (referrer.includes("GymGuide-alter.html")) {
+      folder = "gym";
+    }
+
+    const supabaseFilePath = `avatars/${folder}/${req.file.filename}`;
     const fileBuffer = await fsPromises.readFile(filePath);
 
     let uploadError;
