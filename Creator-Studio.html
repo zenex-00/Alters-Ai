@@ -256,7 +256,7 @@
         <div class="flex items-center justify-between p-6">
           <div class="flex items-center space-x-6">
             <a
-              href="https://readdy.ai/home/c6a5ab58-32fd-4f5d-b1ed-b1a2223e7d4b/87d8a025-9ba2-4722-9a4e-eb2bd0b9443f"
+              href="/marketplace"
               data-readdy="true"
               class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
             >
@@ -278,20 +278,20 @@
               <span>Create Your Own Alter</span>
             </button>
             <!-- Notification -->
-            <div class="relative">
+            <!-- <div class="relative">
               <button
                 class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
               >
                 <i class="ri-notification-3-line text-xl"></i>
                 <span class="notification-dot"></span>
               </button>
-            </div>
+            </div> -->
             <!-- Help -->
-            <button
+            <!-- <button
               class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
             >
               <i class="ri-question-line text-xl"></i>
-            </button>
+            </button> -->
           </div>
         </div>
       </header>
@@ -312,19 +312,16 @@
                 realistic expressions and natural voice.
               </p>
               <div class="flex flex-wrap gap-4">
-                <button
-                  class="bg-primary text-white px-5 py-2.5 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
-                >
-                  <div class="w-5 h-5 mr-2 flex items-center justify-center">
-                    <i class="ri-play-line"></i>
-                  </div>
-                  <span>Watch Tutorial</span>
-                </button>
-                <button
-                  class="bg-white bg-opacity-10 text-white px-5 py-2.5 rounded-button font-medium hover:bg-opacity-20 transition-all whitespace-nowrap"
-                >
-                  Explore Templates
-                </button>
+                <a href="/customize">
+                  <button
+                    class="bg-primary text-white px-5 py-2.5 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
+                  >
+                    <div class="w-5 h-5 mr-2 flex items-center justify-center">
+                      <i class="ri-play-line"></i>
+                    </div>
+                    <span>Get Started</span>
+                  </button>
+                </a>
               </div>
             </div>
             <div class="md:w-1/3 flex justify-center">
@@ -395,146 +392,6 @@
           </div>
         </div>
         <!-- Resource Usage -->
-        <div class="mb-10">
-          <h3 class="text-xl font-bold mb-6">Resource Usage</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Usage Stats -->
-            <div class="bg-secondary bg-opacity-30 rounded-xl p-6">
-              <h4 class="font-bold mb-4">This Month's Usage</h4>
-              <div class="space-y-6">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-400"
-                      >Generation Credits</span
-                    >
-                    <span class="text-sm">78% (780/1000)</span>
-                  </div>
-                  <div class="usage-progress">
-                    <div class="usage-progress-bar" style="width: 78%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-400">Storage Space</span>
-                    <span class="text-sm">45% (4.5GB/10GB)</span>
-                  </div>
-                  <div class="usage-progress">
-                    <div class="usage-progress-bar" style="width: 45%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-400">Voice Generation</span>
-                    <span class="text-sm">62% (310/500 min)</span>
-                  </div>
-                  <div class="usage-progress">
-                    <div class="usage-progress-bar" style="width: 62%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-400">Video Rendering</span>
-                    <span class="text-sm">30% (90/300 min)</span>
-                  </div>
-                  <div class="usage-progress">
-                    <div class="usage-progress-bar" style="width: 30%"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-6 flex justify-between">
-                <button
-                  class="text-primary text-sm flex items-center hover:underline"
-                >
-                  <span>View Detailed Usage</span>
-                  <div class="w-4 h-4 ml-1 flex items-center justify-center">
-                    <i class="ri-arrow-right-line"></i>
-                  </div>
-                </button>
-                <button
-                  class="bg-primary text-white px-4 py-2 rounded-button text-sm font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
-                >
-                  Buy More Credits
-                </button>
-              </div>
-            </div>
-            <!-- Activity Log -->
-            <div class="bg-secondary bg-opacity-30 rounded-xl p-6">
-              <div class="flex items-center justify-between mb-4">
-                <h4 class="font-bold">Recent Activity</h4>
-                <button class="text-gray-400 hover:text-white">
-                  <i class="ri-refresh-line"></i>
-                </button>
-              </div>
-              <div class="space-y-4">
-                <div class="flex items-start">
-                  <div
-                    class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
-                  >
-                    <i class="ri-edit-line text-primary"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium">Updated "Executive Emma"</p>
-                    <p class="text-sm text-gray-400">
-                      Modified voice settings and expressions
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">Today, 10:23 AM</p>
-                  </div>
-                </div>
-                <div class="flex items-start">
-                  <div
-                    class="w-10 h-10 rounded-full bg-green-500 bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
-                  >
-                    <i class="ri-movie-line text-green-500"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium">Generated Video</p>
-                    <p class="text-sm text-gray-400">
-                      Created 2-minute product presentation
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">Yesterday, 4:45 PM</p>
-                  </div>
-                </div>
-                <div class="flex items-start">
-                  <div
-                    class="w-10 h-10 rounded-full bg-blue-500 bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
-                  >
-                    <i class="ri-voice-recognition-line text-blue-500"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium">Voice Training Completed</p>
-                    <p class="text-sm text-gray-400">
-                      Finished voice training for "Tech Thomas"
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">
-                      Apr 22, 2025, 2:30 PM
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-start">
-                  <div
-                    class="w-10 h-10 rounded-full bg-purple-500 bg-opacity-10 flex items-center justify-center mr-3 flex-shrink-0"
-                  >
-                    <i class="ri-add-circle-line text-purple-500"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium">Created New Project</p>
-                    <p class="text-sm text-gray-400">
-                      Started "Tech Thomas" project
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">
-                      Apr 22, 2025, 11:15 AM
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <button
-                class="mt-6 w-full border border-gray-700 text-white py-2 rounded-button font-medium hover:bg-white hover:bg-opacity-5 transition-all whitespace-nowrap"
-              >
-                View All Activity
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </main>
     <!-- Create Alter Modal -->
