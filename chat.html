@@ -83,6 +83,9 @@
             <div class="chat-header">
               <h2>Chat</h2>
               <div class="chat-options">
+                <button id="publish-button" title="Publish to Marketplace">
+                  <i class="fa-solid fa-store"></i>
+                </button>
                 <button id="customize-button" title="Customize Avatar">
                   <i class="fa-solid fa-gear"></i>
                 </button>
@@ -141,6 +144,44 @@
         </div>
       </div>
 
+      <!-- Publish to Marketplace Modal -->
+      <div id="publish-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-modal">×</span>
+          <h2 style="color: #ff8a2b; text-align: center">Publish to Marketplace</h2>
+          
+          <div class="form-group">
+            <label for="alter-name">Alter Name</label>
+            <input type="text" id="alter-name" placeholder="Give your alter a name" required />
+          </div>
+          <div class="form-group">
+            <label for="alter-description">Description</label>
+            <textarea id="alter-description" placeholder="Describe what makes your alter special..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="alter-category">Category</label>
+            <select id="alter-category" required>
+              <option value="">Select a category</option>
+              <option value="professional">Professional</option>
+              <option value="gaming">Gaming</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="service">Service</option>
+              <option value="education">Education</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="creator-name">Creator Name</label>
+            <input type="text" id="creator-name" placeholder="Your name or username" required />
+          </div>
+
+          <div class="modal-actions">
+            <button id="confirm-publish">Publish</button>
+            <button id="cancel-publish">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <audio id="audio-element" class="hidden-audio" autoplay></audio>
       <script type="module" src="./streaming-client-api.js"></script>
       <script type="module" src="./image-upload.js"></script>
@@ -151,15 +192,121 @@
         crossorigin="anonymous"
         referrerpolicy="no-referrer"
       ></script>
-      <script>
+      <script type="module">
+        import { publishAlter } from './marketplace-integration.js';
+        
         document.addEventListener("DOMContentLoaded", () => {
           const customizeButton = document.getElementById("customize-button");
+          const publishButton = document.getElementById("publish-button");
+          const publishModal = document.getElementById("publish-modal");
+          const closeModal = publishModal.querySelector(".close-modal");
+          const confirmPublish = document.getElementById("confirm-publish");
+          const cancelPublish = document.getElementById("cancel-publish");
+          const alterNameInput = document.getElementById("alter-name");
+          const alterDescriptionInput = document.getElementById("alter-description");
+          const alterCategoryInput = document.getElementById("alter-category");
+          const creatorNameInput = document.getElementById("creator-name");
+          
           customizeButton.addEventListener("click", () => {
             console.log(
               "chat.html: Customize button clicked, redirecting to /customize"
             );
             window.location.href = "/customize";
           });
+
+          // Open modal when publish button is clicked
+          publishButton.addEventListener("click", () => {
+            // Pre-fill name if available from settings
+            const savedSettings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
+            if (savedSettings.name) {
+              alterNameInput.value = savedSettings.name;
+            }
+            publishModal.style.display = "block";
+          });
+          
+          // Close modal when close button is clicked
+          closeModal.addEventListener("click", () => {
+            publishModal.style.display = "none";
+          });
+          
+          // Close modal when cancel button is clicked
+          cancelPublish.addEventListener("click", () => {
+            publishModal.style.display = "none";
+          });
+          
+          // Handle confirm publish button click
+          confirmPublish.addEventListener("click", async () => {
+            const name = alterNameInput.value.trim();
+            const description = alterDescriptionInput.value.trim();
+            const category = alterCategoryInput.value.trim();
+            const creatorName = creatorNameInput.value.trim();
+            
+            // Validate inputs
+            if (!name || !description || !category || !creatorName) {
+              showError("Please fill in all required fields");
+              return;
+            }
+            
+            // Get avatar image URL
+            const avatarImage = document.getElementById("avatar-image");
+            const avatarUrl = avatarImage.src;
+            
+            // Get saved avatar settings
+            const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
+            
+            // Prepare alter data
+            const alterData = {
+              name,
+              description,
+              category,
+              creatorName,
+              avatarUrl,
+              personality: settings.personality || "",
+              prompt: settings.prompt || "",
+              knowledge: settings.knowledge || "",
+              voiceId: settings.voiceId || ""
+            };
+            
+            // Show loading state
+            confirmPublish.disabled = true;
+            confirmPublish.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing...';
+            
+            // Publish alter
+            const result = await publishAlter(alterData);
+            
+            // Reset button state
+            confirmPublish.disabled = false;
+            confirmPublish.innerHTML = 'Publish';
+            
+            // Handle result
+            if (result.success) {
+              alert('Your alter has been published to the marketplace!');
+              publishModal.style.display = 'none';
+              // Redirect to marketplace
+              window.location.href = '/marketplace';
+            } else {
+              showError(`Failed to publish alter: ${result.error}`);
+            }
+          });
+
+          // Display error messages
+          function showError(message) {
+            const errorDiv = document.createElement("div");
+            errorDiv.className = "error-message";
+            errorDiv.style.color = "red";
+            errorDiv.style.marginTop = "10px";
+            errorDiv.textContent = message;
+            
+            // Remove any existing error messages
+            document.querySelectorAll(".error-message").forEach(el => el.remove());
+            
+            // Add new error message
+            const modalActions = document.querySelector(".modal-actions");
+            modalActions.parentNode.insertBefore(errorDiv, modalActions);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => errorDiv.remove(), 5000);
+          }
 
           // Create particles for background effect
           createParticles();

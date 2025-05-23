@@ -1334,3 +1334,89 @@ button:disabled {
   transition: background 0.5s ease, color 0.5s ease, border-color 0.5s ease,
     box-shadow 0.5s ease;
 }
+
+/* Add to enhanced-styles.css */
+
+/* Publish section styles */
+.publish-container {
+  background-color: rgba(255, 138, 43, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.publish-container h3 {
+  color: #ff8a2b;
+  margin-bottom: 10px;
+}
+
+/* Modal styles for publish */
+#publish-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+  background-color: #1a1a1a;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.close-modal {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+  color: #ff8a2b;
+  text-decoration: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#confirm-publish {
+  background-color: #ff8a2b;
+  color: white;
+}
+
+#cancel-publish {
+  background-color: #333;
+  color: white;
+}
+
+/* Delete button styles */
+.delete-alter-btn {
+  transition: all 0.3s ease;
+}
+
+.delete-alter-btn:hover {
+  background-color: rgba(255, 0, 0, 0.9) !important;
+}

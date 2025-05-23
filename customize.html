@@ -100,6 +100,10 @@
               <span class="step-number">4</span>
               <span class="step-label">Voice</span>
             </div>
+            <div class="timeline-step" data-step="5">
+              <span class="step-number">5</span>
+              <span class="step-label">Publish</span>
+            </div>
           </div>
           <div class="main-container">
             <div class="customize-section">
@@ -268,6 +272,39 @@
                   </div>
                 </div>
 
+                <!-- Step 5: Publish to Marketplace -->
+                <div class="step" id="step-5" style="display: none">
+                  <div class="form-group" id="publish-section">
+                    <div class="publish-container">
+                      <h3>Ready to Share Your Alter?</h3>
+                      <p>Make your alter available to others in the marketplace.</p>
+                      <div class="form-group">
+                        <label for="alter-description">Description</label>
+                        <textarea id="alter-description" placeholder="Describe what makes your alter special..." required></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label for="alter-category">Category</label>
+                        <select id="alter-category" required>
+                          <option value="">Select a category</option>
+                          <option value="professional">Professional</option>
+                          <option value="gaming">Gaming</option>
+                          <option value="entertainment">Entertainment</option>
+                          <option value="service">Service</option>
+                          <option value="education">Education</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="creator-name">Creator Name</label>
+                        <input type="text" id="creator-name" placeholder="Your name or username" required />
+                      </div>
+                      <button type="button" id="publish-button" class="action-button primary">
+                        <i class="fa-solid fa-upload"></i> Publish to Marketplace
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="form-actions">
                   <button type="button" id="prev-step" class="action-button">
                     Back
@@ -286,7 +323,9 @@
     <!-- Floating particles background -->
     <div id="particles-container" class="particles-container"></div>
 
-    <script>
+    <script type="module">
+      import { publishAlter } from './marketplace-integration.js';
+      
       document.addEventListener("DOMContentLoaded", async () => {
         console.log("customize.html: Script loaded");
         const form = document.getElementById("customize-form");
@@ -314,9 +353,13 @@
         const documentPreview = document.getElementById("document-preview");
         const documentName = document.getElementById("document-name");
         const removeDocument = document.getElementById("remove-document");
+        const publishButton = document.getElementById("publish-button");
+        const alterDescriptionInput = document.getElementById("alter-description");
+        const alterCategoryInput = document.getElementById("alter-category");
+        const creatorNameInput = document.getElementById("creator-name");
 
         let currentStep = 1;
-        const totalSteps = 4;
+        const totalSteps = 5;
 
         // Load saved settings if they exist
         const savedSettings = JSON.parse(
@@ -483,7 +526,7 @@
           });
           prevButton.style.display = currentStep === 1 ? "none" : "block"; // Hide Back on first step
           nextButton.textContent =
-            currentStep === totalSteps ? "Save & Start Chat" : "Continue";
+            currentStep === totalSteps ? "Skip & Start Chat" : "Continue";
           clearErrors();
         }
 
@@ -702,6 +745,12 @@
                   isValid = false;
                 }
               }
+            } else if (currentStep === 4) {
+              const voiceId = voiceSelect.value;
+              if (!voiceId) {
+                showError("Please select a voice.", voiceSelect);
+                isValid = false;
+              }
             }
 
             if (isValid) {
@@ -787,6 +836,7 @@
                   documentName,
                   documentUrl,
                   documentContent,
+                  avatarUrl: savedSettings.avatarUrl || '',
                 })
               );
               console.log(
@@ -805,6 +855,57 @@
 
         nextNavButton.addEventListener("click", () => {
           nextButton.click();
+        });
+
+        // Handle publish button click
+        publishButton.addEventListener("click", async () => {
+          const name = nameInput.value.trim();
+          const description = alterDescriptionInput.value.trim();
+          const category = alterCategoryInput.value.trim();
+          const creatorName = creatorNameInput.value.trim();
+          const personality = document.getElementById("avatar-personality").value.trim();
+          const prompt = document.getElementById("avatar-prompt").value.trim();
+          const knowledge = knowledgeInput.value;
+          const voiceId = voiceSelect.value;
+          
+          // Validate inputs
+          if (!name || !description || !category || !creatorName || !personality || !prompt || !knowledge || !voiceId) {
+            showError("Please fill in all required fields");
+            return;
+          }
+          
+          // Show loading state
+          publishButton.disabled = true;
+          publishButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing...';
+          
+          // Prepare alter data
+          const alterData = {
+            name,
+            description,
+            category,
+            creatorName,
+            avatarUrl: savedSettings.avatarUrl || '',
+            personality,
+            prompt,
+            knowledge,
+            voiceId
+          };
+          
+          // Publish alter
+          const result = await publishAlter(alterData);
+          
+          // Reset button state
+          publishButton.disabled = false;
+          publishButton.innerHTML = '<i class="fa-solid fa-upload"></i> Publish to Marketplace';
+          
+          // Handle result
+          if (result.success) {
+            alert('Your alter has been published to the marketplace!');
+            // Redirect to marketplace
+            window.location.href = '/marketplace';
+          } else {
+            showError(`Failed to publish alter: ${result.error}`);
+          }
         });
 
         // Initialize first step

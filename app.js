@@ -10,6 +10,7 @@ const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const getRawBody = require("raw-body");
+const crypto = require("crypto");
 require("dotenv").config();
 
 // Initialize Firebase Admin with service account
@@ -106,9 +107,61 @@ app.use(
     secret: process.env.SESSION_SECRET || "alter-session-secret",
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === "production" },
+    cookie: { 
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: 'strict'
+    },
   })
 );
+
+// Middleware to sync Firebase user with Supabase
+async function syncUserMiddleware(req, res, next) {
+  if (req.session.firebaseUser && !req.session.supabaseUserId) {
+    try {
+      // Check if user exists in Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('firebase_uid', req.session.firebaseUser.uid)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+        console.error('Error checking for existing user:', error);
+      }
+      
+      if (data) {
+        // User exists, store Supabase ID in session
+        req.session.supabaseUserId = data.id;
+      } else {
+        // User doesn't exist, create a new one
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            firebase_uid: req.session.firebaseUser.uid,
+            display_name: req.session.firebaseUser.displayName || '',
+            email: req.session.firebaseUser.email || '',
+            photo_url: req.session.firebaseUser.photoURL || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select();
+        
+        if (insertError) {
+          console.error('Error creating user in Supabase:', insertError);
+        } else {
+          req.session.supabaseUserId = newUser[0].id;
+        }
+      }
+    } catch (error) {
+      console.error('Error in syncUserMiddleware:', error);
+    }
+  }
+  next();
+}
+
+// Apply user sync middleware to all routes
+app.use(syncUserMiddleware);
 
 // Middleware to protect premium routes (not used for creator-studio, customize, or chat)
 function guardRoute(req, res, next) {
@@ -168,10 +221,83 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "Login-Page.html"));
 });
 
+// Handle dynamic routes for marketplace alters
+app.get("/markeplace/:alterId.html", async (req, res) => {
+  const alterId = req.params.alterId;
+  
+  // Check if it's a static pre-made alter
+  const staticPath = path.join(__dirname, "markeplace", `${alterId}.html`);
+  if (fs.existsSync(staticPath)) {
+    return res.sendFile(staticPath);
+  }
+  
+  // If not static, try to fetch from database
+  try {
+    const { data, error } = await supabase
+      .from('published_alters')
+      .select('*')
+      .eq('id', alterId)
+      .single();
+    
+    if (error || !data) {
+      console.error('Error fetching alter:', error || 'Alter not found');
+      return res.status(404).send('Alter not found');
+    }
+    
+    // TODO: In a production app, you would render a template with the alter data
+    // For now, redirect to marketplace
+    res.redirect('/marketplace');
+  } catch (error) {
+    console.error('Error in dynamic alter route:', error);
+    res.status(500).send('Server error');
+  }
+});
+
 // Handle "Create Your Own Alter" button click
 app.post("/start-customize", (req, res) => {
   req.session.allowedAccess = true;
   res.redirect("/customize");
+});
+
+// API endpoint to handle login and Firebase user sync
+app.post("/api/login", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+    
+    // Get user details from Firebase
+    const firebaseUser = await admin.auth().getUser(uid);
+    
+    // Store in session
+    req.session.firebaseUser = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: firebaseUser.displayName,
+      photoURL: firebaseUser.photoURL,
+      emailVerified: firebaseUser.emailVerified
+    };
+    
+    // Sync to Supabase happens in middleware
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+
+// API endpoint to get configuration
+app.get("/api-config", (req, res) => {
+  res.json({
+    elevenlabs_key: process.env.ELEVENLABS_API_KEY,
+    did_key: process.env.DID_API_KEY,
+    openai_key: process.env.OPENAI_API_KEY,
+    supabase_url: process.env.SUPABASE_URL,
+    supabase_key: process.env.SUPABASE_ANON_KEY
+  });
 });
 
 // Stripe checkout session creation
@@ -517,23 +643,22 @@ app.post("/upload-document", documentUpload, async (req, res) => {
 
   let filePath;
   try {
-    filePath = path.join(__dirname, "Uploads", req.file.filename);
-    // Parse document content
+    filePath = req.file.path;
+    const fileName = req.file.originalname;
+    const fileType = req.file.mimetype;
+
+    // Extract text content from document
     let documentContent = "";
-    if (req.file.mimetype === "application/pdf") {
+    if (fileType === "application/pdf") {
       const dataBuffer = await fsPromises.readFile(filePath);
       const pdfData = await pdfParse(dataBuffer);
       documentContent = pdfData.text;
-    } else if (req.file.mimetype === "text/plain") {
-      documentContent = await fsPromises.readFile(filePath, "utf-8");
-    }
-
-    if (!documentContent) {
-      throw new Error("Failed to extract content from the file.");
+    } else if (fileType === "text/plain") {
+      documentContent = await fsPromises.readFile(filePath, "utf8");
     }
 
     // Upload to Supabase Storage
-    const supabaseFilePath = `documents/public/${req.file.filename}`;
+    const supabaseFilePath = `documents/${req.file.filename}`;
     const fileBuffer = await fsPromises.readFile(filePath);
 
     let uploadError;
@@ -541,7 +666,7 @@ app.post("/upload-document", documentUpload, async (req, res) => {
       const { data, error } = await supabase.storage
         .from("images")
         .upload(supabaseFilePath, fileBuffer, {
-          contentType: req.file.mimetype,
+          contentType: fileType,
           upsert: true,
           cacheControl: "3600",
         });
@@ -565,9 +690,9 @@ app.post("/upload-document", documentUpload, async (req, res) => {
 
     console.log("Document uploaded to Supabase:", publicUrl);
     res.json({
-      documentName: req.file.originalname,
       documentUrl: publicUrl,
-      documentContent,
+      documentName: fileName,
+      documentContent: documentContent,
     });
   } catch (error) {
     console.error("Document upload error:", error);
@@ -578,81 +703,15 @@ app.post("/upload-document", documentUpload, async (req, res) => {
         console.error("Cleanup error:", cleanupError);
       }
     }
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to process document." });
+    res.status(500).json({ error: error.message });
   }
-});
-
-// Handle Google Auth
-app.post("/auth/google", async (req, res) => {
-  try {
-    const { idToken } = req.body;
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-
-    // Set session
-    req.session.userId = decodedToken.uid;
-    req.session.email = decodedToken.email;
-    req.session.allowedAccess = true;
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Auth error:", error);
-    res.status(401).json({
-      success: false,
-      error: "Authentication failed",
-    });
-  }
-});
-
-// Handle Sign Out
-app.post("/auth/signout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Session destruction error:", err);
-      return res.status(500).json({ error: "Failed to sign out" });
-    }
-    res.json({ success: true });
-  });
-});
-
-// API configuration endpoint
-app.get("/api-config", (req, res) => {
-  res.json({
-    key: process.env.DID_API_KEY,
-    openai_key: process.env.OPEN_AI_API_KEY,
-    elevenlabs_key: process.env.ELEVENLABS_API_KEY,
-    url: "https://api.d-id.com",
-  });
 });
 
 // Serve static files
-app.use("/Uploads", express.static(uploadsDir));
 app.use(express.static(__dirname));
-app.use("/css", express.static(path.join(__dirname, "")));
-app.use("/js", express.static(path.join(__dirname, "")));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err.message);
-  res.status(400).json({ error: err.message });
-});
-
+// Start server
 const server = http.createServer(app);
-
-// Graceful shutdown to prevent memory leaks
-const gracefulShutdown = () => {
-  console.log("Shutting down server...");
-  server.close(() => {
-    console.log("Server closed.");
-    process.exit(0);
-  });
-};
-
-// Handle process termination
-process.on("SIGTERM", gracefulShutdown);
-process.on("SIGINT", gracefulShutdown);
-
 server.listen(port, () => {
-  console.log(`Server started on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
