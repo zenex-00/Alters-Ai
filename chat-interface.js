@@ -17,8 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const alter = JSON.parse(selectedAlter);
       // Set avatar image
       const avatarImage = document.getElementById("avatar-image");
-      if (avatarImage && alter.avatar_url) {
-        avatarImage.src = alter.avatar_url;
+      if (avatarImage && (alter.image || alter.avatar_url)) {
+        avatarImage.src = alter.image || alter.avatar_url;
         avatarImage.style.display = "block";
       }
       // Set chat header name if available
