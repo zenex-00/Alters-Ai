@@ -1,6 +1,6 @@
 // marketplace-integration.js
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-import { getCurrentUser, syncUserToSupabase } from "./auth-sync.js";
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { getCurrentUser, syncUserToSupabase } from './auth-sync.js';
 
 // Initialize Supabase client
 let supabaseClient = null;
@@ -8,27 +8,27 @@ let supabaseClient = null;
 // Initialize Supabase client with API keys
 async function initSupabase() {
   if (supabaseClient) return supabaseClient;
-
+  
   try {
     // Fetch Supabase configuration from server
-    const response = await fetch("/api-config");
+    const response = await fetch('/api-config');
     if (!response.ok) {
-      throw new Error("Failed to fetch API configuration");
+      throw new Error('Failed to fetch API configuration');
     }
-
+    
     const config = await response.json();
     const supabaseUrl = config.supabase_url;
     const supabaseKey = config.supabase_key;
-
+    
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Missing Supabase configuration");
+      throw new Error('Missing Supabase configuration');
     }
-
+    
     // Create Supabase client
     supabaseClient = createClient(supabaseUrl, supabaseKey);
     return supabaseClient;
   } catch (error) {
-    console.error("Error initializing Supabase:", error);
+    console.error('Error initializing Supabase:', error);
     throw error;
   }
 }
@@ -43,15 +43,15 @@ export async function publishAlter(alterData) {
     // Ensure user is authenticated
     const user = await getCurrentUser();
     if (!user) {
-      return { success: false, error: "User not authenticated" };
+      return { success: false, error: 'User not authenticated' };
     }
-
+    
     // Ensure user is synced to Supabase
     await syncUserToSupabase(user);
-
+    
     // Initialize Supabase
     const supabase = await initSupabase();
-
+    
     // Prepare alter data for insertion
     const alterRecord = {
       name: alterData.name,
@@ -60,26 +60,26 @@ export async function publishAlter(alterData) {
       prompt: alterData.prompt,
       knowledge: alterData.knowledge,
       voice_id: alterData.voiceId,
-      avatar_url: alterData.avatarUrl || "",
+      avatar_url: alterData.avatarUrl || '',
       category: alterData.category,
       creator_name: alterData.creatorName,
-      is_public: true,
+      is_public: true
     };
-
+    
     // Insert alter into Supabase
     const { data, error } = await supabase
-      .from("published_alters")
+      .from('published_alters')
       .insert(alterRecord)
       .select();
-
+    
     if (error) {
-      console.error("Error publishing alter:", error);
+      console.error('Error publishing alter:', error);
       return { success: false, error: error.message };
     }
-
+    
     return { success: true, data: data[0] };
   } catch (error) {
-    console.error("Error in publishAlter:", error);
+    console.error('Error in publishAlter:', error);
     return { success: false, error: error.message };
   }
 }
@@ -92,22 +92,22 @@ export async function fetchUserAlters() {
   try {
     // Initialize Supabase
     const supabase = await initSupabase();
-
+    
     // Fetch all public alters
     const { data, error } = await supabase
-      .from("published_alters")
-      .select("*")
-      .eq("is_public", true)
-      .order("created_at", { ascending: false });
-
+      .from('published_alters')
+      .select('*')
+      .eq('is_public', true)
+      .order('created_at', { ascending: false });
+    
     if (error) {
-      console.error("Error fetching user alters:", error);
+      console.error('Error fetching user alters:', error);
       return { success: false, error: error.message };
     }
-
+    
     return { success: true, alters: data };
   } catch (error) {
-    console.error("Error in fetchUserAlters:", error);
+    console.error('Error in fetchUserAlters:', error);
     return { success: false, error: error.message };
   }
 }
@@ -122,26 +122,26 @@ export async function deleteUserAlter(alterId) {
     // Ensure user is authenticated
     const user = await getCurrentUser();
     if (!user) {
-      return { success: false, error: "User not authenticated" };
+      return { success: false, error: 'User not authenticated' };
     }
-
+    
     // Initialize Supabase
     const supabase = await initSupabase();
-
+    
     // Delete the alter (RLS policies will ensure only the owner can delete)
     const { error } = await supabase
-      .from("published_alters")
+      .from('published_alters')
       .delete()
-      .eq("id", alterId);
-
+      .eq('id', alterId);
+    
     if (error) {
-      console.error("Error deleting alter:", error);
+      console.error('Error deleting alter:', error);
       return { success: false, error: error.message };
     }
-
+    
     return { success: true };
   } catch (error) {
-    console.error("Error in deleteUserAlter:", error);
+    console.error('Error in deleteUserAlter:', error);
     return { success: false, error: error.message };
   }
 }
@@ -155,22 +155,23 @@ export async function fetchAlterById(alterId) {
   try {
     // Initialize Supabase
     const supabase = await initSupabase();
-
+    
     // Fetch the alter
     const { data, error } = await supabase
-      .from("published_alters")
-      .select("*")
-      .eq("id", alterId)
+      .from('published_alters')
+      .select('*')
+      .eq('id', alterId)
       .single();
-
+    
     if (error) {
-      console.error("Error fetching alter:", error);
+      console.error('Error fetching alter:', error);
       return { success: false, error: error.message };
     }
-
+    
     return { success: true, alter: data };
   } catch (error) {
-    console.error("Error in fetchAlterById:", error);
+    console.error('Error in fetchAlterById:', error);
     return { success: false, error: error.message };
   }
 }
+  

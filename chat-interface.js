@@ -1,3 +1,5 @@
+import alterImageManager from './alter-image-manager.js';
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("chat-interface.js: DOMContentLoaded fired");
 
@@ -10,24 +12,79 @@ document.addEventListener("DOMContentLoaded", () => {
   let isRecording = false;
   let isSending = false;
 
+  // Function to handle image loading with fallbacks
+  async function loadAlterImage(alter) {
+    const avatarImage = document.getElementById("avatar-image");
+    if (!avatarImage) {
+      console.error("Avatar image element not found");
+      return;
+    }
+
+    // List of possible image sources in order of preference
+    const imageSources = [
+      alter.image,
+      alter.avatar_url,
+      alter.avatarUrl,
+      alter.profile_image,
+      alter.profileImage,
+      "/placeholder.svg" // Final fallback
+    ].filter(Boolean); // Remove any undefined/null values
+
+    // Try each image source until one works
+    for (const imageUrl of imageSources) {
+      try {
+        // Create a promise that resolves when the image loads or rejects after timeout
+        const imageLoadPromise = new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(imageUrl);
+          img.onerror = () => reject(new Error(`Failed to load image: ${imageUrl}`));
+          img.src = imageUrl;
+        });
+
+        // Wait for image to load with timeout
+        const loadedUrl = await Promise.race([
+          imageLoadPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+          )
+        ]);
+
+        // If we get here, the image loaded successfully
+        avatarImage.src = loadedUrl;
+        avatarImage.style.display = "block";
+        console.log("Successfully loaded alter image:", loadedUrl);
+        return true;
+      } catch (error) {
+        console.warn(`Failed to load image from ${imageUrl}:`, error);
+        continue; // Try next image source
+      }
+    }
+
+    // If we get here, all image sources failed
+    console.error("All image sources failed to load");
+    avatarImage.src = "/placeholder.svg";
+    avatarImage.style.display = "block";
+    return false;
+  }
+
   // Check for selected alter from marketplace
   const selectedAlter = localStorage.getItem("selectedAlter");
   if (selectedAlter) {
     try {
       const alter = JSON.parse(selectedAlter);
-      // Set avatar image
-      const avatarImage = document.getElementById("avatar-image");
-      if (avatarImage && (alter.image || alter.avatar_url)) {
-        avatarImage.src = alter.image || alter.avatar_url;
-        avatarImage.style.display = "block";
-      }
+      
+      // Use the image manager to handle the alter image
+      alterImageManager.handleAlterImage(alter);
+
       // Set chat header name if available
       const chatHeader = document.querySelector(".chat-header h2");
       if (chatHeader && alter.name) {
         chatHeader.textContent = `Chat with ${alter.name}`;
       }
-      // Optionally, set up videoAgent or chat context with alter's prompt/personality
+
+      // Store alter data for later use
       window.selectedAlter = alter;
+      
       // Remove from localStorage after loading
       localStorage.removeItem("selectedAlter");
     } catch (e) {

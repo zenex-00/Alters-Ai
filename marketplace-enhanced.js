@@ -1,3 +1,5 @@
+import alterImageManager from './alter-image-manager.js';
+
 // Enhanced marketplace functionality with proper tab integration
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Marketplace Enhanced: Script loaded");
@@ -438,7 +440,12 @@ document.addEventListener("DOMContentLoaded", () => {
       id: alter.id,
       name: alter.name,
       description: alter.description,
-      image: alter.image || alter.avatar_url,
+      // Ensure all possible image properties are included
+      image: alter.image,
+      avatar_url: alter.avatar_url,
+      avatarUrl: alter.avatarUrl,
+      profile_image: alter.profile_image,
+      profileImage: alter.profileImage,
       personality:
         alter.personality ||
         alter.description ||
@@ -459,7 +466,8 @@ document.addEventListener("DOMContentLoaded", () => {
       documentName: alter.documentName || "",
     };
 
-    console.log("Preparing alter for chat:", alterForChat);
+    // Pre-load the image using the image manager
+    alterImageManager.handleAlterImage(alterForChat);
 
     // Save alter data for the chat page
     localStorage.setItem("selectedAlter", JSON.stringify(alterForChat));
