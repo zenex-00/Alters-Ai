@@ -595,6 +595,25 @@ app.post("/auth/google", async (req, res) => {
     req.session.email = decodedToken.email;
     req.session.allowedAccess = true;
 
+    // Upsert user in Supabase users table
+    const { uid, email, name, picture } = decodedToken;
+    const { data, error } = await supabaseAdmin.from("users").upsert(
+      [
+        {
+          firebase_uid: uid,
+          email: email,
+          display_name: name || null,
+          photo_url: picture || null,
+        },
+      ],
+      { onConflict: "firebase_uid" }
+    );
+
+    if (error) {
+      console.error("Supabase user upsert error:", error);
+      return res.status(500).json({ error: "Failed to upsert user" });
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error("Auth error:", error);
@@ -624,6 +643,111 @@ app.get("/api-config", (req, res) => {
     elevenlabs_key: process.env.ELEVENLABS_API_KEY,
     url: "https://api.d-id.com",
   });
+});
+
+// API route to publish an alter to the marketplace
+app.post("/api/publish-alter", async (req, res) => {
+  try {
+    // Get Firebase UID from session
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Look up the Supabase UUID from your users table
+    const { data: userRows, error: userLookupError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userLookupError || !userRows || userRows.length === 0) {
+      return res.status(401).json({ error: "User not found in users table" });
+    }
+    const userId = userRows[0].id; // This is the UUID
+
+    const {
+      name,
+      description,
+      personality,
+      prompt,
+      knowledge,
+      voice_id,
+      avatar_url,
+      category,
+      is_public,
+    } = req.body;
+
+    // Validate required fields
+    if (
+      !name ||
+      !description ||
+      !personality ||
+      !prompt ||
+      !knowledge ||
+      !category
+    ) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Insert into Supabase
+    const { data, error } = await supabaseAdmin
+      .from("published_alters")
+      .insert([
+        {
+          user_id: userId,
+          name,
+          description,
+          personality,
+          prompt,
+          knowledge,
+          voice_id,
+          avatar_url,
+          category,
+          is_public: is_public !== undefined ? is_public : true,
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true, alter: data[0] });
+  } catch (err) {
+    console.error("Publish alter error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// API route to get all published alters for the marketplace
+app.get("/api/published-alters", async (req, res) => {
+  try {
+    // Fetch all published alters, join with users for creator info
+    const { data, error } = await supabaseAdmin
+      .from("published_alters")
+      .select(`*, users: user_id (display_name, photo_url)`)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Map to include creator_name and creator_avatar for card UI
+    const alters = data.map((alter) => ({
+      ...alter,
+      creator_name: alter.users?.display_name || "Unknown",
+      creator_avatar: alter.users?.photo_url || "/placeholder.svg",
+    }));
+
+    res.json(alters);
+  } catch (err) {
+    console.error("Fetch published alters error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // Serve static files

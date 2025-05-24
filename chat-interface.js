@@ -10,6 +10,31 @@ document.addEventListener("DOMContentLoaded", () => {
   let isRecording = false;
   let isSending = false;
 
+  // Check for selected alter from marketplace
+  const selectedAlter = localStorage.getItem("selectedAlter");
+  if (selectedAlter) {
+    try {
+      const alter = JSON.parse(selectedAlter);
+      // Set avatar image
+      const avatarImage = document.getElementById("avatar-image");
+      if (avatarImage && alter.avatar_url) {
+        avatarImage.src = alter.avatar_url;
+        avatarImage.style.display = "block";
+      }
+      // Set chat header name if available
+      const chatHeader = document.querySelector(".chat-header h2");
+      if (chatHeader && alter.name) {
+        chatHeader.textContent = `Chat with ${alter.name}`;
+      }
+      // Optionally, set up videoAgent or chat context with alter's prompt/personality
+      window.selectedAlter = alter;
+      // Remove from localStorage after loading
+      localStorage.removeItem("selectedAlter");
+    } catch (e) {
+      console.error("Failed to parse selectedAlter from localStorage:", e);
+    }
+  }
+
   // Prevent multiple event listener attachments
   if (userInputField.dataset.listenersAttached) {
     console.log(

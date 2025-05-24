@@ -83,6 +83,9 @@
             <div class="chat-header">
               <h2>Chat</h2>
               <div class="chat-options">
+                <button id="publish-button" title="Publish to Marketplace">
+                  <i class="fa-solid fa-share"></i>
+                </button>
                 <button id="customize-button" title="Customize Avatar">
                   <i class="fa-solid fa-gear"></i>
                 </button>
@@ -141,10 +144,43 @@
         </div>
       </div>
 
+      <div id="publish-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-modal">×</span>
+          <h2 style="color: #ff8a2b; text-align: center">Publish Your Alter</h2>
+
+          <div class="form-group">
+            <label for="alter-category">Category</label>
+            <select id="alter-category" required>
+              <option value="Professional">Professional</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Service">Service</option>
+              <option value="Education">Education</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="alter-description">Description</label>
+            <textarea
+              id="alter-description"
+              required
+              placeholder="Describe your alter's purpose and characteristics"
+            ></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button id="confirm-publish">Publish</button>
+            <button id="cancel-publish">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <audio id="audio-element" class="hidden-audio" autoplay></audio>
       <script type="module" src="./streaming-client-api.js"></script>
       <script type="module" src="./image-upload.js"></script>
       <script type="module" src="./chat-interface.js"></script>
+      <script type="module" src="./publish-alter.js"></script>
       <script
         src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/v4-shims.min.js"
         integrity="sha512-Ny27nj/CA4kOUa/2b2bhjr8YiJ+OfttH2314Wg8drWh4z9JqGO1PVEqPvo/fM+PjN5UEY4gFxo+ADkhXoGiaSg=="

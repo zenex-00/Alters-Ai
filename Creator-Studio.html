@@ -245,6 +245,42 @@
         -webkit-appearance: none;
         margin: 0;
       }
+      .published-alters-section {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+      .published-alters-section h2 {
+        margin-bottom: 1rem;
+        color: #333;
+      }
+      .alters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+      .alter-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1rem;
+        background: white;
+        position: relative;
+      }
+      .alter-card .delete-button {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .alter-card .delete-button:hover {
+        background: #c82333;
+      }
     </style>
   </head>
   <body>
@@ -392,6 +428,14 @@
           </div>
         </div>
         <!-- Resource Usage -->
+        <div class="studio-container">
+          <div class="published-alters-section">
+            <h2>Your Published Alters</h2>
+            <div id="published-alters-grid" class="alters-grid">
+              <!-- Published alters will be loaded here -->
+            </div>
+          </div>
+        </div>
       </div>
     </main>
     <!-- Create Alter Modal -->
@@ -766,6 +810,86 @@
           }
         });
       });
+    </script>
+    <script type="module">
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const response = await fetch('/api/published-alters');
+          if (!response.ok) {
+            throw new Error('Failed to fetch published alters');
+          }
+          const alters = await response.json();
+          displayPublishedAlters(alters);
+        } catch (error) {
+          console.error('Error loading published alters:', error);
+          showError('Failed to load published alters');
+        }
+      });
+
+      function displayPublishedAlters(alters) {
+        const container = document.getElementById('published-alters-grid');
+        container.innerHTML = ''; // Clear existing content
+
+        alters.forEach(alter => {
+          const alterCard = createAlterCard(alter);
+          container.appendChild(alterCard);
+        });
+      }
+
+      function createAlterCard(alter) {
+        const card = document.createElement('div');
+        card.className = 'alter-card';
+        card.innerHTML = `
+          <img src="${alter.avatar_url}" alt="${alter.name}" class="alter-avatar">
+          <h3>${alter.name}</h3>
+          <p class="category">${alter.category}</p>
+          <p class="description">${alter.description}</p>
+          <div class="price">$${alter.price}</div>
+          <button class="delete-button" data-alter-id="${alter.id}">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        `;
+
+        const deleteButton = card.querySelector('.delete-button');
+        deleteButton.addEventListener('click', () => deleteAlter(alter.id));
+
+        return card;
+      }
+
+      async function deleteAlter(alterId) {
+        if (!confirm('Are you sure you want to delete this alter?')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/published-alters/${alterId}`, {
+            method: 'DELETE'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete alter');
+          }
+
+          // Remove the card from the UI
+          const card = document.querySelector(`[data-alter-id="${alterId}"]`).closest('.alter-card');
+          card.remove();
+
+          showSuccess('Alter deleted successfully');
+        } catch (error) {
+          console.error('Error deleting alter:', error);
+          showError('Failed to delete alter');
+        }
+      }
+
+      function showSuccess(message) {
+        // Implement your toast notification system here
+        console.log('Success:', message);
+      }
+
+      function showError(message) {
+        // Implement your toast notification system here
+        console.error('Error:', message);
+      }
     </script>
   </body>
 </html>
