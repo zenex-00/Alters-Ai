@@ -892,19 +892,13 @@
                 const imageLoadPromise = new Promise((resolve, reject) => {
                   const img = new Image();
                   img.onload = () => resolve(imageUrl);
-                  img.onerror = () =>
-                    reject(new Error(`Failed to load image: ${imageUrl}`));
+                  img.onerror = () => reject(new Error(`Failed to load image: ${imageUrl}`));
                   img.src = imageUrl;
                 });
 
                 const loadedUrl = await Promise.race([
                   imageLoadPromise,
-                  new Promise((_, reject) =>
-                    setTimeout(
-                      () => reject(new Error("Image load timeout")),
-                      5000
-                    )
-                  ),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error("Image load timeout")), 5000))
                 ]);
 
                 avatarImage.src = loadedUrl;
@@ -923,63 +917,103 @@
             return false;
           }
 
-          // Check for selected alter from marketplace
-          const selectedAlter = localStorage.getItem("selectedAlter");
-          if (selectedAlter) {
+          // Check for avatar settings from customization first
+          const avatarSettings = localStorage.getItem("avatarSettings");
+          if (avatarSettings) {
             try {
-              const alter = JSON.parse(selectedAlter);
+              const settings = JSON.parse(avatarSettings);
+              console.log("Loading custom avatar settings:", settings);
               
-              // Clear any existing avatar settings to prevent interference
-              localStorage.removeItem("avatarSettings");
+              // Clear any existing alter data
+              localStorage.removeItem("selectedAlter");
+              sessionStorage.removeItem("currentAlter");
               
-              // Use the image manager to handle the alter image
-              alterImageManager.handleAlterImage(alter);
-
-              // Set chat header name if available
-              const chatHeader = document.querySelector(".chat-header h2");
-              if (chatHeader && alter.name) {
-                chatHeader.textContent = `Chat with ${alter.name}`;
-              }
-
-              // Store alter data for later use, ensuring prompt is preserved based on type
+              // Set up the custom alter
               window.selectedAlter = {
-                ...alter,
-                type: alter.type || 'custom', // Default to custom if not specified
-                prompt: alter.type === 'premade' || alter.type === 'customized' 
-                  ? (alter.prompt || alter.system_prompt) // Use specific prompt for premade/customized
-                  : (alter.prompt || alter.system_prompt || ''), // Allow custom prompt for new alters
-                personality: alter.personality || alter.personality_description,
-                name: alter.name,
-                knowledge: alter.knowledge || alter.category || "general",
-                documentContent: alter.documentContent || ""
+                type: 'custom',
+                name: settings.name,
+                prompt: settings.prompt,
+                personality: settings.personality,
+                knowledge: settings.knowledge,
+                voiceId: settings.voiceId,
+                documentContent: settings.documentContent || "",
+                // Start with placeholder image
+                image: "/placeholder.svg"
               };
 
-              // Store in sessionStorage for persistence across refreshes
+              // Update chat header
+              const chatHeader = document.querySelector(".chat-header h2");
+              if (chatHeader && settings.name) {
+                chatHeader.textContent = `Chat with ${settings.name}`;
+              }
+
+              // Store in sessionStorage for persistence
               sessionStorage.setItem("currentAlter", JSON.stringify(window.selectedAlter));
 
               // Remove from localStorage after loading
-              localStorage.removeItem("selectedAlter");
+              localStorage.removeItem("avatarSettings");
             } catch (e) {
-              console.error("Failed to parse selectedAlter from localStorage:", e);
+              console.error("Failed to parse avatarSettings from localStorage:", e);
             }
           } else {
-            // Check sessionStorage for existing alter data
-            const currentAlter = sessionStorage.getItem("currentAlter");
-            if (currentAlter) {
+            // Check for selected alter from marketplace
+            const selectedAlter = localStorage.getItem("selectedAlter");
+            if (selectedAlter) {
               try {
-                const alter = JSON.parse(currentAlter);
-                window.selectedAlter = alter;
+                const alter = JSON.parse(selectedAlter);
                 
-                // Update chat header
+                // Clear any existing avatar settings to prevent interference
+                localStorage.removeItem("avatarSettings");
+                
+                // Use the image manager to handle the alter image
+                alterImageManager.handleAlterImage(alter);
+
+                // Set chat header name if available
                 const chatHeader = document.querySelector(".chat-header h2");
                 if (chatHeader && alter.name) {
                   chatHeader.textContent = `Chat with ${alter.name}`;
                 }
 
-                // Update image
-                alterImageManager.handleAlterImage(alter);
+                // Store alter data for later use
+                window.selectedAlter = {
+                  ...alter,
+                  type: alter.type || 'custom',
+                  prompt: alter.type === 'premade' || alter.type === 'customized' 
+                    ? (alter.prompt || alter.system_prompt)
+                    : (alter.prompt || alter.system_prompt || ''),
+                  personality: alter.personality || alter.personality_description,
+                  name: alter.name,
+                  knowledge: alter.knowledge || alter.category || "general",
+                  documentContent: alter.documentContent || ""
+                };
+
+                // Store in sessionStorage for persistence
+                sessionStorage.setItem("currentAlter", JSON.stringify(window.selectedAlter));
+
+                // Remove from localStorage after loading
+                localStorage.removeItem("selectedAlter");
               } catch (e) {
-                console.error("Failed to parse currentAlter from sessionStorage:", e);
+                console.error("Failed to parse selectedAlter from localStorage:", e);
+              }
+            } else {
+              // Check sessionStorage for existing alter data
+              const currentAlter = sessionStorage.getItem("currentAlter");
+              if (currentAlter) {
+                try {
+                  const alter = JSON.parse(currentAlter);
+                  window.selectedAlter = alter;
+                  
+                  // Update chat header
+                  const chatHeader = document.querySelector(".chat-header h2");
+                  if (chatHeader && alter.name) {
+                    chatHeader.textContent = `Chat with ${alter.name}`;
+                  }
+
+                  // Update image
+                  alterImageManager.handleAlterImage(alter);
+                } catch (e) {
+                  console.error("Failed to parse currentAlter from sessionStorage:", e);
+                }
               }
             }
           }
@@ -1118,10 +1152,10 @@
             const typingDiv = document.createElement("div");
             typingDiv.classList.add("typing-indicator");
             typingDiv.innerHTML = `
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    `;
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+            `;
             chatHistory.appendChild(typingDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
             return typingDiv;
@@ -1204,6 +1238,41 @@
       ></script>
       <script>
         document.addEventListener("DOMContentLoaded", () => {
+          // Check for custom alter settings in localStorage
+          const avatarSettings = localStorage.getItem('avatarSettings');
+          if (avatarSettings) {
+            try {
+              const settings = JSON.parse(avatarSettings);
+              console.log('Loading custom alter settings:', settings);
+              
+              // Create custom alter object
+              const customAlter = {
+                name: settings.name,
+                avatar: settings.avatar,
+                description: settings.description,
+                isCustom: true
+              };
+
+              // Clear any existing alter data
+              localStorage.removeItem('lastPublishedAlter');
+              sessionStorage.removeItem('currentAlter');
+
+              // Update chat header with custom alter name
+              const chatHeader = document.querySelector('.chat-header');
+              if (chatHeader) {
+                chatHeader.textContent = customAlter.name;
+              }
+
+              // Store custom alter in sessionStorage
+              sessionStorage.setItem('currentAlter', JSON.stringify(customAlter));
+
+              // Clear avatarSettings after loading
+              localStorage.removeItem('avatarSettings');
+            } catch (error) {
+              console.error('Error loading custom alter settings:', error);
+            }
+          }
+
           // Create particles for background effect
           createParticles();
 
