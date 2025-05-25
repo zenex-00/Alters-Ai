@@ -805,6 +805,33 @@
           particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
           particlesContainer.appendChild(particle);
         }
+
+        // Handle alter parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const alterId = urlParams.get('alter');
+        
+        if (alterId) {
+          // Wait for alters to load
+          const checkForAlter = setInterval(() => {
+            const alterElement = document.querySelector(`[data-alter-id="${alterId}"]`);
+            if (alterElement) {
+              clearInterval(checkForAlter);
+              // Scroll to the alter
+              alterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Highlight the alter temporarily
+              alterElement.style.transition = 'all 0.3s ease';
+              alterElement.style.transform = 'scale(1.05)';
+              alterElement.style.boxShadow = '0 0 30px rgba(255, 138, 43, 0.4)';
+              setTimeout(() => {
+                alterElement.style.transform = 'scale(1)';
+                alterElement.style.boxShadow = 'none';
+              }, 2000);
+            }
+          }, 100);
+
+          // Clear interval after 10 seconds if alter not found
+          setTimeout(() => clearInterval(checkForAlter), 10000);
+        }
       });
     </script>
     <script type="module" src="./marketplace-enhanced.js"></script>
