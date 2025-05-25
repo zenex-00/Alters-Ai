@@ -106,26 +106,26 @@ app.use(
     secret: process.env.SESSION_SECRET || "alter-session-secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      httpOnly: true
+      httpOnly: true,
     },
-    proxy: process.env.NODE_ENV === "production" // Trust the reverse proxy
+    proxy: process.env.NODE_ENV === "production", // Trust the reverse proxy
   })
 );
 
 // Middleware to protect premium routes (not used for creator-studio, customize, or chat)
 function guardRoute(req, res, next) {
-  console.log('Guard Route Check:', {
+  console.log("Guard Route Check:", {
     isCreator: req.session.isCreator,
     allowedAccess: req.session.allowedAccess,
     userId: req.session.userId,
     sessionID: req.sessionID,
-    cookies: req.cookies
+    cookies: req.cookies,
   });
-  
+
   if (req.session.isCreator || req.session.allowedAccess) {
     next();
   } else {
@@ -136,6 +136,10 @@ function guardRoute(req, res, next) {
 // Routes
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
+});
+
+app.get("/chat-alter", (req, res) => {
+  res.sendFile(path.join(__dirname, "chat-alter.html"));
 });
 
 app.get("/pricing", (req, res) => {
@@ -609,10 +613,10 @@ app.post("/auth/google", async (req, res) => {
     req.session.email = decodedToken.email;
     req.session.allowedAccess = true;
 
-    console.log('Google Auth Success:', {
+    console.log("Google Auth Success:", {
       userId: decodedToken.uid,
       email: decodedToken.email,
-      sessionID: req.sessionID
+      sessionID: req.sessionID,
     });
 
     // Upsert user in Supabase users table
@@ -878,18 +882,18 @@ app.delete("/api/published-alters/:alterId", async (req, res) => {
 });
 
 // Auth status endpoint
-app.get('/api/auth/status', (req, res) => {
-  console.log('Auth Status Check:', {
+app.get("/api/auth/status", (req, res) => {
+  console.log("Auth Status Check:", {
     isCreator: req.session.isCreator,
     allowedAccess: req.session.allowedAccess,
     userId: req.session.userId,
-    sessionID: req.sessionID
+    sessionID: req.sessionID,
   });
-  
+
   res.json({
     authenticated: !!req.session.userId,
     isCreator: !!req.session.isCreator,
-    allowedAccess: !!req.session.allowedAccess
+    allowedAccess: !!req.session.allowedAccess,
   });
 });
 

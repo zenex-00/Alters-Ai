@@ -668,11 +668,20 @@ class VideoAgent {
                     });
                 } else {
                   console.log("streaming-client-api.js: Video stream stopped");
+                  // Only transition back to avatar if we're not in the middle of playing
                   if (!this.isPlayingPromise) {
                     this.talkVideo.pause();
                     this.talkVideo.srcObject = null;
                     this.talkVideo.style.display = "none";
-                    if (this.customAvatarUrl) {
+                    
+                    // Get the current alter's image URL
+                    const selectedAlter = window.selectedAlter;
+                    const avatarUrl = selectedAlter?.image || 
+                                    selectedAlter?.avatar_url || 
+                                    this.customAvatarUrl;
+                    
+                    if (avatarUrl) {
+                      this.avatarImage.src = avatarUrl;
                       this.avatarImage.style.display = "block";
                       this.idleVideo.style.display = "none";
                     } else {

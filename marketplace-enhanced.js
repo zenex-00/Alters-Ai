@@ -470,7 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("selectedAlter", JSON.stringify(alterForChat));
 
     // Redirect to chat
-    window.location.href = "/chat";
+    window.location.href = "/chat-alter";
   }
 
   function toggleFavorite(btn) {
