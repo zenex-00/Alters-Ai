@@ -41,7 +41,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
     />
     <!-- Firebase SDK -->
-    <!-- Firebase SDK - Compatibility Build -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
@@ -119,6 +118,195 @@
       input[type="password"]::-ms-clear {
         display: none;
       }
+
+      /* Modal Base Styles */
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .modal.show {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-content {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        position: relative;
+        transform: scale(0.7) translateY(50px);
+        transition: all 0.3s ease;
+        box-shadow: 0 20px 60px rgba(255, 138, 43, 0.2);
+      }
+
+      .modal.show .modal-content {
+        transform: scale(1) translateY(0);
+      }
+
+      /* Welcome Modal Styles */
+      .welcome-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #ff8a2b, #ff6b1a);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        animation: pulse 2s infinite;
+      }
+
+      /* Sign Out Modal Styles */
+      .signout-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .modal-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #ffffff, #ff8a2b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+      }
+
+      .signout-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #ffffff, #ef4444);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+      }
+
+      .modal-subtitle {
+        color: #cccccc;
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+      }
+
+      .modal-btn {
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 0 10px;
+      }
+
+      .welcome-btn {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b1a);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 138, 43, 0.3);
+      }
+
+      .welcome-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 138, 43, 0.4);
+      }
+
+      .signout-btn {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      }
+
+      .signout-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+      }
+
+      .cancel-btn {
+        background: transparent;
+        color: #cccccc;
+        border: 2px solid #4b5563;
+      }
+
+      .cancel-btn:hover {
+        background: #4b5563;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #ff8a2b;
+        animation: confetti-fall 3s linear infinite;
+      }
+
+      @keyframes confetti-fall {
+        0% {
+          transform: translateY(-100vh) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+
+      .farewell-particles {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        animation: farewell-float 4s linear infinite;
+      }
+
+      @keyframes farewell-float {
+        0% {
+          transform: translateY(0) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
     </style>
   </head>
   <body class="login-bg min-h-screen flex flex-col">
@@ -127,6 +315,44 @@
       id="particles-container"
       class="fixed inset-0 pointer-events-none"
     ></div>
+
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" class="modal">
+      <div class="modal-content">
+        <div class="welcome-icon">
+          <i class="ri-user-smile-line text-4xl text-white"></i>
+        </div>
+        <h2 class="modal-title">Welcome!</h2>
+        <p class="modal-subtitle" id="welcome-message">
+          Great to see you back!
+        </p>
+        <button class="modal-btn welcome-btn" onclick="closeWelcomeModal()">
+          Continue to Dashboard
+        </button>
+      </div>
+    </div>
+
+    <!-- Sign Out Modal -->
+    <div id="signout-modal" class="modal">
+      <div class="modal-content">
+        <div class="signout-icon">
+          <i class="ri-logout-box-line text-4xl text-white"></i>
+        </div>
+        <h2 class="signout-title">Goodbye!</h2>
+        <p class="modal-subtitle" id="signout-message">
+          You have been successfully signed out.
+        </p>
+        <div>
+          <button class="modal-btn signout-btn" onclick="closeSignoutModal()">
+            Back to Login
+          </button>
+          <button class="modal-btn cancel-btn" onclick="goToHome()">
+            Go to Home
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header
       class="w-full py-4 px-6 md:px-12 flex items-center justify-between z-10"
@@ -147,6 +373,7 @@
         >alters<span class="text-primary">.ai</span></a
       >
     </header>
+
     <!-- Main Content -->
     <main
       class="flex-1 flex items-center justify-center px-6 py-12"
@@ -212,10 +439,12 @@
         </div>
       </div>
     </main>
+
     <!-- Footer -->
     <footer class="py-6 px-6 md:px-12 text-center text-gray-500 text-sm">
       <p>© 2025 alters.ai. All rights reserved.</p>
     </footer>
+
     <script>
       // Initialize Firebase
       const firebaseConfig = {
@@ -231,9 +460,94 @@
       const auth = firebase.auth();
       const googleProvider = new firebase.auth.GoogleAuthProvider();
 
+      // Welcome Modal Functions
+      function showWelcomeModal(userName) {
+        const modal = document.getElementById("welcome-modal");
+        const message = document.getElementById("welcome-message");
+        message.textContent = `Welcome back, ${userName}!`;
+        modal.classList.add("show");
+
+        // Add confetti effect
+        createConfetti();
+      }
+
+      function closeWelcomeModal() {
+        const modal = document.getElementById("welcome-modal");
+        modal.classList.remove("show");
+        // Optionally redirect after closing
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 300);
+      }
+
+      // Sign Out Modal Functions
+      function showSignoutModal(userName) {
+        const modal = document.getElementById("signout-modal");
+        const message = document.getElementById("signout-message");
+        message.textContent = `Thanks for visiting, ${
+          userName || "User"
+        }! See you next time.`;
+        modal.classList.add("show");
+
+        // Add farewell particles effect
+        createFarewellParticles();
+      }
+
+      function closeSignoutModal() {
+        const modal = document.getElementById("signout-modal");
+        modal.classList.remove("show");
+      }
+
+      function goToHome() {
+        const modal = document.getElementById("signout-modal");
+        modal.classList.remove("show");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 300);
+      }
+
+      function createConfetti() {
+        const colors = ["#ff8a2b", "#ff6b1a", "#ffa500", "#ffb347"];
+        for (let i = 0; i < 50; i++) {
+          setTimeout(() => {
+            const confetti = document.createElement("div");
+            confetti.className = "confetti";
+            confetti.style.left = Math.random() * 100 + "%";
+            confetti.style.backgroundColor =
+              colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = Math.random() * 3 + "s";
+            document.body.appendChild(confetti);
+
+            setTimeout(() => {
+              confetti.remove();
+            }, 3000);
+          }, i * 100);
+        }
+      }
+
+      function createFarewellParticles() {
+        const colors = ["#ef4444", "#dc2626", "#f87171", "#fca5a5"];
+        for (let i = 0; i < 30; i++) {
+          setTimeout(() => {
+            const particle = document.createElement("div");
+            particle.className = "farewell-particles";
+            particle.style.left = Math.random() * 100 + "%";
+            particle.style.backgroundColor =
+              colors[Math.floor(Math.random() * colors.length)];
+            particle.style.animationDelay = Math.random() * 2 + "s";
+            document.body.appendChild(particle);
+
+            setTimeout(() => {
+              particle.remove();
+            }, 4000);
+          }, i * 150);
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", function () {
         const signInButton = document.getElementById("google-signin-btn");
         const signOutButton = document.getElementById("signout-btn");
+        let currentUser = null;
 
         // Handle Google Sign-In
         signInButton.addEventListener("click", () => {
@@ -241,6 +555,7 @@
             .signInWithPopup(googleProvider)
             .then(async (result) => {
               const user = result.user;
+              currentUser = user;
               const idToken = await user.getIdToken();
               // Send ID token to backend
               fetch("/auth/google", {
@@ -253,9 +568,8 @@
                   if (data.success) {
                     signInButton.classList.add("hidden");
                     signOutButton.classList.remove("hidden");
-                    alert(`Welcome, ${user.displayName}!`);
-                    // Optionally redirect to /customize
-                    window.location.href = "/";
+                    // Show welcome modal instead of alert
+                    showWelcomeModal(user.displayName || "User");
                   } else {
                     alert("Authentication failed: " + data.error);
                   }
@@ -281,7 +595,9 @@
                 .then(() => {
                   signInButton.classList.remove("hidden");
                   signOutButton.classList.add("hidden");
-                  alert("Signed out successfully");
+                  // Show sign out modal instead of alert
+                  showSignoutModal(currentUser?.displayName || "User");
+                  currentUser = null;
                 })
                 .catch((error) => {
                   console.error("Sign-out error:", error);
@@ -297,9 +613,11 @@
         // Check auth state
         auth.onAuthStateChanged((user) => {
           if (user) {
+            currentUser = user;
             signInButton.classList.add("hidden");
             signOutButton.classList.remove("hidden");
           } else {
+            currentUser = null;
             signInButton.classList.remove("hidden");
             signOutButton.classList.add("hidden");
           }
@@ -324,6 +642,31 @@
           particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
           particlesContainer.appendChild(particle);
         }
+
+        // Close modals when clicking outside
+        document
+          .getElementById("welcome-modal")
+          .addEventListener("click", function (e) {
+            if (e.target === this) {
+              closeWelcomeModal();
+            }
+          });
+
+        document
+          .getElementById("signout-modal")
+          .addEventListener("click", function (e) {
+            if (e.target === this) {
+              closeSignoutModal();
+            }
+          });
+
+        // Close modals with Escape key
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") {
+            closeWelcomeModal();
+            closeSignoutModal();
+          }
+        });
       });
     </script>
   </body>

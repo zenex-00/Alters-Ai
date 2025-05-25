@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -17,10 +17,674 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
-    <link rel="stylesheet" href="/enhanced-styles.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Mulish", sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f0f23 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: #ffffff;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Navigation Styles */
+      .main-nav {
+        background: rgba(15, 15, 35, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 138, 43, 0.2);
+        padding: 0.75rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 2rem;
+      }
+
+      .nav-logo .logo-text {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .nav-logo .logo-text:hover {
+        transform: scale(1.05);
+      }
+
+      .accent-text {
+        color: #ff8a2b;
+      }
+
+      .small-text {
+        font-size: 0.9em;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .nav-link {
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .nav-link:hover {
+        background: rgba(255, 138, 43, 0.1);
+        color: #ff8a2b;
+      }
+
+      .publish-nav-button {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        box-shadow: 0 3px 12px rgba(255, 138, 43, 0.3);
+        font-size: 0.9rem;
+      }
+
+      .publish-nav-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 16px rgba(255, 138, 43, 0.4);
+        background: linear-gradient(135deg, #ff6b35, #ff8a2b);
+      }
+
+      /* Main Content */
+      main {
+        height: calc(100vh - 80px);
+        padding: 1rem 0;
+        overflow: hidden;
+      }
+
+      #content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .title {
+        text-align: center;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #ff8a2b, #ffffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(255, 138, 43, 0.3);
+      }
+
+      .main-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        height: calc(100% - 120px);
+        min-height: 0;
+      }
+
+      /* Video Section */
+      .video-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+      }
+
+      #video-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 450px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #video-container {
+        width: 100%;
+        height: 350px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 138, 43, 0.3);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      #video-container video,
+      #video-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+      }
+
+      #upload-avatar-button {
+        margin-top: 1rem;
+        background: rgba(255, 138, 43, 0.1);
+        border: 2px solid #ff8a2b;
+        color: #ff8a2b;
+        padding: 0.6rem 1.5rem;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: 180px;
+        flex-shrink: 0;
+      }
+
+      #upload-avatar-button:hover {
+        background: #ff8a2b;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 138, 43, 0.3);
+      }
+
+      /* Chat Section */
+      .chat-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 138, 43, 0.2);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        min-height: 0;
+      }
+
+      .chat-header {
+        background: rgba(255, 138, 43, 0.1);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 138, 43, 0.2);
+        flex-shrink: 0;
+      }
+
+      .chat-header h2 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #ff8a2b;
+      }
+
+      #chat-history {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        min-height: 0;
+      }
+
+      .message {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        max-width: 85%;
+      }
+
+      .assistant-message {
+        align-self: flex-start;
+      }
+
+      .user-message {
+        align-self: flex-end;
+      }
+
+      .message-content {
+        padding: 0.8rem 1.2rem;
+        border-radius: 16px;
+        font-weight: 500;
+        line-height: 1.4;
+        font-size: 0.95rem;
+      }
+
+      .assistant-message .message-content {
+        background: rgba(255, 138, 43, 0.1);
+        border: 1px solid rgba(255, 138, 43, 0.2);
+        color: #ffffff;
+      }
+
+      .user-message .message-content {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        color: white;
+      }
+
+      .timestamp {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.6);
+        align-self: flex-end;
+      }
+
+      /* Typing Indicator */
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.8rem 1.2rem;
+        margin-bottom: 0.8rem;
+        max-width: 85%;
+        align-self: flex-start;
+      }
+
+      .typing-indicator .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #ff8a2b;
+        animation: typing-bounce 1.4s infinite ease-in-out;
+      }
+
+      .typing-indicator .dot:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+
+      .typing-indicator .dot:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+
+      .typing-indicator .dot:nth-child(3) {
+        animation-delay: 0s;
+      }
+
+      @keyframes typing-bounce {
+        0%,
+        80%,
+        100% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        40% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      /* Loading button animation */
+      .loading {
+        position: relative;
+        pointer-events: none;
+      }
+
+      .loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+        border: 2px solid transparent;
+        border-top: 2px solid #ff8a2b;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Recording state for voice button */
+      .recording {
+        background: #ff8a2b !important;
+        color: white !important;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(255, 138, 43, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0);
+        }
+      }
+
+      #input-container {
+        padding: 1rem 1.5rem;
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 138, 43, 0.2);
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      #user-input-field {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        border-radius: 20px;
+        padding: 0.6rem 1.2rem;
+        color: #ffffff;
+        font-size: 0.95rem;
+        outline: none;
+        transition: all 0.3s ease;
+      }
+
+      #user-input-field:focus {
+        border-color: #ff8a2b;
+        box-shadow: 0 0 0 3px rgba(255, 138, 43, 0.1);
+      }
+
+      #user-input-field::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      #voice-button,
+      #enter-button {
+        background: rgba(255, 138, 43, 0.1);
+        border: 1px solid #ff8a2b;
+        color: #ff8a2b;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      #voice-button:hover,
+      #enter-button:hover {
+        background: #ff8a2b;
+        color: white;
+        transform: scale(1.1);
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        margin: 3% auto;
+        padding: 1.5rem;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 450px;
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .close-modal {
+        color: #aaa;
+        float: right;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+      }
+
+      .close-modal:hover {
+        color: #ff8a2b;
+      }
+
+      .form-group {
+        margin-bottom: 1.2rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.4rem;
+        color: #ff8a2b;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.6rem;
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+      }
+
+      .form-group select:focus,
+      .form-group textarea:focus {
+        border-color: #ff8a2b;
+        box-shadow: 0 0 0 3px rgba(255, 138, 43, 0.1);
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 0.8rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+      }
+
+      .modal-actions button {
+        padding: 0.6rem 1.2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+      }
+
+      #confirm-publish,
+      #confirm-upload {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        color: white;
+      }
+
+      #confirm-publish:hover,
+      #confirm-upload:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 138, 43, 0.3);
+      }
+
+      #cancel-publish,
+      #cancel-upload {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      #cancel-publish:hover,
+      #cancel-upload:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      /* Image Upload Styles */
+      .image-upload-area {
+        border: 2px dashed rgba(255, 138, 43, 0.5);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+      }
+
+      .image-upload-area:hover {
+        border-color: #ff8a2b;
+        background: rgba(255, 138, 43, 0.05);
+      }
+
+      .file-info {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 0.4rem;
+      }
+
+      #file-input {
+        display: none;
+      }
+
+      #image-preview {
+        display: none;
+        max-width: 100%;
+        max-height: 150px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      /* Particles Animation */
+      .particles-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        background: rgba(255, 138, 43, 0.3);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-15px) rotate(180deg);
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .nav-container {
+          padding: 0 1rem;
+        }
+
+        .nav-links {
+          gap: 1rem;
+        }
+
+        .publish-nav-button {
+          padding: 0.5rem 1rem;
+          font-size: 0.8rem;
+        }
+
+        .title {
+          font-size: 1.8rem;
+          margin-bottom: 1rem;
+        }
+
+        .main-container {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          height: calc(100% - 80px);
+        }
+
+        #content {
+          padding: 0 1rem;
+        }
+
+        #video-container {
+          height: 280px;
+        }
+
+        .chat-section {
+          height: 400px;
+        }
+      }
+
+      /* Success/Error Messages */
+      .success-message {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #22c55e;
+        padding: 0.6rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+        padding: 0.6rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .hidden-audio {
+        display: none;
+      }
+    </style>
     <script src="/navbar.js" defer></script>
   </head>
-  <body class="hero-bg">
+  <body>
     <!-- Navigation Bar -->
     <nav class="main-nav">
       <div class="nav-container">
@@ -34,6 +698,14 @@
           <a href="/creator-studio" class="nav-link">Home</a>
           <a href="/marketplace" class="nav-link">Marketplace</a>
           <a href="/customize" class="nav-link">Customize</a>
+          <button
+            id="publish-button"
+            class="publish-nav-button"
+            title="Publish to Marketplace"
+          >
+            <i class="fa-solid fa-share"></i>
+            <span>Publish</span>
+          </button>
         </div>
       </div>
     </nav>
@@ -81,22 +753,15 @@
           <!-- Right section with chat -->
           <div class="chat-section">
             <div class="chat-header">
-              <h2>Chat</h2>
-              <div class="chat-options">
-                <button id="publish-button" title="Publish to Marketplace">
-                  <i class="fa-solid fa-share"></i>
-                </button>
-                <button id="customize-button" title="Customize Avatar">
-                  <i class="fa-solid fa-gear"></i>
-                </button>
-              </div>
+              <h2>Chat with Your Alter</h2>
             </div>
 
             <div id="chat-history">
               <!-- Messages will be added here dynamically -->
               <div class="message assistant-message">
                 <div class="message-content">
-                  Hello! Feel free to ask me anything.
+                  Hello! I'm your AI alter. Feel free to ask me anything or
+                  start a conversation.
                 </div>
                 <div class="timestamp">12:30</div>
               </div>
@@ -106,7 +771,7 @@
               <input
                 type="text"
                 id="user-input-field"
-                placeholder="Type a message..."
+                placeholder="Type your message here..."
               />
               <button id="voice-button" title="Voice Input">
                 <i class="fa-solid fa-microphone"></i>
@@ -119,16 +784,24 @@
         </div>
       </div>
 
+      <!-- Image Upload Modal -->
       <div id="image-upload-modal" class="modal">
         <div class="modal-content">
           <span class="close-modal">×</span>
-          <h2 style="color: #ff8a2b; text-align: center">
+          <h2 style="color: #ff8a2b; text-align: center; margin-bottom: 1.5rem">
             Upload Custom Alter
           </h2>
 
           <div class="image-upload-area" id="drop-area">
-            <p><i class="fa-solid fa-cloud-arrow-up fa-2x"></i></p>
-            <p>Drag & drop your image here or click to browse</p>
+            <p>
+              <i
+                class="fa-solid fa-cloud-arrow-up fa-2x"
+                style="color: #ff8a2b"
+              ></i>
+            </p>
+            <p style="margin: 1rem 0">
+              Drag & drop your image here or click to browse
+            </p>
             <p class="file-info">
               Image must be JPEG/PNG, < 25MB, and ≤ 1920x1080 pixels
             </p>
@@ -138,16 +811,19 @@
           <img id="image-preview" src="#" alt="Preview" />
 
           <div class="modal-actions">
-            <button id="confirm-upload">Confirm</button>
+            <button id="confirm-upload">Confirm Upload</button>
             <button id="cancel-upload">Cancel</button>
           </div>
         </div>
       </div>
 
+      <!-- Publish Modal -->
       <div id="publish-modal" class="modal">
         <div class="modal-content">
           <span class="close-modal">×</span>
-          <h2 style="color: #ff8a2b; text-align: center">Publish Your Alter</h2>
+          <h2 style="color: #ff8a2b; text-align: center; margin-bottom: 1.5rem">
+            Publish Your Alter
+          </h2>
 
           <div class="form-group">
             <label for="alter-category">Category</label>
@@ -165,12 +841,12 @@
             <textarea
               id="alter-description"
               required
-              placeholder="Describe your alter's purpose and characteristics"
+              placeholder="Describe your alter's purpose, personality, and unique characteristics..."
             ></textarea>
           </div>
 
           <div class="modal-actions">
-            <button id="confirm-publish">Publish</button>
+            <button id="confirm-publish">Publish to Marketplace</button>
             <button id="cancel-publish">Cancel</button>
           </div>
         </div>
@@ -179,7 +855,307 @@
       <audio id="audio-element" class="hidden-audio" autoplay></audio>
       <script type="module" src="./streaming-client-api.js"></script>
       <script type="module" src="./image-upload.js"></script>
-      <script type="module" src="./chat-interface.js"></script>
+      <script type="module">
+        import alterImageManager from "./alter-image-manager.js";
+
+        document.addEventListener("DOMContentLoaded", () => {
+          console.log("chat-interface.js: DOMContentLoaded fired");
+
+          const userInputField = document.getElementById("user-input-field");
+          const voiceButton = document.getElementById("voice-button");
+          const enterButton = document.getElementById("enter-button");
+          const chatHistory = document.getElementById("chat-history");
+
+          let recognition = null;
+          let isRecording = false;
+          let isSending = false;
+
+          // Function to handle image loading with fallbacks
+          async function loadAlterImage(alter) {
+            const avatarImage = document.getElementById("avatar-image");
+            if (!avatarImage) {
+              console.error("Avatar image element not found");
+              return;
+            }
+
+            const imageSources = [
+              alter.image,
+              alter.avatar_url,
+              alter.avatarUrl,
+              alter.profile_image,
+              alter.profileImage,
+              "/placeholder.svg",
+            ].filter(Boolean);
+
+            for (const imageUrl of imageSources) {
+              try {
+                const imageLoadPromise = new Promise((resolve, reject) => {
+                  const img = new Image();
+                  img.onload = () => resolve(imageUrl);
+                  img.onerror = () =>
+                    reject(new Error(`Failed to load image: ${imageUrl}`));
+                  img.src = imageUrl;
+                });
+
+                const loadedUrl = await Promise.race([
+                  imageLoadPromise,
+                  new Promise((_, reject) =>
+                    setTimeout(
+                      () => reject(new Error("Image load timeout")),
+                      5000
+                    )
+                  ),
+                ]);
+
+                avatarImage.src = loadedUrl;
+                avatarImage.style.display = "block";
+                console.log("Successfully loaded alter image:", loadedUrl);
+                return true;
+              } catch (error) {
+                console.warn(`Failed to load image from ${imageUrl}:`, error);
+                continue;
+              }
+            }
+
+            console.error("All image sources failed to load");
+            avatarImage.src = "/placeholder.svg";
+            avatarImage.style.display = "block";
+            return false;
+          }
+
+          // Check for selected alter from marketplace
+          const selectedAlter = localStorage.getItem("selectedAlter");
+          if (selectedAlter) {
+            try {
+              const alter = JSON.parse(selectedAlter);
+              alterImageManager.handleAlterImage(alter);
+
+              const chatHeader = document.querySelector(".chat-header h2");
+              if (chatHeader && alter.name) {
+                chatHeader.textContent = `Chat with ${alter.name}`;
+              }
+
+              window.selectedAlter = alter;
+              localStorage.removeItem("selectedAlter");
+            } catch (e) {
+              console.error(
+                "Failed to parse selectedAlter from localStorage:",
+                e
+              );
+            }
+          }
+
+          if (userInputField.dataset.listenersAttached) {
+            console.log(
+              "chat-interface.js: Event listeners already attached, skipping."
+            );
+            return;
+          }
+          userInputField.dataset.listenersAttached = "true";
+
+          async function waitForVideoAgent(timeout = 10000) {
+            const start = Date.now();
+            while (!window.videoAgent && Date.now() - start < timeout) {
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+            if (!window.videoAgent) {
+              throw new Error("VideoAgent not initialized within timeout");
+            }
+            return window.videoAgent;
+          }
+
+          async function monitorConnection() {
+            try {
+              const videoAgent = await waitForVideoAgent();
+              const checkConnection = () => {
+                if (videoAgent.isConnecting) {
+                  enterButton.classList.add("loading");
+                  enterButton.disabled = true;
+                  enterButton.innerHTML = "";
+                } else {
+                  enterButton.classList.remove("loading");
+                  enterButton.disabled = false;
+                  enterButton.innerHTML =
+                    '<i class="fa-solid fa-paper-plane"></i>';
+                }
+              };
+
+              checkConnection();
+              const intervalId = setInterval(checkConnection, 500);
+              setTimeout(() => {
+                clearInterval(intervalId);
+                checkConnection();
+              }, 30000);
+            } catch (error) {
+              console.error(
+                "chat-interface.js: Error monitoring connection:",
+                error
+              );
+              if (window.videoAgent) {
+                window.videoAgent.showToast(
+                  "Failed to initialize, please refresh."
+                );
+              }
+              enterButton.classList.remove("loading");
+              enterButton.disabled = false;
+              enterButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+            }
+          }
+
+          monitorConnection();
+
+          // Initialize SpeechRecognition
+          if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+            recognition = new (window.SpeechRecognition ||
+              window.webkitSpeechRecognition)();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = "en-US";
+
+            recognition.onresult = (event) => {
+              const transcript = Array.from(event.results)
+                .map((result) => result[0])
+                .map((result) => result.transcript)
+                .join("");
+              userInputField.value = transcript;
+            };
+
+            recognition.onend = () => {
+              isRecording = false;
+              voiceButton.classList.remove("recording");
+              userInputField.placeholder = "Type your message here...";
+            };
+
+            recognition.onerror = (event) => {
+              console.error("Speech recognition error", event.error);
+              isRecording = false;
+              voiceButton.classList.remove("recording");
+              if (window.videoAgent) {
+                window.videoAgent.showToast(
+                  "Speech recognition failed. Please try again."
+                );
+              }
+            };
+
+            voiceButton.addEventListener("click", () => {
+              if (!recognition) {
+                if (window.videoAgent) {
+                  window.videoAgent.showToast(
+                    "Speech recognition is not supported in your browser."
+                  );
+                }
+                return;
+              }
+
+              if (isRecording) {
+                recognition.stop();
+              } else {
+                recognition.start();
+                isRecording = true;
+                voiceButton.classList.add("recording");
+                userInputField.value = "";
+                userInputField.placeholder = "Listening...";
+              }
+            });
+          } else {
+            voiceButton.addEventListener("click", () => {
+              if (window.videoAgent) {
+                window.videoAgent.showToast(
+                  "Speech recognition is not supported in your browser."
+                );
+              }
+            });
+          }
+
+          // Function to show typing indicator
+          function showTypingIndicator() {
+            // Remove any existing typing indicators first
+            const existingTyping =
+              chatHistory.querySelector(".typing-indicator");
+            if (existingTyping) {
+              existingTyping.remove();
+            }
+
+            const typingDiv = document.createElement("div");
+            typingDiv.classList.add("typing-indicator");
+            typingDiv.innerHTML = `
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    `;
+            chatHistory.appendChild(typingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return typingDiv;
+          }
+
+          function removeTypingIndicator(typingDiv) {
+            if (typingDiv && typingDiv.parentNode) {
+              typingDiv.remove();
+            }
+          }
+
+          // Function to send a message
+          async function sendMessage() {
+            if (isSending || enterButton.classList.contains("loading")) {
+              console.log(
+                "chat-interface.js: Message sending blocked (isSending or loading)"
+              );
+              return;
+            }
+
+            const message = userInputField.value.trim();
+            if (!message) return;
+
+            isSending = true;
+            userInputField.disabled = true;
+            enterButton.disabled = true;
+
+            // Show typing indicator immediately
+            const typingDiv = showTypingIndicator();
+
+            // Clear input field
+            userInputField.value = "";
+
+            if (window.videoAgent) {
+              try {
+                console.log(
+                  `chat-interface.js: Calling videoAgent.handleTalk with message: "${message}"`
+                );
+                // Let videoAgent handle adding both user and assistant messages
+                await window.videoAgent.handleTalk(message);
+              } catch (error) {
+                console.error("chat-interface.js: Error in handleTalk:", error);
+                if (window.videoAgent) {
+                  window.videoAgent.showToast(
+                    "Server is slow, please try again later."
+                  );
+                }
+              } finally {
+                removeTypingIndicator(typingDiv);
+                isSending = false;
+                userInputField.disabled = false;
+                enterButton.disabled = false;
+                userInputField.placeholder = "Type your message here...";
+              }
+            } else {
+              console.error(
+                "chat-interface.js: window.videoAgent is not defined"
+              );
+              removeTypingIndicator(typingDiv);
+              isSending = false;
+              userInputField.disabled = false;
+              enterButton.disabled = false;
+              userInputField.placeholder = "Type your message here...";
+            }
+          }
+
+          // Add event listeners for sending messages
+          enterButton.addEventListener("click", sendMessage);
+          userInputField.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+          });
+        });
+      </script>
       <script type="module" src="./publish-alter.js"></script>
       <script
         src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/v4-shims.min.js"
@@ -189,16 +1165,27 @@
       ></script>
       <script>
         document.addEventListener("DOMContentLoaded", () => {
-          const customizeButton = document.getElementById("customize-button");
-          customizeButton.addEventListener("click", () => {
-            console.log(
-              "chat.html: Customize button clicked, redirecting to /customize"
-            );
-            window.location.href = "/customize";
-          });
-
           // Create particles for background effect
           createParticles();
+
+          // Handle input field enter key
+          const inputField = document.getElementById("user-input-field");
+          const enterButton = document.getElementById("enter-button");
+
+          inputField.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+              enterButton.click();
+            }
+          });
+
+          // Auto-resize textarea in modals
+          const textareas = document.querySelectorAll("textarea");
+          textareas.forEach((textarea) => {
+            textarea.addEventListener("input", function () {
+              this.style.height = "auto";
+              this.style.height = this.scrollHeight + "px";
+            });
+          });
         });
 
         // Create floating particles

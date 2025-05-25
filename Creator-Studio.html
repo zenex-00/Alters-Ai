@@ -245,41 +245,510 @@
         -webkit-appearance: none;
         margin: 0;
       }
+
+      /* Enhanced Published Alters Section */
       .published-alters-section {
         margin-top: 2rem;
-        padding: 1rem;
-        background: #f8f9fa;
-        border-radius: 8px;
+        padding: 2rem;
+        background: rgba(31, 41, 55, 0.3);
+        border-radius: 16px;
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        backdrop-filter: blur(10px);
       }
       .published-alters-section h2 {
-        margin-bottom: 1rem;
-        color: #333;
+        margin-bottom: 2rem;
+        color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: 700;
       }
       .alters-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
       }
+
+      /* Enhanced Alter Card Styling - Matching Marketplace */
       .alter-card {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 1rem;
-        background: white;
+        background: rgba(31, 41, 55, 0.5);
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
         position: relative;
+        backdrop-filter: blur(10px);
       }
-      .alter-card .delete-button {
+
+      .alter-card .image-container {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .alter-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 25px 40px -15px rgba(255, 138, 43, 0.3);
+        border-color: rgba(255, 138, 43, 0.4);
+      }
+
+      .alter-card .alter-avatar,
+      .alter-card .alter-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        transition: transform 0.3s ease;
+        display: block;
+      }
+
+      .alter-card:hover .alter-avatar,
+      .alter-card:hover .alter-image {
+        transform: scale(1.05);
+      }
+
+      .alter-card .card-content {
+        padding: 1.5rem;
+      }
+
+      .alter-card h3,
+      .alter-card .alter-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+      }
+
+      .alter-card .category,
+      .alter-card .alter-category {
+        display: inline-block;
+        background: rgba(255, 138, 43, 0.2);
+        color: #ff8a2b;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+      }
+
+      .alter-card .description,
+      .alter-card .alter-description {
+        color: #9ca3af;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .alter-card .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(75, 85, 99, 0.3);
+      }
+
+      .alter-card .price,
+      .alter-card .alter-price {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #ff8a2b;
+      }
+
+      .alter-card .card-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      /* Overlay Buttons */
+      .alter-card .overlay-buttons {
         position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: #dc3545;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 10;
+      }
+
+      .alter-card:hover .overlay-buttons {
+        opacity: 1;
+      }
+
+      .btn-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .btn-icon.btn-view {
+        background: rgba(255, 138, 43, 0.9);
+        color: white;
+      }
+
+      .btn-icon.btn-view:hover {
+        background: #ff8a2b;
+        transform: scale(1.1);
+      }
+
+      .btn-icon.btn-delete {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+      }
+
+      .btn-icon.btn-delete:hover {
+        background: #ef4444;
+        transform: scale(1.1);
+      }
+
+      /* Delete Button - Always Visible */
+      .delete-button {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.75rem;
+        background: rgba(239, 68, 68, 0.9);
         color: white;
         border: none;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
+        padding: 0.5rem;
+        border-radius: 50%;
         cursor: pointer;
+        font-size: 0.875rem;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
-      .alter-card .delete-button:hover {
-        background: #c82333;
+
+      .delete-button:hover {
+        background: #ef4444;
+        transform: scale(1.1);
+      }
+
+      .btn-primary {
+        background: #ff8a2b;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+
+      .btn-primary:hover {
+        background: #e67e22;
+        transform: translateY(-1px);
+      }
+
+      .btn-secondary {
+        background: rgba(75, 85, 99, 0.5);
+        color: #d1d5db;
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        font-size: 0.875rem;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(75, 85, 99, 0.7);
+        border-color: rgba(156, 163, 175, 0.5);
+        color: #ffffff;
+      }
+
+      .loading-spinner-container {
+        text-align: center;
+        padding: 3rem;
+        color: #9ca3af;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 138, 43, 0.3);
+        border-radius: 50%;
+        border-top-color: #ff8a2b;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .no-alters-message {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: rgba(255, 138, 43, 0.1);
+        border-radius: 16px;
+        color: #ff8a2b;
+        border: 1px dashed rgba(255, 138, 43, 0.3);
+      }
+
+      .no-alters-message i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.7;
+      }
+
+      .no-alters-message h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .no-alters-message p {
+        color: #d1d5db;
+        margin-bottom: 1.5rem;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: slideIn 0.3s ease-out;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      }
+
+      .toast.success {
+        background: rgba(16, 185, 129, 0.9);
+        color: white;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+
+      .toast.error {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      /* Featured Badge */
+      .featured-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        background: linear-gradient(45deg, #fbbf24, #f59e0b);
+        color: #1f2937;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        z-index: 2;
+      }
+
+      /* Custom Confirm Dialog Styles */
+      .confirm-dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .confirm-dialog-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .confirm-dialog {
+        background: rgba(31, 41, 55, 0.95);
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 450px;
+        width: 90%;
+        margin: 1rem;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        transform: scale(0.9) translateY(20px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .confirm-dialog-overlay.show .confirm-dialog {
+        transform: scale(1) translateY(0);
+      }
+
+      .confirm-dialog::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
+        border-radius: 20px 20px 0 0;
+      }
+
+      .confirm-dialog-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: rgba(239, 68, 68, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #ef4444;
+        animation: pulse-warning 2s infinite;
+      }
+
+      @keyframes pulse-warning {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+        }
+      }
+
+      .confirm-dialog-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+
+      .confirm-dialog-message {
+        color: #9ca3af;
+        text-align: center;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        font-size: 1rem;
+      }
+
+      .confirm-dialog-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+      }
+
+      .confirm-btn {
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        min-width: 120px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .confirm-btn-cancel {
+        background: rgba(75, 85, 99, 0.5);
+        color: #d1d5db;
+        border: 1px solid rgba(75, 85, 99, 0.5);
+      }
+
+      .confirm-btn-cancel:hover {
+        background: rgba(75, 85, 99, 0.7);
+        border-color: rgba(156, 163, 175, 0.5);
+        color: #ffffff;
+        transform: translateY(-2px);
+      }
+
+      .confirm-btn-delete {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      }
+
+      .confirm-btn-delete:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+      }
+
+      .confirm-btn-delete:active {
+        transform: translateY(0);
+      }
+
+      /* Loading state for delete button */
+      .confirm-btn-delete.loading {
+        pointer-events: none;
+        opacity: 0.8;
+      }
+
+      .confirm-btn-delete.loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .confirm-btn-delete.loading span {
+        opacity: 0;
       }
     </style>
   </head>
@@ -313,24 +782,10 @@
               </div>
               <span>Create Your Own Alter</span>
             </button>
-            <!-- Notification -->
-            <!-- <div class="relative">
-              <button
-                class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
-              >
-                <i class="ri-notification-3-line text-xl"></i>
-                <span class="notification-dot"></span>
-              </button>
-            </div> -->
-            <!-- Help -->
-            <!-- <button
-              class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
-            >
-              <i class="ri-question-line text-xl"></i>
-            </button> -->
           </div>
         </div>
       </header>
+
       <!-- Dashboard Content -->
       <div class="p-6 md:p-10">
         <!-- Welcome Section -->
@@ -362,13 +817,14 @@
             </div>
             <div class="md:w-1/3 flex justify-center">
               <img
-                src="https://readdy.ai/api/search-image?query=futuristic%2520digital%2520avatar%2520creation%2520interface%2520with%2520holographic%2520elements%2520showing%2520face%2520customization%2520options%2520on%2520dark%2520background%2520with%2520orange%2520accents%2520high%2520tech%2520UI%2520design%2520minimal%2520clean%2520aesthetic&width=400&height=300&seq=2&orientation=landscape"
+                src="/placeholder.svg?height=300&width=400"
                 alt="Creator Studio Interface"
                 class="rounded-lg max-w-full h-auto"
               />
             </div>
           </div>
         </div>
+
         <!-- Quick Actions -->
         <div class="mb-10">
           <h3 class="text-xl font-bold mb-6">Quick Actions</h3>
@@ -427,10 +883,22 @@
             </div>
           </div>
         </div>
-        <!-- Resource Usage -->
+
+        <!-- Enhanced Published Alters Section -->
         <div class="studio-container">
           <div class="published-alters-section">
-            <h2>Your Published Alters</h2>
+            <div class="flex items-center justify-between mb-6">
+              <h2>Your Published Alters</h2>
+              <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400" id="alters-count"
+                  >0 alters</span
+                >
+                <button class="btn-secondary" onclick="refreshAlters()">
+                  <i class="ri-refresh-line mr-2"></i>
+                  Refresh
+                </button>
+              </div>
+            </div>
             <div id="published-alters-grid" class="alters-grid">
               <!-- Published alters will be loaded here -->
             </div>
@@ -438,282 +906,32 @@
         </div>
       </div>
     </main>
-    <!-- Create Alter Modal -->
-    <div
-      id="createAlterModal"
-      class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center backdrop-blur-sm"
-    >
-      <div
-        class="bg-secondary rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-      >
-        <div
-          class="p-6 border-b border-gray-800 flex justify-between items-center"
-        >
-          <h2 class="text-2xl font-bold">Create Your Own Alter</h2>
-          <button
-            id="closeModal"
-            class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white"
-          >
-            <i class="ri-close-line text-xl"></i>
-          </button>
+
+    <!-- Custom Confirm Dialog -->
+    <div id="confirmDialog" class="confirm-dialog-overlay">
+      <div class="confirm-dialog">
+        <div class="confirm-dialog-icon">
+          <i class="ri-delete-bin-line"></i>
         </div>
-        <div class="p-6">
-          <div class="mb-8">
-            <h3 class="text-lg font-bold mb-4">Choose Creation Method</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div
-                class="bg-black bg-opacity-50 p-4 rounded-lg border-2 border-primary cursor-pointer"
-              >
-                <div
-                  class="w-12 h-12 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mb-3"
-                >
-                  <i class="ri-upload-cloud-line text-primary text-xl"></i>
-                </div>
-                <h4 class="font-bold mb-1">Upload Photos</h4>
-                <p class="text-sm text-gray-400">
-                  Use your photos to create a personalized alter
-                </p>
-              </div>
-              <div
-                class="bg-black bg-opacity-50 p-4 rounded-lg border border-gray-700 hover:border-primary cursor-pointer"
-              >
-                <div
-                  class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mb-3"
-                >
-                  <i class="ri-layout-grid-line text-gray-300 text-xl"></i>
-                </div>
-                <h4 class="font-bold mb-1">Use Template</h4>
-                <p class="text-sm text-gray-400">
-                  Start with a pre-designed template
-                </p>
-              </div>
-              <div
-                class="bg-black bg-opacity-50 p-4 rounded-lg border border-gray-700 hover:border-primary cursor-pointer"
-              >
-                <div
-                  class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mb-3"
-                >
-                  <i class="ri-brush-line text-gray-300 text-xl"></i>
-                </div>
-                <h4 class="font-bold mb-1">AI Designer</h4>
-                <p class="text-sm text-gray-400">
-                  Let AI create an alter based on your description
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="mb-8">
-            <h3 class="text-lg font-bold mb-4">Upload Photos</h3>
-            <p class="text-gray-400 mb-4">
-              For best results, upload 5-10 clear photos of your face from
-              different angles
-            </p>
-            <div
-              class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-primary transition-colors"
-            >
-              <div
-                class="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4"
-              >
-                <i class="ri-upload-cloud-line text-primary text-2xl"></i>
-              </div>
-              <p class="mb-2">Drag and drop photos here</p>
-              <p class="text-sm text-gray-400 mb-4">or</p>
-              <button
-                class="bg-primary text-white px-6 py-2 rounded-button font-medium hover:bg-opacity-90 transition-all whitespace-nowrap"
-              >
-                Browse Files
-              </button>
-              <p class="text-xs text-gray-500 mt-4">
-                Supported formats: JPG, PNG, HEIC (Max 10MB each)
-              </p>
-            </div>
-          </div>
-          <div class="mb-8">
-            <h3 class="text-lg font-bold mb-4">Basic Information</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium mb-2">Alter Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Professional Alex"
-                  class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-2">Category</label>
-                <div class="relative">
-                  <select
-                    class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary appearance-none pr-8"
-                  >
-                    <option>Professional</option>
-                    <option>Casual</option>
-                    <option>Educational</option>
-                    <option>Entertainment</option>
-                    <option>Customer Service</option>
-                    <option>Other</option>
-                  </select>
-                  <div
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  >
-                    <i class="ri-arrow-down-s-line text-gray-400"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium mb-2"
-                  >Description (optional)</label
-                >
-                <textarea
-                  placeholder="Describe your alter's purpose and characteristics"
-                  rows="3"
-                  class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-          <div class="mb-8">
-            <h3 class="text-lg font-bold mb-4">Voice Settings</h3>
-            <div class="flex items-center justify-between mb-6">
-              <div>
-                <p class="font-medium">Use Voice Training</p>
-                <p class="text-sm text-gray-400">
-                  Train the AI to sound like you
-                </p>
-              </div>
-              <label class="custom-switch">
-                <input type="checkbox" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium mb-2">Voice Type</label>
-                <div class="relative">
-                  <select
-                    class="w-full bg-black bg-opacity-50 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-primary appearance-none pr-8"
-                  >
-                    <option>Natural (Recommended)</option>
-                    <option>Professional</option>
-                    <option>Casual</option>
-                    <option>Energetic</option>
-                    <option>Calm</option>
-                  </select>
-                  <div
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  >
-                    <i class="ri-arrow-down-s-line text-gray-400"></i>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-2"
-                  >Speech Rate</label
-                >
-                <div class="flex items-center">
-                  <span class="text-sm text-gray-400 mr-3">Slow</span>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value="5"
-                    class="flex-1 h-2 bg-gray-700 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
-                  />
-                  <span class="text-sm text-gray-400 ml-3">Fast</span>
-                </div>
-              </div>
-            </div>
-            <div class="mt-6">
-              <label class="block text-sm font-medium mb-2"
-                >Voice Sample (optional)</label
-              >
-              <p class="text-sm text-gray-400 mb-3">
-                Record a sample of your voice for better results
-              </p>
-              <div
-                class="bg-black bg-opacity-50 p-4 rounded-lg border border-gray-700 flex items-center justify-between"
-              >
-                <div class="flex items-center">
-                  <button
-                    class="w-12 h-12 rounded-full bg-primary flex items-center justify-center mr-4"
-                  >
-                    <i class="ri-mic-line text-white text-xl"></i>
-                  </button>
-                  <div>
-                    <p class="font-medium">Record Voice Sample</p>
-                    <p class="text-sm text-gray-400">
-                      Min 30 seconds recommended
-                    </p>
-                  </div>
-                </div>
-                <button class="text-primary hover:underline">
-                  Upload Audio
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="mb-8">
-            <h3 class="text-lg font-bold mb-4">Advanced Settings</h3>
-            <div class="space-y-4">
-              <label class="custom-checkbox flex items-center">
-                <input type="checkbox" checked />
-                <span class="checkmark"></span>
-                <div class="ml-2">
-                  <p class="font-medium">Enable Emotions</p>
-                  <p class="text-sm text-gray-400">
-                    Allow your alter to display emotions based on context
-                  </p>
-                </div>
-              </label>
-              <label class="custom-checkbox flex items-center">
-                <input type="checkbox" checked />
-                <span class="checkmark"></span>
-                <div class="ml-2">
-                  <p class="font-medium">Natural Hand Gestures</p>
-                  <p class="text-sm text-gray-400">
-                    Enable realistic hand movements during speech
-                  </p>
-                </div>
-              </label>
-              <label class="custom-checkbox flex items-center">
-                <input type="checkbox" />
-                <span class="checkmark"></span>
-                <div class="ml-2">
-                  <p class="font-medium">Background Removal</p>
-                  <p class="text-sm text-gray-400">
-                    Automatically remove background from your alter
-                  </p>
-                </div>
-              </label>
-              <label class="custom-checkbox flex items-center">
-                <input type="checkbox" checked />
-                <span class="checkmark"></span>
-                <div class="ml-2">
-                  <p class="font-medium">High Definition Rendering</p>
-                  <p class="text-sm text-gray-400">
-                    Create videos in 1080p resolution (uses more credits)
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-          <div class="flex justify-between pt-6 border-t border-gray-800">
-            <button
-              class="border border-gray-700 text-white px-6 py-3 rounded-button font-medium hover:bg-white hover:bg-opacity-5 transition-all whitespace-nowrap"
-            >
-              Save as Draft
-            </button>
-            <button
-              class="bg-primary text-white px-8 py-3 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
-            >
-              <span>Continue</span>
-              <div class="w-5 h-5 ml-2 flex items-center justify-center">
-                <i class="ri-arrow-right-line"></i>
-              </div>
-            </button>
-          </div>
+        <h3 class="confirm-dialog-title">Delete Alter</h3>
+        <p class="confirm-dialog-message">
+          Are you sure you want to delete this alter? This action cannot be
+          undone and all associated data will be permanently removed.
+        </p>
+        <div class="confirm-dialog-actions">
+          <button
+            class="confirm-btn confirm-btn-cancel"
+            onclick="closeConfirmDialog()"
+          >
+            <span>Cancel</span>
+          </button>
+          <button class="confirm-btn confirm-btn-delete" id="confirmDeleteBtn">
+            <span>Delete Alter</span>
+          </button>
         </div>
       </div>
     </div>
+
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         // Sidebar toggle functionality
@@ -721,53 +939,63 @@
         const mainContent = document.getElementById("mainContent");
         const toggleButton = document.getElementById("toggleSidebar");
         const menuTexts = document.querySelectorAll(".menu-item-text");
-        toggleButton.addEventListener("click", function () {
-          if (sidebar.classList.contains("sidebar-expanded")) {
-            // Collapse sidebar
-            sidebar.classList.remove("sidebar-expanded");
-            sidebar.classList.add("sidebar-collapsed");
-            mainContent.style.marginLeft = "80px";
-            toggleButton.innerHTML =
-              '<i class="ri-menu-unfold-line text-xl"></i>';
-            // Hide menu text
-            menuTexts.forEach((text) => {
-              text.style.opacity = "0";
-              text.style.display = "none";
-            });
-          } else {
-            // Expand sidebar
-            sidebar.classList.remove("sidebar-collapsed");
-            sidebar.classList.add("sidebar-expanded");
-            mainContent.style.marginLeft = "260px";
-            toggleButton.innerHTML =
-              '<i class="ri-menu-fold-line text-xl"></i>';
-            // Show menu text
-            menuTexts.forEach((text) => {
-              text.style.display = "block";
-              setTimeout(() => {
-                text.style.opacity = "1";
-              }, 100);
-            });
-          }
-        });
+
+        if (toggleButton) {
+          toggleButton.addEventListener("click", function () {
+            if (sidebar.classList.contains("sidebar-expanded")) {
+              // Collapse sidebar
+              sidebar.classList.remove("sidebar-expanded");
+              sidebar.classList.add("sidebar-collapsed");
+              mainContent.style.marginLeft = "80px";
+              toggleButton.innerHTML =
+                '<i class="ri-menu-unfold-line text-xl"></i>';
+              // Hide menu text
+              menuTexts.forEach((text) => {
+                text.style.opacity = "0";
+                text.style.display = "none";
+              });
+            } else {
+              // Expand sidebar
+              sidebar.classList.remove("sidebar-collapsed");
+              sidebar.classList.add("sidebar-expanded");
+              mainContent.style.marginLeft = "260px";
+              toggleButton.innerHTML =
+                '<i class="ri-menu-fold-line text-xl"></i>';
+              // Show menu text
+              menuTexts.forEach((text) => {
+                text.style.display = "block";
+                setTimeout(() => {
+                  text.style.opacity = "1";
+                }, 100);
+              });
+            }
+          });
+        }
+
         // Modal functionality
         const createAlterBtn = document.querySelector(".create-alter-btn");
         const createAlterModal = document.getElementById("createAlterModal");
         const closeModalBtn = document.getElementById("closeModal");
-        createAlterBtn.addEventListener("click", function () {
-          createAlterModal.classList.remove("hidden");
-          document.body.style.overflow = "hidden";
-        });
-        closeModalBtn.addEventListener("click", function () {
-          createAlterModal.classList.add("hidden");
-          document.body.style.overflow = "auto";
-        });
-        createAlterModal.addEventListener("click", function (e) {
-          if (e.target === createAlterModal) {
+
+        if (createAlterModal) {
+          createAlterBtn.addEventListener("click", function () {
+            createAlterModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+          });
+
+          closeModalBtn.addEventListener("click", function () {
             createAlterModal.classList.add("hidden");
             document.body.style.overflow = "auto";
-          }
-        });
+          });
+
+          createAlterModal.addEventListener("click", function (e) {
+            if (e.target === createAlterModal) {
+              createAlterModal.classList.add("hidden");
+              document.body.style.overflow = "auto";
+            }
+          });
+        }
+
         // Animate elements on scroll
         const animateElements = document.querySelectorAll(
           ".template-card, .bg-secondary.bg-opacity-30"
@@ -788,6 +1016,7 @@
         animateElements.forEach((element) => observer.observe(element));
       });
     </script>
+
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const createAlterButton = document.querySelector(".create-alter-btn");
@@ -811,84 +1040,342 @@
         });
       });
     </script>
+
     <script type="module">
-      document.addEventListener('DOMContentLoaded', async () => {
+      // Custom Confirm Dialog Functions
+      let currentAlterToDelete = null;
+
+      function showConfirmDialog(alterId, alterName) {
+        currentAlterToDelete = alterId;
+        const dialog = document.getElementById("confirmDialog");
+        const message = dialog.querySelector(".confirm-dialog-message");
+
+        // Update message with alter name if provided
+        if (alterName) {
+          message.innerHTML = `Are you sure you want to delete "<strong>${alterName}</strong>"? This action cannot be undone and all associated data will be permanently removed.`;
+        }
+
+        dialog.classList.add("show");
+        document.body.style.overflow = "hidden";
+
+        // Set up delete button click handler
+        const deleteBtn = document.getElementById("confirmDeleteBtn");
+        deleteBtn.onclick = () => confirmDelete();
+      }
+
+      function closeConfirmDialog() {
+        const dialog = document.getElementById("confirmDialog");
+        dialog.classList.remove("show");
+        document.body.style.overflow = "auto";
+        currentAlterToDelete = null;
+
+        // Reset delete button state
+        const deleteBtn = document.getElementById("confirmDeleteBtn");
+        deleteBtn.classList.remove("loading");
+        deleteBtn.onclick = null;
+      }
+
+      async function confirmDelete() {
+        if (!currentAlterToDelete) return;
+
+        const deleteBtn = document.getElementById("confirmDeleteBtn");
+        deleteBtn.classList.add("loading");
+
         try {
-          const response = await fetch('/api/published-alters');
-          if (!response.ok) {
-            throw new Error('Failed to fetch published alters');
-          }
-          const alters = await response.json();
-          displayPublishedAlters(alters);
+          await deleteAlter(currentAlterToDelete);
+          closeConfirmDialog();
         } catch (error) {
-          console.error('Error loading published alters:', error);
-          showError('Failed to load published alters');
+          deleteBtn.classList.remove("loading");
+          // Error is already handled in deleteAlter function
+        }
+      }
+
+      // Close dialog when clicking outside
+      document
+        .getElementById("confirmDialog")
+        .addEventListener("click", (e) => {
+          if (e.target.classList.contains("confirm-dialog-overlay")) {
+            closeConfirmDialog();
+          }
+        });
+
+      // Close dialog with Escape key
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Escape" &&
+          document.getElementById("confirmDialog").classList.contains("show")
+        ) {
+          closeConfirmDialog();
         }
       });
 
-      function displayPublishedAlters(alters) {
-        const container = document.getElementById('published-alters-grid');
-        container.innerHTML = ''; // Clear existing content
+      // Make functions globally available
+      window.showConfirmDialog = showConfirmDialog;
+      window.closeConfirmDialog = closeConfirmDialog;
 
-        alters.forEach(alter => {
+      // Using the original API integration logic with enhanced card design
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          showLoading(true);
+          const response = await fetch("/api/user-alters");
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to fetch your alters");
+          }
+
+          const alters = await response.json();
+          updateAltersCount(alters.length);
+
+          if (alters.length === 0) {
+            showNoAlters();
+          } else {
+            displayPublishedAlters(alters);
+          }
+        } catch (error) {
+          console.error("Error loading published alters:", error);
+          showError(
+            error.message ||
+              "Failed to load your alters. Please try again later."
+          );
+        } finally {
+          showLoading(false);
+        }
+      });
+
+      function showLoading(isLoading) {
+        const container = document.getElementById("published-alters-grid");
+        if (isLoading) {
+          container.innerHTML = `
+            <div class="loading-spinner-container">
+              <div class="loading-spinner"></div>
+              <p>Loading your alters...</p>
+            </div>
+          `;
+        }
+      }
+
+      function updateAltersCount(count) {
+        const countElement = document.getElementById("alters-count");
+        if (countElement) {
+          countElement.textContent = `${count} alter${count !== 1 ? "s" : ""}`;
+        }
+      }
+
+      function showNoAlters() {
+        const container = document.getElementById("published-alters-grid");
+        container.innerHTML = `
+          <div class="no-alters-message">
+            <i class="ri-user-add-line"></i>
+            <h3>No Alters Published Yet</h3>
+            <p>Start creating your first alter to see it here!</p>
+            <button class="btn-primary mt-4" onclick="document.querySelector('.create-alter-btn').click()">
+              <i class="ri-add-line mr-1"></i>
+            </button>
+          </div>
+        `;
+      }
+
+      function displayPublishedAlters(alters) {
+        const container = document.getElementById("published-alters-grid");
+        container.innerHTML = ""; // Clear existing content
+
+        alters.forEach((alter) => {
           const alterCard = createAlterCard(alter);
           container.appendChild(alterCard);
         });
       }
 
+      // Enhanced card creation with marketplace-style design
       function createAlterCard(alter) {
-        const card = document.createElement('div');
-        card.className = 'alter-card';
+        const card = document.createElement("div");
+        card.className = "alter-card";
+        card.setAttribute("data-alter-id", alter.id);
+
+        // Determine if alter is featured (you can add your own logic here)
+        const isFeatured = alter.featured || Math.random() > 0.8; // Random for demo
+
         card.innerHTML = `
-          <img src="${alter.avatar_url}" alt="${alter.name}" class="alter-avatar">
-          <h3>${alter.name}</h3>
-          <p class="category">${alter.category}</p>
-          <p class="description">${alter.description}</p>
-          <div class="price">$${alter.price}</div>
-          <button class="delete-button" data-alter-id="${alter.id}">
-            <i class="fas fa-trash"></i> Delete
+          ${isFeatured ? '<div class="featured-badge">Featured</div>' : ""}
+          
+          <!-- Delete Button - Always Visible -->
+          <button class="delete-button" data-alter-id="${
+            alter.id
+          }" title="Delete Alter">
+            <i class="ri-delete-bin-line"></i>
           </button>
+          
+          <div class="overlay-buttons">
+            <button class="btn-icon btn-view" onclick="viewAlterInMarketplace('${
+              alter.id
+            }')" title="Quick View">
+              <i class="ri-eye-line"></i>
+            </button>
+          </div>
+          
+          <div class="image-container">
+            <img src="${
+              alter.avatar_url || "/placeholder.svg?height=200&width=300"
+            }" 
+                 alt="${alter.name}" 
+                 class="alter-avatar"
+                 onerror="this.src='/placeholder.svg?height=200&width=300'">
+          </div>
+          
+          <div class="card-content">
+            <h3>${alter.name}</h3>
+            <span class="category">${alter.category || "General"}</span>
+            <p class="description">${
+              alter.description || "No description available."
+            }</p>
+            
+            <div class="card-footer">
+              <div class="price">$${
+                alter.price ? parseFloat(alter.price).toFixed(2) : "9.99"
+              }</div>
+              <div class="card-actions">
+                <button class="btn-secondary" onclick="editAlter('${
+                  alter.id
+                }')">
+                  <i class="ri-edit-line mr-1"></i>
+                  Edit
+                </button>
+                <button class="btn-primary" onclick="viewAlterInMarketplace('${
+                  alter.id
+                }')">
+                  <i class="ri-external-link-line mr-1"></i>
+                  View
+                </button>
+              </div>
+            </div>
+          </div>
         `;
 
-        const deleteButton = card.querySelector('.delete-button');
-        deleteButton.addEventListener('click', () => deleteAlter(alter.id));
+        // Add delete event listener with custom confirm dialog
+        const deleteButton = card.querySelector(".delete-button");
+        deleteButton.addEventListener("click", () => {
+          showConfirmDialog(alter.id, alter.name);
+        });
 
         return card;
       }
 
+      // Global functions for button actions
+      window.viewAlterInMarketplace = function (alterId) {
+        // Navigate to marketplace with specific alter
+        window.open(`/marketplace.html#alter-${alterId}`, "_blank");
+      };
+
+      window.editAlter = function (alterId) {
+        // Navigate to edit page
+        window.location.href = `/edit-alter/${alterId}`;
+      };
+
+      window.refreshAlters = async function () {
+        try {
+          showLoading(true);
+          const response = await fetch("/api/user-alters");
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to refresh alters");
+          }
+
+          const alters = await response.json();
+          updateAltersCount(alters.length);
+
+          if (alters.length === 0) {
+            showNoAlters();
+          } else {
+            displayPublishedAlters(alters);
+          }
+
+          showSuccess("Alters refreshed successfully");
+        } catch (error) {
+          console.error("Error refreshing alters:", error);
+          showError(
+            error.message || "Failed to refresh alters. Please try again later."
+          );
+        } finally {
+          showLoading(false);
+        }
+      };
+
+      // Updated delete function to work with custom dialog
       async function deleteAlter(alterId) {
-        if (!confirm('Are you sure you want to delete this alter?')) {
+        const card = document.querySelector(`[data-alter-id="${alterId}"]`);
+        if (!card) {
+          showError("Alter card not found");
           return;
         }
 
+        // Show loading state on the card
+        card.style.opacity = "0.5";
+        card.style.pointerEvents = "none";
+
         try {
           const response = await fetch(`/api/published-alters/${alterId}`, {
-            method: 'DELETE'
+            method: "DELETE",
           });
 
           if (!response.ok) {
-            throw new Error('Failed to delete alter');
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to delete alter");
           }
 
-          // Remove the card from the UI
-          const card = document.querySelector(`[data-alter-id="${alterId}"]`).closest('.alter-card');
-          card.remove();
+          // Animate card removal
+          card.style.transform = "scale(0.8)";
+          card.style.opacity = "0";
 
-          showSuccess('Alter deleted successfully');
+          setTimeout(() => {
+            card.remove();
+
+            // Update count
+            const remainingAlters = document.querySelectorAll(".alter-card");
+            updateAltersCount(remainingAlters.length);
+
+            // Check if there are any alters left
+            if (remainingAlters.length === 0) {
+              showNoAlters();
+            }
+          }, 300);
+
+          showSuccess("Alter deleted successfully");
         } catch (error) {
-          console.error('Error deleting alter:', error);
-          showError('Failed to delete alter');
+          console.error("Error deleting alter:", error);
+          showError(
+            error.message || "Failed to delete alter. Please try again later."
+          );
+
+          // Restore card state on error
+          card.style.opacity = "1";
+          card.style.pointerEvents = "auto";
+
+          // Re-throw error to be handled by confirm dialog
+          throw error;
         }
       }
 
       function showSuccess(message) {
-        // Implement your toast notification system here
-        console.log('Success:', message);
+        const toast = document.createElement("div");
+        toast.className = "toast success";
+        toast.innerHTML = `
+          <i class="ri-check-line"></i>
+          <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
       }
 
       function showError(message) {
-        // Implement your toast notification system here
-        console.error('Error:', message);
+        const toast = document.createElement("div");
+        toast.className = "toast error";
+        toast.innerHTML = `
+          <i class="ri-error-warning-line"></i>
+          <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
       }
     </script>
   </body>

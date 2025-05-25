@@ -721,10 +721,50 @@ app.post("/api/publish-alter", async (req, res) => {
   }
 });
 
+// API route to get user's published alters (for Creator Studio)
+app.get("/api/user-alters", async (req, res) => {
+  try {
+    // Get Firebase UID from session
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Look up the Supabase UUID from users table
+    const { data: userRows, error: userLookupError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userLookupError || !userRows || userRows.length === 0) {
+      return res.status(401).json({ error: "User not found in users table" });
+    }
+    const userId = userRows[0].id;
+
+    // Fetch user's published alters
+    const { data, error } = await supabaseAdmin
+      .from("published_alters")
+      .select(`*, users: user_id (display_name, photo_url)`)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return res.status(500).json({ error: "Failed to fetch user's alters" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Fetch user alters error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // API route to get all published alters for the marketplace
 app.get("/api/published-alters", async (req, res) => {
   try {
-    // Fetch all published alters, join with users for creator info
+    // Fetch all public alters, join with users for creator info
     const { data, error } = await supabaseAdmin
       .from("published_alters")
       .select(`*, users: user_id (display_name, photo_url)`)
@@ -733,7 +773,9 @@ app.get("/api/published-alters", async (req, res) => {
 
     if (error) {
       console.error("Supabase fetch error:", error);
-      return res.status(500).json({ error: error.message });
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch published alters" });
     }
 
     // Map to include creator_name and creator_avatar for card UI
@@ -746,6 +788,64 @@ app.get("/api/published-alters", async (req, res) => {
     res.json(alters);
   } catch (err) {
     console.error("Fetch published alters error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// API route to delete a published alter
+app.delete("/api/published-alters/:alterId", async (req, res) => {
+  try {
+    // Get Firebase UID from session
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Look up the Supabase UUID from users table
+    const { data: userRows, error: userLookupError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userLookupError || !userRows || userRows.length === 0) {
+      return res.status(401).json({ error: "User not found in users table" });
+    }
+    const userId = userRows[0].id;
+
+    // First, verify that the alter belongs to the user
+    const { data: alterData, error: alterError } = await supabaseAdmin
+      .from("published_alters")
+      .select("user_id")
+      .eq("id", req.params.alterId)
+      .single();
+
+    if (alterError) {
+      console.error("Error fetching alter:", alterError);
+      return res.status(404).json({ error: "Alter not found" });
+    }
+
+    if (alterData.user_id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "You don't have permission to delete this alter" });
+    }
+
+    // Delete the alter
+    const { error: deleteError } = await supabaseAdmin
+      .from("published_alters")
+      .delete()
+      .eq("id", req.params.alterId)
+      .eq("user_id", userId); // Extra safety check
+
+    if (deleteError) {
+      console.error("Error deleting alter:", deleteError);
+      return res.status(500).json({ error: "Failed to delete alter" });
+    }
+
+    res.json({ success: true, message: "Alter deleted successfully" });
+  } catch (err) {
+    console.error("Delete alter error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

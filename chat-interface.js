@@ -1,4 +1,4 @@
-import alterImageManager from './alter-image-manager.js';
+import alterImageManager from "./alter-image-manager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("chat-interface.js: DOMContentLoaded fired");
@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alter.avatarUrl,
       alter.profile_image,
       alter.profileImage,
-      "/placeholder.svg" // Final fallback
+      "/placeholder.svg", // Final fallback
     ].filter(Boolean); // Remove any undefined/null values
 
     // Try each image source until one works
@@ -37,16 +37,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const imageLoadPromise = new Promise((resolve, reject) => {
           const img = new Image();
           img.onload = () => resolve(imageUrl);
-          img.onerror = () => reject(new Error(`Failed to load image: ${imageUrl}`));
+          img.onerror = () =>
+            reject(new Error(`Failed to load image: ${imageUrl}`));
           img.src = imageUrl;
         });
 
         // Wait for image to load with timeout
         const loadedUrl = await Promise.race([
           imageLoadPromise,
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Image load timeout')), 5000)
-          )
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Image load timeout")), 5000)
+          ),
         ]);
 
         // If we get here, the image loaded successfully
@@ -72,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (selectedAlter) {
     try {
       const alter = JSON.parse(selectedAlter);
-      
+
       // Use the image manager to handle the alter image
       alterImageManager.handleAlterImage(alter);
 
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Store alter data for later use
       window.selectedAlter = alter;
-      
+
       // Remove from localStorage after loading
       localStorage.removeItem("selectedAlter");
     } catch (e) {

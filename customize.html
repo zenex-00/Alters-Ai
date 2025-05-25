@@ -4,11 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Customize Avatar - Alters.ai</title>
-    <link rel="stylesheet" href="/enhanced-styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -18,9 +17,698 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Mulish", sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f0f23 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: #ffffff;
+        min-height: 100vh;
+      }
+
+      /* Navigation Styles */
+      .main-nav {
+        background: rgba(15, 15, 35, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 138, 43, 0.2);
+        padding: 0.75rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 2rem;
+      }
+
+      .nav-logo .logo-text {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .nav-logo .logo-text:hover {
+        transform: scale(1.05);
+      }
+
+      .accent-text {
+        color: #ff8a2b;
+      }
+
+      .small-text {
+        font-size: 0.9em;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .nav-link {
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .nav-link:hover {
+        background: rgba(255, 138, 43, 0.1);
+        color: #ff8a2b;
+      }
+
+      /* Main Content */
+      main {
+        padding: 2rem 0;
+      }
+
+      #content {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
+
+      .title {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ff8a2b, #ffffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(255, 138, 43, 0.3);
+      }
+
+      .subtitle {
+        text-align: center;
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 3rem;
+        line-height: 1.5;
+      }
+
+      /* Form Section */
+      .customize-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 138, 43, 0.2);
+        padding: 2.5rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        margin-bottom: 2rem;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 2rem;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .form-group label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #ff8a2b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .form-group label i {
+        font-size: 1.1rem;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        border-radius: 12px;
+        padding: 1rem;
+        color: #ffffff;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.3s ease;
+        font-family: inherit;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        border-color: #ff8a2b;
+        box-shadow: 0 0 0 3px rgba(255, 138, 43, 0.15);
+        background: rgba(255, 255, 255, 0.12);
+        transform: translateY(-1px);
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+        line-height: 1.5;
+      }
+
+      .form-group input::placeholder,
+      .form-group textarea::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      /* Personality Tags */
+      .personality-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 138, 43, 0.1);
+      }
+
+      .personality-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .personality-tags .tag {
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .personality-tags .tag:hover,
+      .personality-tags .tag.selected {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        border-color: #ff8a2b;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 138, 43, 0.3);
+      }
+
+      /* Knowledge Cards */
+      .knowledge-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 138, 43, 0.1);
+      }
+
+      .knowledge-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .knowledge-card {
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .knowledge-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(255, 138, 43, 0.2);
+        border-color: #ff8a2b;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .knowledge-card.selected {
+        border-color: #ff8a2b;
+        background: rgba(255, 138, 43, 0.15);
+        box-shadow: 0 0 0 2px rgba(255, 138, 43, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .knowledge-card .icon {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+
+      .knowledge-card strong {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 0.4rem;
+      }
+
+      .knowledge-card p {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.3;
+      }
+
+      /* Document Upload */
+      .document-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 138, 43, 0.1);
+      }
+
+      .document-upload-area {
+        border: 2px dashed rgba(255, 138, 43, 0.5);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+      }
+
+      .document-upload-area:hover,
+      .document-upload-area.drag-over {
+        border-color: #ff8a2b;
+        background: rgba(255, 138, 43, 0.08);
+        transform: scale(1.02);
+      }
+
+      .document-upload-area i {
+        font-size: 2.5rem;
+        color: #ff8a2b;
+        margin-bottom: 1rem;
+      }
+
+      .file-info {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 0.75rem;
+      }
+
+      .file-preview {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 138, 43, 0.1);
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      .file-preview-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .document-icon {
+        font-size: 1.5rem;
+        color: #ff8a2b;
+      }
+
+      .remove-file {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.7);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .remove-file:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ff8a2b;
+        transform: scale(1.1);
+      }
+
+      /* Voice Section */
+      .voice-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 138, 43, 0.1);
+      }
+
+      .voice-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .voice-controls select {
+        flex: 1;
+      }
+
+      /* Voice Select Styling */
+      select#avatar-voice {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 138, 43, 0.3);
+        color: #ffffff;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        appearance: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      select#avatar-voice:hover {
+        border-color: #ff8a2b;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      select#avatar-voice:focus {
+        outline: none;
+        border-color: #ff8a2b;
+        box-shadow: 0 0 0 3px rgba(255, 138, 43, 0.1);
+      }
+
+      select#avatar-voice option {
+        background: #1a1a2e;
+        color: white;
+        padding: 12px;
+      }
+
+      /* Preview Button Enhanced Styling */
+      #preview-voice-button {
+        background: rgba(255, 138, 43, 0.1);
+        color: #ff8a2b;
+        border: 1px solid #ff8a2b;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+      }
+
+      #preview-voice-button:hover {
+        background: #ff8a2b;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 138, 43, 0.3);
+      }
+
+      #preview-voice-button:disabled {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.3);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .voice-controls select::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+        font-style: italic;
+      }
+
+      .voice-controls select option {
+        background: #1a1a2e;
+        color: #ffffff;
+        padding: 0.5rem;
+      }
+
+      .voice-controls select option:hover {
+        background: rgba(255, 138, 43, 0.1);
+      }
+
+      /* Action Buttons */
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        justify-content: center;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 138, 43, 0.2);
+      }
+
+      .action-button {
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        min-width: 140px;
+      }
+
+      .action-button.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .action-button.secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+      }
+
+      .action-button.primary {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 138, 43, 0.3);
+      }
+
+      .action-button.primary:hover {
+        background: linear-gradient(135deg, #ff6b35, #ff8a2b);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(255, 138, 43, 0.4);
+      }
+
+      /* Section Headers */
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #ff8a2b;
+      }
+
+      .section-header i {
+        font-size: 1.2rem;
+      }
+
+      /* Particles Animation */
+      .particles-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        background: rgba(255, 138, 43, 0.3);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-15px) rotate(180deg);
+        }
+      }
+
+      /* Error Messages */
+      .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .error-message i {
+        font-size: 1rem;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .nav-container {
+          padding: 0 1rem;
+        }
+
+        .nav-links {
+          gap: 1rem;
+        }
+
+        .title {
+          font-size: 2rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .subtitle {
+          font-size: 1rem;
+          margin-bottom: 2rem;
+        }
+
+        #content {
+          padding: 0 1rem;
+        }
+
+        .customize-section {
+          padding: 1.5rem;
+        }
+
+        .knowledge-options {
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        .voice-controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .form-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .action-button {
+          width: 100%;
+        }
+      }
+
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 138, 43, 0.5);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 138, 43, 0.7);
+      }
+
+      /* Hidden elements */
+      #file-input,
+      #document-upload {
+        display: none;
+      }
+
+      .voice-controls-enhanced {
+        display: flex;
+        gap: 1rem;
+        align-items: stretch;
+      }
+
+      .voice-controls-enhanced select {
+        flex: 1;
+        min-height: 3.5rem;
+      }
+
+      .voice-preview-btn {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        color: white;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 140px;
+        justify-content: center;
+      }
+
+      .voice-preview-btn:hover {
+        background: linear-gradient(135deg, #ff6b35, #ff8a2b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(255, 138, 43, 0.4);
+      }
+
+      .voice-preview-btn:disabled {
+        background: rgba(0, 0, 0, 0.1);
+        color: rgba(255, 255, 255, 0.5);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      @media (max-width: 768px) {
+        .voice-controls-enhanced {
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .voice-preview-btn {
+          width: 100%;
+        }
+      }
+    </style>
     <script src="/navbar.js" defer></script>
   </head>
-  <body class="hero-bg">
+  <body>
     <!-- Navigation Bar -->
     <nav class="main-nav">
       <div class="nav-container">
@@ -42,243 +730,208 @@
       <div id="content">
         <h1 class="title">Customize Your Avatar</h1>
         <p class="subtitle">
-          Use our tools to create your perfect digital twin.
+          Create your perfect AI alter with personality, knowledge, and voice
         </p>
-        <div id="content">
-          <div class="nav-bar">
-            <button id="back-button" class="nav-button">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 19L8 12L15 5"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+
+        <div class="customize-section">
+          <form id="customize-form">
+            <div class="form-grid">
+              <!-- Basic Information -->
+              <div class="form-group">
+                <label for="avatar-name">
+                  <i class="fa-solid fa-user"></i>
+                  Avatar Name
+                </label>
+                <input
+                  type="text"
+                  id="avatar-name"
+                  placeholder="e.g., Zunair, Alex, Dr. Smith..."
+                  required
                 />
-              </svg>
-              Back
-            </button>
-            <button id="next-button" class="nav-button">
-              Next
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M9 5L16 12L9 19"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <div class="timeline">
-            <div class="timeline-step active" data-step="1">
-              <span class="step-number">1</span>
-              <span class="step-label">Basics</span>
-            </div>
-            <div class="timeline-step" data-step="2">
-              <span class="step-number">2</span>
-              <span class="step-label">Personality</span>
-            </div>
-            <div class="timeline-step" data-step="3">
-              <span class="step-number">3</span>
-              <span class="step-label">Knowledge</span>
-            </div>
-            <div class="timeline-step" data-step="4">
-              <span class="step-number">4</span>
-              <span class="step-label">Voice</span>
-            </div>
-          </div>
-          <div class="main-container">
-            <div class="customize-section">
-              <form id="customize-form">
-                <!-- Step 1: Basics -->
-                <div class="step" id="step-1">
-                  <div class="form-group">
-                    <label for="avatar-name">Avatar Name</label>
-                    <input
-                      type="text"
-                      id="avatar-name"
-                      placeholder="e.g., Zunair"
-                      required
-                    />
+              </div>
+
+              <!-- Personality Section -->
+              <div class="personality-section">
+                <div class="section-header">
+                  <i class="fa-solid fa-heart"></i>
+                  Personality Traits
+                </div>
+                <div class="personality-tags">
+                  <button type="button" class="tag" data-value="Patient">
+                    Patient
+                  </button>
+                  <button type="button" class="tag" data-value="Humorous">
+                    Humorous
+                  </button>
+                  <button type="button" class="tag" data-value="Knowledgeable">
+                    Knowledgeable
+                  </button>
+                  <button type="button" class="tag" data-value="Friendly">
+                    Friendly
+                  </button>
+                  <button type="button" class="tag" data-value="Professional">
+                    Professional
+                  </button>
+                  <button type="button" class="tag" data-value="Encouraging">
+                    Encouraging
+                  </button>
+                  <button type="button" class="tag" data-value="Creative">
+                    Creative
+                  </button>
+                  <button type="button" class="tag" data-value="Analytical">
+                    Analytical
+                  </button>
+                </div>
+                <div class="form-group">
+                  <label for="avatar-personality">
+                    <i class="fa-solid fa-palette"></i>
+                    Personality Description
+                  </label>
+                  <textarea
+                    id="avatar-personality"
+                    placeholder="e.g., Friendly and patient, loves to explain complex topics in simple terms, uses encouraging language, has a warm sense of humor, always supportive and understanding..."
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- System Prompt -->
+              <div class="form-group">
+                <label for="avatar-prompt">
+                  <i class="fa-solid fa-code"></i>
+                  System Prompt
+                </label>
+                <textarea
+                  id="avatar-prompt"
+                  placeholder="e.g., Act as a helpful assistant who specializes in providing detailed explanations and guidance..."
+                  required
+                ></textarea>
+              </div>
+
+              <!-- Knowledge Context -->
+              <div class="knowledge-section">
+                <div class="section-header">
+                  <i class="fa-solid fa-brain"></i>
+                  Knowledge Context
+                </div>
+                <div class="knowledge-options">
+                  <div class="knowledge-card" data-value="technology">
+                    <span class="icon">💻</span>
+                    <strong>Technology</strong>
+                    <p>Programming, AI, gadgets & tech trends</p>
+                  </div>
+                  <div class="knowledge-card" data-value="medical">
+                    <span class="icon">🩺</span>
+                    <strong>Medical</strong>
+                    <p>Health information & medical knowledge</p>
+                  </div>
+                  <div class="knowledge-card" data-value="general">
+                    <span class="icon">🌐</span>
+                    <strong>General</strong>
+                    <p>Broad knowledge across many domains</p>
+                  </div>
+                  <div class="knowledge-card" data-value="legal">
+                    <span class="icon">⚖️</span>
+                    <strong>Legal</strong>
+                    <p>Laws, regulations & legal concepts</p>
+                  </div>
+                  <div class="knowledge-card" data-value="creative">
+                    <span class="icon">✍️</span>
+                    <strong>Creative</strong>
+                    <p>Storytelling & creative content</p>
+                  </div>
+                  <div class="knowledge-card" data-value="education">
+                    <span class="icon">🎓</span>
+                    <strong>Education</strong>
+                    <p>Teaching & educational content</p>
+                  </div>
+                  <div class="knowledge-card" data-value="finance">
+                    <span class="icon">💰</span>
+                    <strong>Finance</strong>
+                    <p>Money, investing & financial advice</p>
+                  </div>
+                  <div class="knowledge-card" data-value="document">
+                    <span class="icon">📄</span>
+                    <strong>Document</strong>
+                    <p>Upload your own documents</p>
                   </div>
                 </div>
+                <input type="hidden" id="avatar-knowledge" required />
+              </div>
 
-                <!-- Step 2: Personality -->
-                <div class="step" id="step-2" style="display: none">
-                  <div class="form-group">
-                    <label for="avatar-personality">Personality</label>
-                    <div class="personality-tags">
-                      <button type="button" class="tag" data-value="Patient">
-                        Patient
-                      </button>
-                      <button type="button" class="tag" data-value="Humorous">
-                        Humorous
-                      </button>
-                      <button
-                        type="button"
-                        class="tag"
-                        data-value="Knowledgeable"
-                      >
-                        Knowledgeable
-                      </button>
-                      <button type="button" class="tag" data-value="Friendly">
-                        Friendly
-                      </button>
-                      <button
-                        type="button"
-                        class="tag"
-                        data-value="Professional"
-                      >
-                        Professional
-                      </button>
-                      <button
-                        type="button"
-                        class="tag"
-                        data-value="Encouraging"
-                      >
-                        Encouraging
-                      </button>
-                    </div>
-                    <textarea
-                      id="avatar-personality"
-                      placeholder="e.g., Patient, humorous, knowledgeable"
-                      required
-                    ></textarea>
-                  </div>
-                  <div class="form-group">
-                    <label for="avatar-prompt">Prompt</label>
-                    <textarea
-                      id="avatar-prompt"
-                      placeholder="e.g., Act as a doctor"
-                      required
-                    ></textarea>
-                  </div>
+              <!-- Document Upload (hidden by default) -->
+              <div
+                class="document-section"
+                id="document-upload-group"
+                style="display: none"
+              >
+                <div class="section-header">
+                  <i class="fa-solid fa-upload"></i>
+                  Upload Document
                 </div>
-
-                <!-- Step 3: Knowledge -->
-                <div class="step" id="step-3" style="display: none">
-                  <div class="form-group">
-                    <label>Select Knowledge Context</label>
-                    <div class="knowledge-options">
-                      <div class="knowledge-card" data-value="technology">
-                        <span class="icon">💻</span>
-                        <strong>Technology</strong>
-                        <p>Programming, AI, gadgets, and tech trends</p>
-                      </div>
-                      <div class="knowledge-card" data-value="medical">
-                        <span class="icon">🩺</span>
-                        <strong>Medical</strong>
-                        <p>Health information and medical knowledge</p>
-                      </div>
-                      <div class="knowledge-card" data-value="general">
-                        <span class="icon">🌐</span>
-                        <strong>General Knowledge</strong>
-                        <p>Broad knowledge across many domains</p>
-                      </div>
-                      <div class="knowledge-card" data-value="legal">
-                        <span class="icon">⚖️</span>
-                        <strong>Legal</strong>
-                        <p>Laws, regulations, and legal concepts</p>
-                      </div>
-                      <div class="knowledge-card" data-value="creative">
-                        <span class="icon">✍️</span>
-                        <strong>Creative</strong>
-                        <p>Storytelling and creative content</p>
-                      </div>
-                      <div class="knowledge-card" data-value="education">
-                        <span class="icon">🎓</span>
-                        <strong>Education</strong>
-                        <p>Teaching and educational content</p>
-                      </div>
-                      <div class="knowledge-card" data-value="finance">
-                        <span class="icon">💰</span>
-                        <strong>Finance</strong>
-                        <p>Money, investing, and financial advice</p>
-                      </div>
-                      <div class="knowledge-card" data-value="document">
-                        <span class="icon">📄</span>
-                        <strong>Document-Based</strong>
-                        <p>Upload your own documents</p>
-                      </div>
-                    </div>
-                    <input type="hidden" id="avatar-knowledge" required />
+                <div class="document-upload-area" id="doc-drop-area">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <p>Drag & drop your document here or click to browse</p>
+                  <p class="file-info">PDF or TXT files, maximum 5MB</p>
+                  <input type="file" id="document-upload" accept=".pdf,.txt" />
+                </div>
+                <div id="document-preview" class="file-preview">
+                  <div class="file-preview-info">
+                    <i class="fa-solid fa-file-pdf document-icon"></i>
+                    <span id="document-name">No file selected</span>
                   </div>
-                  <div
-                    class="form-group"
-                    id="document-upload-group"
-                    style="display: none"
+                  <button
+                    type="button"
+                    id="remove-document"
+                    class="remove-file"
                   >
-                    <label for="document-upload"
-                      >Upload Document (PDF, TXT)</label
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Voice Selection -->
+              <div class="voice-section">
+                <div class="section-header">
+                  <i class="fa-solid fa-microphone"></i>
+                  Voice Selection
+                </div>
+                <div class="form-group">
+                  <div class="voice-controls-enhanced">
+                    <select id="avatar-voice" required>
+                      <option value="">
+                        Choose a voice that matches your avatar's personality...
+                      </option>
+                    </select>
+                    <button
+                      type="button"
+                      id="preview-voice-button"
+                      class="voice-preview-btn"
                     >
-                    <div class="document-upload-area" id="doc-drop-area">
-                      <p><i class="fa-solid fa-cloud-arrow-up"></i></p>
-                      <p>Drag & drop your document here or click to browse</p>
-                      <p class="file-info">PDF or TXT, max 5MB</p>
-                      <input
-                        type="file"
-                        id="document-upload"
-                        accept=".pdf,.txt"
-                        style="display: none"
-                      />
-                    </div>
-                    <div id="document-preview" class="file-preview">
-                      <div class="file-preview-info">
-                        <i class="fa-solid fa-file-pdf document-icon"></i>
-                        <span id="document-name">No file selected</span>
-                      </div>
-                      <button
-                        type="button"
-                        id="remove-document"
-                        class="remove-file"
-                      >
-                        <i class="fa-solid fa-xmark"></i>
-                      </button>
-                    </div>
+                      <i class="fa-solid fa-play"></i>
+                      <span>Preview Voice</span>
+                    </button>
                   </div>
                 </div>
+              </div>
 
-                <!-- Step 4: Voice -->
-                <div class="step" id="step-4" style="display: none">
-                  <div class="form-group">
-                    <label for="avatar-voice">Select Voice</label>
-                    <div style="display: flex; align-items: center; gap: 10px">
-                      <select id="avatar-voice" required>
-                        <option value="">Select a voice</option>
-                        <!-- Populated dynamically -->
-                      </select>
-                      <button type="button" id="preview-voice-button">
-                        <i class="fa-solid fa-play"></i> Preview
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-actions">
-                  <button type="button" id="prev-step" class="action-button">
-                    Back
-                  </button>
-                  <button type="button" id="next-step" class="action-button">
-                    Continue
-                  </button>
-                </div>
-              </form>
+              <!-- Action Buttons -->
+              <div class="form-actions">
+                <button
+                  type="button"
+                  class="action-button secondary"
+                  onclick="window.history.back()"
+                >
+                  <i class="fa-solid fa-arrow-left"></i>
+                  Cancel
+                </button>
+                <button type="submit" class="action-button primary">
+                  <i class="fa-solid fa-rocket"></i>
+                  Save & Start Chat
+                </button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </main>
@@ -289,11 +942,8 @@
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
         console.log("customize.html: Script loaded");
+
         const form = document.getElementById("customize-form");
-        const prevButton = document.getElementById("prev-step");
-        const nextButton = document.getElementById("next-step");
-        const backButton = document.getElementById("back-button");
-        const nextNavButton = document.getElementById("next-button");
         const voiceSelect = document.getElementById("avatar-voice");
         const previewVoiceButton = document.getElementById(
           "preview-voice-button"
@@ -315,9 +965,6 @@
         const documentName = document.getElementById("document-name");
         const removeDocument = document.getElementById("remove-document");
 
-        let currentStep = 1;
-        const totalSteps = 4;
-
         // Load saved settings if they exist
         const savedSettings = JSON.parse(
           localStorage.getItem("avatarSettings") || "{}"
@@ -331,7 +978,6 @@
           savedSettings.prompt || "";
         knowledgeInput.value = savedSettings.knowledge || "";
         const savedVoiceId = savedSettings.voiceId || "";
-        const savedDocumentUrl = savedSettings.documentUrl || "";
 
         // Highlight selected knowledge card
         if (knowledgeInput.value) {
@@ -402,12 +1048,14 @@
 
         // Display error messages inline
         function showError(message, element = null) {
+          // Clear existing errors
+          clearErrors();
+
           const errorDiv = document.createElement("div");
           errorDiv.className = "error-message";
-          errorDiv.style.color = "red";
-          errorDiv.style.marginTop = "10px";
-          errorDiv.textContent = message;
-          if (element) {
+          errorDiv.innerHTML = `<i class="fa-solid fa-exclamation-triangle"></i> ${message}`;
+
+          if (element && element.parentElement) {
             element.parentElement.appendChild(errorDiv);
           } else {
             form.appendChild(errorDiv);
@@ -438,7 +1086,7 @@
           documentUploadGroup.style.display =
             knowledgeInput.value === "document" ? "block" : "none";
           if (knowledgeInput.value !== "document") {
-            documentUpload.value = ""; // Clear file input
+            documentUpload.value = "";
             documentPreview.style.display = "none";
             docDropArea.style.display = "block";
           }
@@ -469,25 +1117,7 @@
           });
         });
 
-        // Update timeline and step visibility
-        function updateStep(step) {
-          currentStep = step;
-          document.querySelectorAll(".timeline-step").forEach((s) => {
-            s.classList.remove("active");
-            if (parseInt(s.getAttribute("data-step")) === currentStep) {
-              s.classList.add("active");
-            }
-          });
-          document.querySelectorAll(".step").forEach((s) => {
-            s.style.display = s.id === `step-${currentStep}` ? "block" : "none";
-          });
-          prevButton.style.display = currentStep === 1 ? "none" : "block"; // Hide Back on first step
-          nextButton.textContent =
-            currentStep === totalSteps ? "Save & Start Chat" : "Continue";
-          clearErrors();
-        }
-
-        // Fetch Eleven Labs voices with retry
+        // Fetch Eleven Labs voices
         async function loadVoices(attempt = 1, maxAttempts = 3) {
           try {
             console.log(`customize.html: Attempt ${attempt} to load voices`);
@@ -510,6 +1140,7 @@
                 },
               }
             );
+
             if (!voicesResponse.ok) {
               const errorData = await voicesResponse.json().catch(() => ({}));
               throw new Error(
@@ -518,9 +1149,11 @@
                 }`
               );
             }
+
             const { voices } = await voicesResponse.json();
 
-            voiceSelect.innerHTML = '<option value="">Select a voice</option>';
+            voiceSelect.innerHTML =
+              '<option value="">Choose a voice that matches your avatar\'s personality...</option>';
             voices.forEach((voice) => {
               const option = document.createElement("option");
               option.value = voice.voice_id;
@@ -545,10 +1178,7 @@
             }
             voiceSelect.innerHTML =
               '<option value="">Failed to load voices</option>';
-            showError(
-              `Failed to load voices after ${maxAttempts} attempts: ${error.message}. Please check your Eleven Labs API key or network connection.`,
-              voiceSelect
-            );
+            showError(`Failed to load voices: ${error.message}`, voiceSelect);
           }
         }
 
@@ -575,7 +1205,8 @@
               throw new Error("Missing Eleven Labs API key in configuration");
             }
 
-            const sampleText = "Hello, this is a voice preview.";
+            const sampleText =
+              "Hello, this is a voice preview for your avatar.";
             const audioResponse = await fetch(
               `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
               {
@@ -631,184 +1262,139 @@
         // Handle preview voice button click
         previewVoiceButton.addEventListener("click", previewVoice);
 
-        // Handle navigation
-        prevButton.addEventListener("click", () => {
-          if (currentStep > 1) {
-            updateStep(currentStep - 1);
-          }
-        });
-
-        backButton.addEventListener("click", () => {
-          if (currentStep > 1) {
-            updateStep(currentStep - 1);
-          }
-        });
-
-        nextButton.addEventListener("click", async () => {
+        // Handle form submission
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
           clearErrors();
-          if (currentStep < totalSteps) {
-            // Validate current step
-            let isValid = true;
-            if (currentStep === 1) {
-              const name = nameInput.value.trim();
-              if (!name) {
-                showError("Please enter an avatar name.", nameInput);
-                isValid = false;
-              }
-            } else if (currentStep === 2) {
-              const personality = document
-                .getElementById("avatar-personality")
-                .value.trim();
-              const prompt = document
-                .getElementById("avatar-prompt")
-                .value.trim();
-              if (!personality) {
-                showError(
-                  "Please select or enter a personality.",
-                  document.getElementById("avatar-personality")
-                );
-                isValid = false;
-              }
-              if (!prompt) {
-                showError(
-                  "Please enter a prompt.",
-                  document.getElementById("avatar-prompt")
-                );
-                isValid = false;
-              }
-            } else if (currentStep === 3) {
-              if (!knowledgeInput.value) {
-                showError(
-                  "Please select a knowledge context.",
-                  document.querySelector(".knowledge-options")
-                );
-                isValid = false;
-              }
-              if (
-                knowledgeInput.value === "document" &&
-                documentUpload.files.length === 0
-              ) {
-                showError("Please upload a document.", documentUpload);
-                isValid = false;
-              }
-              if (
-                knowledgeInput.value === "document" &&
-                documentUpload.files.length > 0
-              ) {
-                const file = documentUpload.files[0];
-                const fileError = validateFile(file);
-                if (fileError) {
-                  showError(fileError, documentUpload);
-                  isValid = false;
-                }
-              }
-            }
 
-            if (isValid) {
-              updateStep(currentStep + 1);
-            }
-          } else {
-            // Final step: save and redirect
-            const name = nameInput.value.trim();
-            const personality = document
+          const name = nameInput.value.trim();
+          const personality = document
+            .getElementById("avatar-personality")
+            .value.trim();
+          const prompt = document.getElementById("avatar-prompt").value.trim();
+          const knowledge = knowledgeInput.value;
+          const voiceId = voiceSelect.value;
+
+          // Validation
+          if (!name) {
+            showError("Please enter an avatar name.", nameInput);
+            nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+          if (!personality) {
+            showError(
+              "Please select or enter personality traits.",
+              document.getElementById("avatar-personality")
+            );
+            document
               .getElementById("avatar-personality")
-              .value.trim();
-            const prompt = document
+              .scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+          if (!prompt) {
+            showError(
+              "Please enter a system prompt.",
+              document.getElementById("avatar-prompt")
+            );
+            document
               .getElementById("avatar-prompt")
-              .value.trim();
-            const knowledge = knowledgeInput.value;
-            const voiceId = voiceSelect.value;
-            let documentUrl = "";
-            let documentName = "";
-            let documentContent = "";
+              .scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+          if (!knowledge) {
+            showError("Please select a knowledge context.");
+            document
+              .querySelector(".knowledge-section")
+              .scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+          if (!voiceId) {
+            showError("Please select a voice.", voiceSelect);
+            document
+              .querySelector(".voice-section")
+              .scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+          if (knowledge === "document" && documentUpload.files.length === 0) {
+            showError("Please upload a document.", documentUpload);
+            document
+              .querySelector(".document-section")
+              .scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
 
-            // Handle document upload to server
-            if (knowledge === "document" && documentUpload.files.length > 0) {
-              const file = documentUpload.files[0];
-              const fileError = validateFile(file);
-              if (fileError) {
-                showError(fileError, documentUpload);
-                return;
-              }
+          let documentUrl = "";
+          let documentName = "";
+          let documentContent = "";
 
-              try {
-                const formData = new FormData();
-                formData.append("document", file);
-                const response = await fetch("/upload-document", {
-                  method: "POST",
-                  body: formData,
-                });
-
-                if (!response.ok) {
-                  let errorData;
-                  try {
-                    errorData = await response.json();
-                  } catch {
-                    errorData = { error: response.statusText };
-                  }
-                  throw new Error(
-                    `Failed to upload document: ${
-                      errorData.error || response.statusText
-                    }`
-                  );
-                }
-
-                const result = await response.json();
-                if (!result.documentUrl || !result.documentContent) {
-                  throw new Error(
-                    "Server response missing documentUrl or documentContent"
-                  );
-                }
-                documentUrl = result.documentUrl;
-                documentName = result.documentName;
-                documentContent = result.documentContent;
-              } catch (error) {
-                console.error(
-                  "customize.html: Error uploading document:",
-                  error
-                );
-                showError(
-                  `Failed to upload document: ${error.message}`,
-                  documentUpload
-                );
-                return;
-              }
+          // Handle document upload to server
+          if (knowledge === "document" && documentUpload.files.length > 0) {
+            const file = documentUpload.files[0];
+            const fileError = validateFile(file);
+            if (fileError) {
+              showError(fileError, documentUpload);
+              return;
             }
 
-            if (name && personality && prompt && knowledge && voiceId) {
-              localStorage.setItem(
-                "avatarSettings",
-                JSON.stringify({
-                  name,
-                  personality,
-                  prompt,
-                  knowledge,
-                  voiceId,
-                  documentName,
-                  documentUrl,
-                  documentContent,
-                })
-              );
-              console.log(
-                "customize.html: Settings saved, redirecting to /chat"
-              );
-              window.location.href = "/chat";
-            } else {
+            try {
+              const formData = new FormData();
+              formData.append("document", file);
+              const response = await fetch("/upload-document", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (!response.ok) {
+                let errorData;
+                try {
+                  errorData = await response.json();
+                } catch {
+                  errorData = { error: response.statusText };
+                }
+                throw new Error(
+                  `Failed to upload document: ${
+                    errorData.error || response.statusText
+                  }`
+                );
+              }
+
+              const result = await response.json();
+              if (!result.documentUrl || !result.documentContent) {
+                throw new Error(
+                  "Server response missing documentUrl or documentContent"
+                );
+              }
+              documentUrl = result.documentUrl;
+              documentName = result.documentName;
+              documentContent = result.documentContent;
+            } catch (error) {
+              console.error("customize.html: Error uploading document:", error);
               showError(
-                "Please complete all fields, including selecting a voice.",
-                form
+                `Failed to upload document: ${error.message}`,
+                documentUpload
               );
-              console.log("customize.html: Validation failed");
+              return;
             }
           }
-        });
 
-        nextNavButton.addEventListener("click", () => {
-          nextButton.click();
-        });
+          // Save settings and redirect
+          localStorage.setItem(
+            "avatarSettings",
+            JSON.stringify({
+              name,
+              personality,
+              prompt,
+              knowledge,
+              voiceId,
+              documentName,
+              documentUrl,
+              documentContent,
+            })
+          );
 
-        // Initialize first step
-        updateStep(1);
+          console.log("customize.html: Settings saved, redirecting to /chat");
+          window.location.href = "/chat";
+        });
 
         // Create particles for background effect
         createParticles();
