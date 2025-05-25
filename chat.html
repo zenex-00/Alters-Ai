@@ -928,20 +928,59 @@
           if (selectedAlter) {
             try {
               const alter = JSON.parse(selectedAlter);
+              
+              // Clear any existing avatar settings to prevent interference
+              localStorage.removeItem("avatarSettings");
+              
+              // Use the image manager to handle the alter image
               alterImageManager.handleAlterImage(alter);
 
+              // Set chat header name if available
               const chatHeader = document.querySelector(".chat-header h2");
               if (chatHeader && alter.name) {
                 chatHeader.textContent = `Chat with ${alter.name}`;
               }
 
-              window.selectedAlter = alter;
+              // Store alter data for later use, ensuring prompt is preserved based on type
+              window.selectedAlter = {
+                ...alter,
+                type: alter.type || 'custom', // Default to custom if not specified
+                prompt: alter.type === 'premade' || alter.type === 'customized' 
+                  ? (alter.prompt || alter.system_prompt) // Use specific prompt for premade/customized
+                  : (alter.prompt || alter.system_prompt || ''), // Allow custom prompt for new alters
+                personality: alter.personality || alter.personality_description,
+                name: alter.name,
+                knowledge: alter.knowledge || alter.category || "general",
+                documentContent: alter.documentContent || ""
+              };
+
+              // Store in sessionStorage for persistence across refreshes
+              sessionStorage.setItem("currentAlter", JSON.stringify(window.selectedAlter));
+
+              // Remove from localStorage after loading
               localStorage.removeItem("selectedAlter");
             } catch (e) {
-              console.error(
-                "Failed to parse selectedAlter from localStorage:",
-                e
-              );
+              console.error("Failed to parse selectedAlter from localStorage:", e);
+            }
+          } else {
+            // Check sessionStorage for existing alter data
+            const currentAlter = sessionStorage.getItem("currentAlter");
+            if (currentAlter) {
+              try {
+                const alter = JSON.parse(currentAlter);
+                window.selectedAlter = alter;
+                
+                // Update chat header
+                const chatHeader = document.querySelector(".chat-header h2");
+                if (chatHeader && alter.name) {
+                  chatHeader.textContent = `Chat with ${alter.name}`;
+                }
+
+                // Update image
+                alterImageManager.handleAlterImage(alter);
+              } catch (e) {
+                console.error("Failed to parse currentAlter from sessionStorage:", e);
+              }
             }
           }
 

@@ -1,14 +1,19 @@
 export async function fetchOpenAIResponse(apiKey, userMessage) {
   try {
-    // Get complete settings from localStorage
+    // First check for selected alter data
+    const selectedAlter = window.selectedAlter;
+    
+    // Get settings from localStorage as fallback
     const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
+    
+    // Use alter-specific data if available, otherwise fall back to settings
     const {
-      name = "Assistant",
-      personality = "friendly and helpful",
-      prompt = "Act as a conversational assistant",
-      knowledge = "general",
-      documentContent = "",
-    } = settings;
+      name = settings.name || "Assistant",
+      personality = settings.personality || "friendly and helpful",
+      prompt = settings.prompt || "Act as a conversational assistant",
+      knowledge = settings.knowledge || "general",
+      documentContent = settings.documentContent || "",
+    } = selectedAlter || settings;
 
     // Enhanced question detection
     const isPersonalQuestion =

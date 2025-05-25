@@ -1,4 +1,4 @@
-import alterImageManager from './alter-image-manager.js';
+import alterImageManager from "./alter-image-manager.js";
 
 // Enhanced marketplace functionality with proper tab integration
 document.addEventListener("DOMContentLoaded", () => {
@@ -298,10 +298,9 @@ document.addEventListener("DOMContentLoaded", () => {
           
           <div class="flex items-center justify-between">
             <div class="text-xl font-bold">$${alter.price}</div>
-            <div class="flex gap-2">
-              <button class="btn-primary px-4 py-2 rounded-lg chat-alter-btn" data-alter='${JSON.stringify(
-                enhancedAlter
-              )}' title="Chat with ${alter.name}">
+            <div class="flex gap-2">              <button class="btn-primary px-4 py-2 rounded-lg chat-alter-btn" data-alter="${encodeURIComponent(
+              JSON.stringify(enhancedAlter)
+            )}" title="Chat with ${alter.name}">
                 <i class="ri-chat-3-line mr-2"></i>Chat Now
               </button>
             </div>
@@ -373,13 +372,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const alter = JSON.parse(btn.getAttribute("data-alter"));
         tryAlter(alter);
       });
-    });
-
-    // Chat buttons
+    }); // Chat buttons
     container.querySelectorAll(".chat-alter-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const alter = JSON.parse(btn.getAttribute("data-alter"));
+        const alterJson = decodeURIComponent(btn.getAttribute("data-alter"));
+        const alter = JSON.parse(alterJson);
         chatWithAlter(alter);
       });
     });
@@ -446,13 +444,9 @@ document.addEventListener("DOMContentLoaded", () => {
       avatarUrl: alter.avatarUrl,
       profile_image: alter.profile_image,
       profileImage: alter.profileImage,
-      personality:
-        alter.personality ||
-        alter.description ||
-        `I am ${alter.name}, ${alter.description}`,
-      prompt:
-        alter.prompt ||
-        `You are ${alter.name}. ${alter.description}. You are helpful, knowledgeable, and maintain the personality traits that make you unique. Respond in character and be engaging.`,
+      // Always use the specific personality and prompt from the alter
+      personality: alter.personality || alter.personality_description,
+      prompt: alter.prompt || alter.system_prompt,
       knowledge: alter.knowledge || alter.category || "general",
       voice_id: alter.voice_id || alter.voiceId || "",
       category: alter.category,
@@ -465,6 +459,9 @@ document.addEventListener("DOMContentLoaded", () => {
       documentUrl: alter.documentUrl || "",
       documentName: alter.documentName || "",
     };
+
+    // Clear any existing avatar settings to prevent interference
+    localStorage.removeItem("avatarSettings");
 
     // Pre-load the image using the image manager
     alterImageManager.handleAlterImage(alterForChat);

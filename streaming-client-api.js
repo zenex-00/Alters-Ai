@@ -280,12 +280,16 @@ class VideoAgent {
         throw new Error("Invalid audio URL: Must be an HTTPS URL");
       }
 
+      // Get the current alter's image URL
+      const selectedAlter = window.selectedAlter;
+      const avatarUrl = selectedAlter?.image || 
+                       selectedAlter?.avatar_url || 
+                       this.customAvatarUrl ||
+                       "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+
       // Log the audio URL and avatar URL for debugging
       console.log("D-ID API audio URL:", audioUrl);
-      console.log(
-        "D-ID API source_url:",
-        this.customAvatarUrl || "default oracle_pic.jpg"
-      );
+      console.log("D-ID API source_url:", avatarUrl);
 
       // Verify audio URL accessibility
       const urlCheck = await fetch(audioUrl, { method: "HEAD" });
@@ -315,9 +319,7 @@ class VideoAgent {
                 config: { fluent: true, stitch: true, client_fps: 30 },
                 driver_url: "bank://lively/",
                 session_id: this.sessionId,
-                source_url:
-                  this.customAvatarUrl ||
-                  "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg",
+                source_url: avatarUrl,
               }),
             }
           );
@@ -498,14 +500,43 @@ class VideoAgent {
   }
 
   async createStream() {
-    const avatarUrl =
-      this.customAvatarUrl ||
-      "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+    // Get the current alter's image URL with proper fallback chain
+    const selectedAlter = window.selectedAlter;
+    let avatarUrl;
+
+    if (selectedAlter) {
+      // For premade or customized alters
+      if (selectedAlter.type === 'premade' || selectedAlter.type === 'customized') {
+        avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
+      } 
+      // For new custom alters
+      else if (selectedAlter.type === 'custom') {
+        avatarUrl = this.customAvatarUrl;
+      }
+      // Fallback for any other case
+      else {
+        avatarUrl = selectedAlter.image || 
+                   selectedAlter.avatar_url || 
+                   this.customAvatarUrl;
+      }
+    } else {
+      // If no selected alter, use custom avatar or default
+      avatarUrl = this.customAvatarUrl || 
+                 "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+    }
 
     console.log(
       "streaming-client-api.js: Creating stream with avatar URL:",
       avatarUrl
     );
+
+    // Set the avatar image in the UI
+    if (this.avatarImage) {
+      this.avatarImage.src = avatarUrl;
+      this.avatarImage.style.display = "block";
+      this.idleVideo.style.display = "none";
+      this.talkVideo.style.display = "none";
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -722,7 +753,33 @@ class VideoAgent {
       this.talkVideo.srcObject = null;
       this.talkVideo.style.display = "none";
 
-      if (this.customAvatarUrl) {
+      // Get the current alter's image URL with proper fallback chain
+      const selectedAlter = window.selectedAlter;
+      let avatarUrl;
+
+      if (selectedAlter) {
+        // For premade or customized alters
+        if (selectedAlter.type === 'premade' || selectedAlter.type === 'customized') {
+          avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
+        } 
+        // For new custom alters
+        else if (selectedAlter.type === 'custom') {
+          avatarUrl = this.customAvatarUrl;
+        }
+        // Fallback for any other case
+        else {
+          avatarUrl = selectedAlter.image || 
+                     selectedAlter.avatar_url || 
+                     this.customAvatarUrl;
+        }
+      } else {
+        // If no selected alter, use custom avatar or default
+        avatarUrl = this.customAvatarUrl || 
+                   "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+      }
+
+      if (avatarUrl) {
+        this.avatarImage.src = avatarUrl;
         this.avatarImage.style.display = "block";
         this.idleVideo.style.display = "none";
       } else {
