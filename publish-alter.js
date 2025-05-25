@@ -55,10 +55,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // Get avatar settings from localStorage
       const avatarSettings = JSON.parse(localStorage.getItem("avatarSettings"));
+      const currentAlter = JSON.parse(sessionStorage.getItem("currentAlter") || "{}");
 
-      if (!avatarSettings) {
+      if (!avatarSettings && !currentAlter.name) {
         throw new Error(
-          "No avatar settings found. Please customize your alter first."
+          "No alter settings found. Please customize your alter first."
         );
       }
 
@@ -68,18 +69,26 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("No avatar image found. Please upload an image first.");
       }
 
-      // Prepare alter data
+      // Prepare alter data - prioritize current alter settings over avatarSettings
       const alterData = {
-        name: avatarSettings.name,
+        name: currentAlter.name || avatarSettings.name || "Untitled Alter",
         description: description,
         category: category,
         avatar_url: avatarImage.src,
-        personality: avatarSettings.personality,
-        prompt: avatarSettings.prompt,
-        knowledge: avatarSettings.knowledge,
-        voice_id: avatarSettings.voiceId,
+        personality: currentAlter.personality || avatarSettings.personality || "Friendly and helpful",
+        prompt: currentAlter.prompt || avatarSettings.prompt || "You are a helpful AI assistant.",
+        knowledge: currentAlter.knowledge || avatarSettings.knowledge || category.toLowerCase(),
+        voice_id: currentAlter.voiceId || avatarSettings.voiceId || "",
         is_public: true,
+        type: currentAlter.type || "custom",
+        documentContent: currentAlter.documentContent || avatarSettings.documentContent || ""
       };
+
+      // Validate required fields
+      if (!alterData.name || !alterData.description || !alterData.personality || 
+          !alterData.prompt || !alterData.knowledge || !alterData.category) {
+        throw new Error("Missing required fields. Please ensure all fields are filled out.");
+      }
 
       console.log("publish-alter.js: Publishing alter:", alterData);
 
@@ -100,6 +109,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const result = await response.json();
       console.log("publish-alter.js: Alter published successfully:", result);
+
+      // Store the published alter data in sessionStorage
+      sessionStorage.setItem("currentAlter", JSON.stringify({
+        ...alterData,
+        id: result.alter.id,
+        type: "published"
+      }));
+
+      // Remove avatarSettings after successful publishing
+      localStorage.removeItem("avatarSettings");
 
       // Show success message
       const successDiv = document.createElement("div");

@@ -950,8 +950,8 @@
               // Store in sessionStorage for persistence
               sessionStorage.setItem("currentAlter", JSON.stringify(window.selectedAlter));
 
-              // Remove from localStorage after loading
-              localStorage.removeItem("avatarSettings");
+              // Note: We don't remove avatarSettings from localStorage here anymore
+              // It will be removed after successful publishing
             } catch (e) {
               console.error("Failed to parse avatarSettings from localStorage:", e);
             }
