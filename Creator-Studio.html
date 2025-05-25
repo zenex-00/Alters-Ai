@@ -1019,6 +1019,27 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        // Check authentication status
+        fetch('/api/auth/status')
+          .then(response => response.json())
+          .then(data => {
+            if (!data.authenticated) {
+              console.log('Not authenticated, redirecting to login');
+              window.location.href = '/login';
+              return;
+            }
+            
+            if (!data.isCreator && !data.allowedAccess) {
+              console.log('Not authorized for creator studio, redirecting to creator page');
+              window.location.href = '/creator-page';
+              return;
+            }
+          })
+          .catch(error => {
+            console.error('Auth check error:', error);
+            window.location.href = '/login';
+          });
+
         const createAlterButton = document.querySelector(".create-alter-btn");
         createAlterButton.addEventListener("click", async (event) => {
           event.preventDefault();

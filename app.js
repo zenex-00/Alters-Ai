@@ -105,13 +105,27 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET || "alter-session-secret",
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === "production" },
+    saveUninitialized: false,
+    cookie: { 
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true
+    },
+    proxy: process.env.NODE_ENV === "production" // Trust the reverse proxy
   })
 );
 
 // Middleware to protect premium routes (not used for creator-studio, customize, or chat)
 function guardRoute(req, res, next) {
+  console.log('Guard Route Check:', {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+    userId: req.session.userId,
+    sessionID: req.sessionID,
+    cookies: req.cookies
+  });
+  
   if (req.session.isCreator || req.session.allowedAccess) {
     next();
   } else {
@@ -595,6 +609,12 @@ app.post("/auth/google", async (req, res) => {
     req.session.email = decodedToken.email;
     req.session.allowedAccess = true;
 
+    console.log('Google Auth Success:', {
+      userId: decodedToken.uid,
+      email: decodedToken.email,
+      sessionID: req.sessionID
+    });
+
     // Upsert user in Supabase users table
     const { uid, email, name, picture } = decodedToken;
     const { data, error } = await supabaseAdmin.from("users").upsert(
@@ -614,7 +634,14 @@ app.post("/auth/google", async (req, res) => {
       return res.status(500).json({ error: "Failed to upsert user" });
     }
 
-    res.json({ success: true });
+    // Explicitly save session before sending response
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).json({ error: "Failed to save session" });
+      }
+      res.json({ success: true });
+    });
   } catch (error) {
     console.error("Auth error:", error);
     res.status(401).json({
@@ -848,6 +875,22 @@ app.delete("/api/published-alters/:alterId", async (req, res) => {
     console.error("Delete alter error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// Auth status endpoint
+app.get('/api/auth/status', (req, res) => {
+  console.log('Auth Status Check:', {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+    userId: req.session.userId,
+    sessionID: req.sessionID
+  });
+  
+  res.json({
+    authenticated: !!req.session.userId,
+    isCreator: !!req.session.isCreator,
+    allowedAccess: !!req.session.allowedAccess
+  });
 });
 
 // Serve static files
