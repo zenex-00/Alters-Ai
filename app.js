@@ -316,7 +316,7 @@ app.post(
               .from("users")
               .select("id")
               .eq("firebase_uid", firebaseUid)
-              .single();
+              .limit(1);
 
             if (userError) {
               console.log("User not found, creating new user...");
@@ -331,7 +331,7 @@ app.post(
                   },
                 ])
                 .select()
-                .single();
+                .limit(1);
 
               if (createError) {
                 console.error("Error creating user:", createError);
@@ -350,7 +350,7 @@ app.post(
                 .from("creatorsuser")
                 .select("*")
                 .eq("user_id", userRecord.id)
-                .single();
+                .limit(1);
 
             if (creatorCheckError && creatorCheckError.code !== "PGRST116") {
               console.error(
@@ -874,7 +874,7 @@ app.delete("/api/published-alters/:alterId", async (req, res) => {
       .from("published_alters")
       .select("user_id")
       .eq("id", req.params.alterId)
-      .single();
+      .limit(1);
 
     if (alterError) {
       console.error("Error fetching alter:", alterError);
@@ -936,7 +936,7 @@ app.get("/api/check-creator-status", async (req, res) => {
       .from("users")
       .select("id")
       .eq("firebase_uid", firebaseUid)
-      .single();
+      .limit(1);
 
     if (userError) {
       console.error("Error finding user:", userError);
@@ -951,26 +951,21 @@ app.get("/api/check-creator-status", async (req, res) => {
     console.log("Found user in Supabase:", userData);
 
     // Then check creator status
-    const { data: creatorData, error: creatorError } = await supabaseAdmin
+    const { data: creatorRows, error: creatorError } = await supabaseAdmin
       .from("creatorsuser")
       .select("is_creator")
       .eq("user_id", userData.id)
-      .maybeSingle();
+      .limit(1); // Only take one
 
     if (creatorError) {
-      if (creatorError.code === "PGRST116") {
-        console.log("No creator record found for user");
-        return res.json({ isCreator: false });
-      }
       console.error("Error checking creator status:", creatorError);
       return res.json({ isCreator: false });
     }
 
-    const isCreator = creatorData?.is_creator || false;
-    console.log("Creator status check result:", {
-      userId: userData.id,
-      isCreator,
-    });
+    const isCreator =
+      creatorRows && creatorRows.length > 0 ? creatorRows[0].is_creator : false;
+    res.json({ isCreator });
+
     res.json({ isCreator });
   } catch (error) {
     console.error("Error in check-creator-status:", error);
