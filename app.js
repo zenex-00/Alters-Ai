@@ -268,7 +268,7 @@ app.get("/payment-success", async (req, res) => {
 });
 
 // Webhook endpoint for Stripe events
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   console.log("Webhook triggered - Received event");
   
   const sig = req.headers["stripe-signature"];
@@ -276,11 +276,9 @@ app.post("/webhook", async (req, res) => {
 
   let event;
   try {
-    const rawBody = await getRawBody(req);
-    console.log("Raw webhook body received");
-    
+    // No need for getRawBody since express.raw() already gives us the raw body
     event = stripe.webhooks.constructEvent(
-      rawBody,
+      req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
