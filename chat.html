@@ -46,6 +46,7 @@
         position: sticky;
         top: 0;
         z-index: 1000;
+        height: 60px;
       }
 
       .nav-container {
@@ -122,8 +123,8 @@
 
       /* Main Content */
       main {
-        height: calc(100vh - 80px);
-        padding: 1rem 0;
+        height: calc(100vh - 100px);
+        padding: 1.5rem 0 1rem 0;
         overflow: hidden;
       }
 
@@ -138,9 +139,9 @@
 
       .title {
         text-align: center;
-        font-size: 2.2rem;
+        font-size: 1.8rem;
         font-weight: 700;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         background: linear-gradient(135deg, #ff8a2b, #ffffff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -152,39 +153,121 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 2rem;
-        max-width: 1200px;
+        max-width: 1100px;
         margin: 0 auto;
-        height: calc(100% - 120px);
+        height: calc(100% - 80px);
         min-height: 0;
       }
 
       /* Video Section */
+      :root {
+        --panel-bg: rgba(255, 255, 255, 0.08);
+        --radius-lg: 24px;
+        --shadow-color: rgba(0, 0, 0, 0.25);
+        --border-color: rgba(255, 138, 43, 0.2);
+        --transition-standard: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        --glow-primary: rgba(255, 138, 43, 0.4);
+        --glow-secondary: rgba(255, 138, 43, 0.2);
+      }
+
       .video-section {
         display: flex;
         flex-direction: column;
         align-items: center;
         height: 100%;
+        position: relative;
       }
 
       #video-wrapper {
+        background: var(--panel-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 20px 40px var(--shadow-color),
+          0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         position: relative;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        transition: var(--transition-standard);
+        height: auto;
+        max-width: 500px;
         width: 100%;
-        max-width: 450px;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
+        overflow: hidden;
+        height: 90%;
+      }
+
+      #video-wrapper::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 138, 43, 0.05) 0%,
+          rgba(255, 138, 43, 0.02) 50%,
+          rgba(255, 138, 43, 0.05) 100%
+        );
+        border-radius: var(--radius-lg);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      #video-wrapper:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 32px 64px var(--shadow-color),
+          0 16px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 138, 43, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 138, 43, 0.4);
       }
 
       #video-container {
-        width: 100%;
-        height: 350px;
-        border-radius: 16px;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.05);
-        border: 2px solid rgba(255, 138, 43, 0.3);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         position: relative;
-        flex-shrink: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(26, 26, 26, 0.9) 0%,
+          rgba(10, 10, 10, 0.95) 100%
+        );
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+          0 8px 16px rgba(0, 0, 0, 0.2),
+          inset 0 2px 4px rgba(255, 255, 255, 0.1),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        margin: 0 auto;
+        z-index: 2;
+        position: relative;
+        transition: var(--transition-standard);
+      }
+
+      #video-container::before {
+        content: "";
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        background: linear-gradient(
+          45deg,
+          var(--glow-primary) 0%,
+          var(--glow-secondary) 25%,
+          transparent 50%,
+          var(--glow-secondary) 75%,
+          var(--glow-primary) 100%
+        );
+        border-radius: 50%;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.6s ease;
+        animation: avatarGlow 4s ease-in-out infinite alternate;
+      }
+
+      #video-container:hover::before {
+        opacity: 1;
       }
 
       #video-container video,
@@ -193,20 +276,71 @@
         height: 100%;
         object-fit: cover;
         object-position: center;
+        border-radius: 50%;
+        transition: var(--transition-standard);
+      }
+
+      #video-container:hover video,
+      #video-container:hover img {
+        transform: scale(1.05);
+      }
+
+      /* Avatar glow animation */
+      @keyframes avatarGlow {
+        0% {
+          opacity: 0.3;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: scale(1.02);
+        }
+        100% {
+          opacity: 0.4;
+          transform: scale(1.01);
+        }
+      }
+
+      /* Status indicator */
+      #video-container::after {
+        content: "";
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 20px;
+        height: 20px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        z-index: 10;
+        animation: statusPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes statusPulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
       }
 
       #upload-avatar-button {
-        margin-top: 1rem;
+        margin-top: 0.45rem;
         background: rgba(255, 138, 43, 0.1);
         border: 2px solid #ff8a2b;
         color: #ff8a2b;
-        padding: 0.6rem 1.5rem;
-        border-radius: 20px;
+        padding: 1rem 2rem;
+        border-radius: 16px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
         width: 100%;
-        max-width: 180px;
+        max-width: 160px;
         flex-shrink: 0;
       }
 
@@ -225,7 +359,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        height: 100%;
+        height: 90%;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         min-height: 0;
       }
@@ -650,6 +784,18 @@
 
         #video-container {
           height: 280px;
+          width: 280px;
+        }
+
+        #video-wrapper {
+          padding: 1.5rem;
+          margin-bottom: 1rem;
+          max-width: 100%;
+        }
+
+        #upload-avatar-button {
+          max-width: 100%;
+          padding: 0.8rem 1.5rem;
         }
 
         .chat-section {
@@ -680,6 +826,270 @@
 
       .hidden-audio {
         display: none;
+      }
+
+      /* Enhanced Modern Toast Styles */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        color: #1a1a2e;
+        padding: 0;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15),
+          0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        z-index: 10000;
+        transform: translateX(400px) scale(0.8);
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        max-width: 420px;
+        min-width: 320px;
+        word-wrap: break-word;
+        display: flex;
+        align-items: stretch;
+        font-weight: 500;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .toast.show {
+        transform: translateX(0) scale(1);
+      }
+
+      .toast.toast-success {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.95) 0%,
+          rgba(5, 150, 105, 0.95) 100%
+        );
+        color: white;
+        border-color: rgba(16, 185, 129, 0.3);
+        box-shadow: 0 20px 40px rgba(16, 185, 129, 0.25),
+          0 8px 16px rgba(16, 185, 129, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .toast.toast-error {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.95) 0%,
+          rgba(220, 38, 38, 0.95) 100%
+        );
+        color: white;
+        border-color: rgba(239, 68, 68, 0.3);
+        box-shadow: 0 20px 40px rgba(239, 68, 68, 0.25),
+          0 8px 16px rgba(239, 68, 68, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .toast.toast-warning {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.95) 0%,
+          rgba(217, 119, 6, 0.95) 100%
+        );
+        color: white;
+        border-color: rgba(245, 158, 11, 0.3);
+        box-shadow: 0 20px 40px rgba(245, 158, 11, 0.25),
+          0 8px 16px rgba(245, 158, 11, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .toast.toast-info {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.95) 0%,
+          rgba(37, 99, 235, 0.95) 100%
+        );
+        color: white;
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25),
+          0 8px 16px rgba(59, 130, 246, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .toast-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+      }
+
+      .toast-icon {
+        font-size: 1.4rem;
+        color: currentColor;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      }
+
+      .toast-content {
+        flex: 1;
+        padding: 1.25rem 1rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .toast-message {
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .toast-close {
+        background: none;
+        border: none;
+        color: currentColor;
+        cursor: pointer;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        flex-shrink: 0;
+        opacity: 0.8;
+        position: relative;
+      }
+
+      .toast-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        opacity: 1;
+        transform: scale(1.1);
+      }
+
+      .toast-close:active {
+        transform: scale(0.95);
+      }
+
+      .toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.3);
+        transform-origin: left;
+        transition: transform 4s linear;
+      }
+
+      .toast.toast-success .toast-progress {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      .toast.toast-error .toast-progress {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      .toast.toast-warning .toast-progress {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      .toast.toast-info .toast-progress {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Toast container for multiple toasts */
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        pointer-events: none;
+      }
+
+      .toast-container .toast {
+        position: relative;
+        top: auto;
+        right: auto;
+        pointer-events: auto;
+      }
+
+      /* Hover effects */
+      .toast:hover {
+        transform: translateX(-5px) scale(1.02);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2),
+          0 12px 24px rgba(0, 0, 0, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .toast:hover .toast-progress {
+        animation-play-state: paused;
+      }
+
+      /* Mobile responsive */
+      @media (max-width: 768px) {
+        .toast-container {
+          top: 10px;
+          right: 10px;
+          left: 10px;
+        }
+
+        .toast {
+          max-width: none;
+          min-width: auto;
+          transform: translateY(-100px) scale(0.9);
+          margin: 0;
+        }
+
+        .toast.show {
+          transform: translateY(0) scale(1);
+        }
+
+        .toast-content {
+          padding: 1rem 0.75rem;
+        }
+
+        .toast-icon-wrapper {
+          width: 50px;
+        }
+
+        .toast-close {
+          width: 45px;
+          padding: 0.75rem;
+        }
+      }
+
+      /* Dark theme support */
+      @media (prefers-color-scheme: dark) {
+        .toast:not(.toast-success):not(.toast-error):not(.toast-warning):not(
+            .toast-info
+          ) {
+          background: rgba(30, 30, 46, 0.95);
+          color: #ffffff;
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      /* Accessibility improvements */
+      @media (prefers-reduced-motion: reduce) {
+        .toast {
+          transition: opacity 0.3s ease;
+          transform: none;
+        }
+
+        .toast.show {
+          transform: none;
+        }
+
+        .toast:hover {
+          transform: none;
+        }
+      }
+
+      /* Focus styles for accessibility */
+      .toast-close:focus {
+        outline: 2px solid rgba(255, 255, 255, 0.5);
+        outline-offset: 2px;
       }
     </style>
     <script src="/navbar.js" defer></script>
@@ -721,12 +1131,12 @@
               <div id="video-container">
                 <video
                   id="idle-video"
-                  src="./oracle_Idle.mp4"
+                  src="https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg"
                   autoplay
                   muted
                   loop
                   playsinline
-                  style="display: block"
+                  style="display: none"
                 ></video>
                 <video
                   id="talk-video"
@@ -736,10 +1146,10 @@
                 ></video>
                 <img
                   id="avatar-image"
-                  src="/placeholder.svg"
+                  src="https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg"
                   alt="Custom Avatar"
                   style="
-                    display: none;
+                    display: block;
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
@@ -892,13 +1302,19 @@
                 const imageLoadPromise = new Promise((resolve, reject) => {
                   const img = new Image();
                   img.onload = () => resolve(imageUrl);
-                  img.onerror = () => reject(new Error(`Failed to load image: ${imageUrl}`));
+                  img.onerror = () =>
+                    reject(new Error(`Failed to load image: ${imageUrl}`));
                   img.src = imageUrl;
                 });
 
                 const loadedUrl = await Promise.race([
                   imageLoadPromise,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error("Image load timeout")), 5000))
+                  new Promise((_, reject) =>
+                    setTimeout(
+                      () => reject(new Error("Image load timeout")),
+                      5000
+                    )
+                  ),
                 ]);
 
                 avatarImage.src = loadedUrl;
@@ -923,22 +1339,22 @@
             try {
               const settings = JSON.parse(avatarSettings);
               console.log("Loading custom avatar settings:", settings);
-              
+
               // Clear any existing alter data
               localStorage.removeItem("selectedAlter");
               sessionStorage.removeItem("currentAlter");
-              
+
               // Set up the custom alter
               window.selectedAlter = {
-                type: 'custom',
+                type: "custom",
                 name: settings.name,
                 prompt: settings.prompt,
                 personality: settings.personality,
                 knowledge: settings.knowledge,
                 voiceId: settings.voiceId,
                 documentContent: settings.documentContent || "",
-                // Start with placeholder image
-                image: "/placeholder.svg"
+                // Only set image if avatarUrl exists
+                image: settings.avatarUrl || null,
               };
 
               // Update chat header
@@ -947,13 +1363,24 @@
                 chatHeader.textContent = `Chat with ${settings.name}`;
               }
 
-              // Store in sessionStorage for persistence
-              sessionStorage.setItem("currentAlter", JSON.stringify(window.selectedAlter));
+              // Load the alter image (will handle null/undefined gracefully)
+              loadAlterImage(window.selectedAlter);
 
-              // Note: We don't remove avatarSettings from localStorage here anymore
-              // It will be removed after successful publishing
+              // Store in sessionStorage for persistence
+              sessionStorage.setItem(
+                "currentAlter",
+                JSON.stringify(window.selectedAlter)
+              );
             } catch (e) {
-              console.error("Failed to parse avatarSettings from localStorage:", e);
+              console.error(
+                "Failed to parse avatarSettings from localStorage:",
+                e
+              );
+              // Show default video on error
+              const avatarImage = document.getElementById("avatar-image");
+              const idleVideo = document.getElementById("idle-video");
+              if (avatarImage) avatarImage.style.display = "none";
+              if (idleVideo) idleVideo.style.display = "block";
             }
           } else {
             // Check for selected alter from marketplace
@@ -961,12 +1388,20 @@
             if (selectedAlter) {
               try {
                 const alter = JSON.parse(selectedAlter);
-                
+
                 // Clear any existing avatar settings to prevent interference
                 localStorage.removeItem("avatarSettings");
-                
-                // Use the image manager to handle the alter image
-                alterImageManager.handleAlterImage(alter);
+
+                // Use the image manager to handle the alter image with error handling
+                try {
+                  alterImageManager.handleAlterImage(alter);
+                } catch (imageError) {
+                  console.warn(
+                    "Image manager failed, using fallback:",
+                    imageError
+                  );
+                  loadAlterImage(alter);
+                }
 
                 // Set chat header name if available
                 const chatHeader = document.querySelector(".chat-header h2");
@@ -977,23 +1412,36 @@
                 // Store alter data for later use
                 window.selectedAlter = {
                   ...alter,
-                  type: alter.type || 'custom',
-                  prompt: alter.type === 'premade' || alter.type === 'customized' 
-                    ? (alter.prompt || alter.system_prompt)
-                    : (alter.prompt || alter.system_prompt || ''),
-                  personality: alter.personality || alter.personality_description,
+                  type: alter.type || "custom",
+                  prompt:
+                    alter.type === "premade" || alter.type === "customized"
+                      ? alter.prompt || alter.system_prompt
+                      : alter.prompt || alter.system_prompt || "",
+                  personality:
+                    alter.personality || alter.personality_description,
                   name: alter.name,
                   knowledge: alter.knowledge || alter.category || "general",
-                  documentContent: alter.documentContent || ""
+                  documentContent: alter.documentContent || "",
                 };
 
                 // Store in sessionStorage for persistence
-                sessionStorage.setItem("currentAlter", JSON.stringify(window.selectedAlter));
+                sessionStorage.setItem(
+                  "currentAlter",
+                  JSON.stringify(window.selectedAlter)
+                );
 
                 // Remove from localStorage after loading
                 localStorage.removeItem("selectedAlter");
               } catch (e) {
-                console.error("Failed to parse selectedAlter from localStorage:", e);
+                console.error(
+                  "Failed to parse selectedAlter from localStorage:",
+                  e
+                );
+                // Show default video on error
+                const avatarImage = document.getElementById("avatar-image");
+                const idleVideo = document.getElementById("idle-video");
+                if (avatarImage) avatarImage.style.display = "none";
+                if (idleVideo) idleVideo.style.display = "block";
               }
             } else {
               // Check sessionStorage for existing alter data
@@ -1002,18 +1450,40 @@
                 try {
                   const alter = JSON.parse(currentAlter);
                   window.selectedAlter = alter;
-                  
+
                   // Update chat header
                   const chatHeader = document.querySelector(".chat-header h2");
                   if (chatHeader && alter.name) {
                     chatHeader.textContent = `Chat with ${alter.name}`;
                   }
 
-                  // Update image
-                  alterImageManager.handleAlterImage(alter);
+                  // Update image with error handling
+                  try {
+                    alterImageManager.handleAlterImage(alter);
+                  } catch (imageError) {
+                    console.warn(
+                      "Image manager failed, using fallback:",
+                      imageError
+                    );
+                    loadAlterImage(alter);
+                  }
                 } catch (e) {
-                  console.error("Failed to parse currentAlter from sessionStorage:", e);
+                  console.error(
+                    "Failed to parse currentAlter from sessionStorage:",
+                    e
+                  );
+                  // Show default video on error
+                  const avatarImage = document.getElementById("avatar-image");
+                  const idleVideo = document.getElementById("idle-video");
+                  if (avatarImage) avatarImage.style.display = "none";
+                  if (idleVideo) idleVideo.style.display = "block";
                 }
+              } else {
+                // No alter data found, show default video
+                const avatarImage = document.getElementById("avatar-image");
+                const idleVideo = document.getElementById("idle-video");
+                if (avatarImage) avatarImage.style.display = "none";
+                if (idleVideo) idleVideo.style.display = "block";
               }
             }
           }
@@ -1103,11 +1573,10 @@
               console.error("Speech recognition error", event.error);
               isRecording = false;
               voiceButton.classList.remove("recording");
-              if (window.videoAgent) {
-                window.videoAgent.showToast(
-                  "Speech recognition failed. Please try again."
-                );
-              }
+              showToast(
+                "Speech recognition failed. Please try again.",
+                "warning"
+              );
             };
 
             voiceButton.addEventListener("click", () => {
@@ -1132,11 +1601,10 @@
             });
           } else {
             voiceButton.addEventListener("click", () => {
-              if (window.videoAgent) {
-                window.videoAgent.showToast(
-                  "Speech recognition is not supported in your browser."
-                );
-              }
+              showToast(
+                "Speech recognition is not supported in your browser.",
+                "info"
+              );
             });
           }
 
@@ -1228,6 +1696,77 @@
             if (e.key === "Enter") sendMessage();
           });
         });
+
+        // Global toast function for enhanced user feedback
+        function showToast(message, type = "error") {
+          // Create toast container if it doesn't exist
+          let container = document.querySelector(".toast-container");
+          if (!container) {
+            container = document.createElement("div");
+            container.className = "toast-container";
+            document.body.appendChild(container);
+          }
+
+          const toast = document.createElement("div");
+          toast.className = `toast toast-${type}`;
+
+          // Add icon based on type
+          const icons = {
+            success: "fa-check-circle",
+            error: "fa-exclamation-circle",
+            warning: "fa-exclamation-triangle",
+            info: "fa-info-circle",
+          };
+
+          // Create unique ID for this toast
+          const toastId = `toast-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
+          toast.id = toastId;
+
+          toast.innerHTML = `
+            <div class="toast-icon-wrapper">
+              <i class="fas ${icons[type] || icons.error} toast-icon"></i>
+            </div>
+            <div class="toast-content">
+              <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="toast-progress"></div>
+          `;
+
+          container.appendChild(toast);
+
+          // Trigger animation
+          setTimeout(() => {
+            toast.classList.add("show");
+          }, 100);
+
+          // Start progress bar animation
+          const progressBar = toast.querySelector(".toast-progress");
+          setTimeout(() => {
+            progressBar.style.transform = "scaleX(0)";
+          }, 200);
+
+          // Auto remove after 4 seconds
+          setTimeout(() => {
+            if (document.getElementById(toastId)) {
+              toast.classList.remove("show");
+              setTimeout(() => {
+                if (toast.parentElement) {
+                  toast.remove();
+                }
+              }, 400);
+            }
+          }, 4000);
+
+          console[type === "error" ? "error" : "log"](message);
+        }
+
+        // Make showToast available globally
+        window.showToast = showToast;
       </script>
       <script type="module" src="./publish-alter.js"></script>
       <script
@@ -1239,37 +1778,40 @@
       <script>
         document.addEventListener("DOMContentLoaded", () => {
           // Check for custom alter settings in localStorage
-          const avatarSettings = localStorage.getItem('avatarSettings');
+          const avatarSettings = localStorage.getItem("avatarSettings");
           if (avatarSettings) {
             try {
               const settings = JSON.parse(avatarSettings);
-              console.log('Loading custom alter settings:', settings);
-              
+              console.log("Loading custom alter settings:", settings);
+
               // Create custom alter object
               const customAlter = {
                 name: settings.name,
                 avatar: settings.avatar,
                 description: settings.description,
-                isCustom: true
+                isCustom: true,
               };
 
               // Clear any existing alter data
-              localStorage.removeItem('lastPublishedAlter');
-              sessionStorage.removeItem('currentAlter');
+              localStorage.removeItem("lastPublishedAlter");
+              sessionStorage.removeItem("currentAlter");
 
               // Update chat header with custom alter name
-              const chatHeader = document.querySelector('.chat-header');
+              const chatHeader = document.querySelector(".chat-header");
               if (chatHeader) {
                 chatHeader.textContent = customAlter.name;
               }
 
               // Store custom alter in sessionStorage
-              sessionStorage.setItem('currentAlter', JSON.stringify(customAlter));
+              sessionStorage.setItem(
+                "currentAlter",
+                JSON.stringify(customAlter)
+              );
 
               // Clear avatarSettings after loading
-              localStorage.removeItem('avatarSettings');
+              localStorage.removeItem("avatarSettings");
             } catch (error) {
-              console.error('Error loading custom alter settings:', error);
+              console.error("Error loading custom alter settings:", error);
             }
           }
 

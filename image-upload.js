@@ -73,14 +73,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   function handleFile(file) {
     // Validate image format and size
     if (!file.type.match("image/(jpeg|png|jpg)")) {
-      window.videoAgent.showToast(
-        "Please try another image (JPEG or PNG only)"
-      );
+      window.videoAgent.showToast("Please use a JPEG or PNG image format");
       console.warn("image-upload.js: Invalid file type", file.type);
       return;
     }
     if (file.size > 25 * 1024 * 1024) {
-      window.videoAgent.showToast("Image exceeds requirements (max 25MB)");
+      window.videoAgent.showToast("Image is too large (maximum 25MB allowed)");
       console.warn("image-upload.js: File too large", file.size);
       return;
     }
@@ -128,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   confirmButton.addEventListener("click", async () => {
     if (!fileInput.file) {
-      window.videoAgent.showToast("Please select an image to upload.");
+      window.videoAgent.showToast("Please select an image to upload");
       console.warn("image-upload.js: No file selected for upload");
       return;
     }
@@ -184,14 +182,14 @@ document.addEventListener("DOMContentLoaded", async () => {
           error
         );
         window.videoAgent.showToast(
-          error.message.includes("D-ID rejected")
-            ? "Image rejected by D-ID. Please try another JPEG/PNG image."
-            : error.message
+          error.message.includes("not supported")
+            ? "Avatar image not supported. Please try a different image"
+            : "Unable to set avatar. Please try again"
         );
       }
     } catch (error) {
       console.error("image-upload.js: Upload error:", error);
-      window.videoAgent.showToast(error.message);
+      window.videoAgent.showToast("Upload failed. Please try again");
       confirmButton.textContent = "Upload Failed";
       confirmButton.classList.remove("uploading");
       confirmButton.classList.add("error");

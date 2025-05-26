@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const http = require("http");
 const fs = require("fs");
@@ -10,7 +11,7 @@ const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const getRawBody = require("raw-body");
-require("dotenv").config();
+const { isCreator } = require('./middleware');
 
 // Initialize Firebase Admin with service account
 const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -158,7 +159,7 @@ app.get("/creator-page", (req, res) => {
   res.sendFile(path.join(__dirname, "Creator-Page.html"));
 });
 
-app.get("/creator-studio", (req, res) => {
+app.get("/creator-studio", isCreator, (req, res) => {
   console.log("Accessing /creator-studio, session:", {
     isCreator: req.session.isCreator,
     allowedAccess: req.session.allowedAccess,
@@ -269,14 +270,13 @@ app.get("/payment-success", async (req, res) => {
 // Stripe webhook handler
 app.post(
   "/webhook",
-  express.raw({ type: "application/json" }), // Parse raw body for webhook signature
+  express.raw({ type: "application/json" }),
   async (req, res) => {
     const signature = req.headers["stripe-signature"];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
     try {
-      // Verify webhook signature
       event = stripe.webhooks.constructEvent(
         req.body,
         signature,
@@ -289,9 +289,7 @@ app.post(
       });
     } catch (error) {
       console.error("Webhook signature verification failed:", error.message);
-      return res
-        .status(400)
-        .json({ error: "Webhook signature verification failed" });
+      return res.status(400).json({ error: "Webhook signature verification failed" });
     }
 
     try {
@@ -307,75 +305,97 @@ app.post(
 
           if (session.payment_status === "paid") {
             const customerId = session.customer;
-            const userId = session.client_reference_id; // From create-checkout-session
+            const firebaseUid = session.client_reference_id;
             const email = session.customer_details?.email;
 
-            let supabaseUserId = userId;
-            if (email) {
-              // Try to find or create user in Supabase auth
-              const { data: authUser, error: userError } =
-                await supabaseAdmin.auth.admin.getUserByEmail(email);
-              if (userError) {
-                console.warn(
-                  "Error fetching user by email:",
-                  userError.message
-                );
-              }
+            // First, find or create the user in the users table
+            let userRecord;
+            const { data: existingUser, error: userError } = await supabaseAdmin
+              .from("users")
+              .select("id")
+              .eq("firebase_uid", firebaseUid)
+              .single();
 
-              if (authUser?.user) {
-                supabaseUserId = authUser.user.id;
-              } else {
-                // Create a new user in Supabase auth
-                const { data: newUser, error: createError } =
-                  await supabaseAdmin.auth.admin.createUser({
-                    email,
-                    email_confirm: true,
-                    user_metadata: { stripe_customer_id: customerId },
-                  });
-                if (createError) {
-                  console.error(
-                    "Error creating Supabase user:",
-                    createError.message
-                  );
-                  throw createError;
-                }
-                supabaseUserId = newUser.user.id;
-                console.log("Created new Supabase user:", supabaseUserId);
+            if (userError) {
+              console.log("User not found, creating new user...");
+              // Create new user if not found
+              const { data: newUser, error: createError } = await supabaseAdmin
+                .from("users")
+                .insert([
+                  {
+                    firebase_uid: firebaseUid,
+                    email: email,
+                    display_name: session.customer_details?.name || null,
+                  },
+                ])
+                .select()
+                .single();
+
+              if (createError) {
+                console.error("Error creating user:", createError);
+                throw createError;
               }
+              userRecord = newUser;
+              console.log("New user created:", userRecord);
+            } else {
+              userRecord = existingUser;
+              console.log("Existing user found:", userRecord);
             }
 
-            if (supabaseUserId) {
-              // Upsert creator record in creatorsuser table
-              const { error: upsertError } = await supabaseAdmin
+            // Check if creator record already exists
+            const { data: existingCreator, error: creatorCheckError } = await supabaseAdmin
+              .from("creatorsuser")
+              .select("*")
+              .eq("id", userRecord.id)
+              .single();
+
+            if (creatorCheckError && creatorCheckError.code !== 'PGRST116') {
+              console.error("Error checking existing creator:", creatorCheckError);
+              throw creatorCheckError;
+            }
+
+            if (existingCreator) {
+              console.log("Updating existing creator record:", existingCreator);
+              // Update existing creator record
+              const { error: updateError } = await supabaseAdmin
                 .from("creatorsuser")
-                .upsert(
+                .update({
+                  stripe_customer_id: customerId,
+                  is_creator: true,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", userRecord.id);
+
+              if (updateError) {
+                console.error("Error updating creator:", updateError);
+                throw updateError;
+              }
+            } else {
+              console.log("Creating new creator record");
+              // Create new creator record
+              const { error: insertError } = await supabaseAdmin
+                .from("creatorsuser")
+                .insert([
                   {
-                    id: supabaseUserId,
+                    id: userRecord.id,
+                    user_id: userRecord.id,
                     stripe_customer_id: customerId,
                     is_creator: true,
                     created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
                   },
-                  { onConflict: "id" }
-                );
+                ]);
 
-              if (upsertError) {
-                console.error("Error upserting creator:", upsertError.message);
-                throw upsertError;
+              if (insertError) {
+                console.error("Error creating creator:", insertError);
+                throw insertError;
               }
-
-              console.log(
-                `Creator saved for user ${supabaseUserId}, customer ${customerId}`
-              );
-            } else {
-              console.warn(
-                "No user ID or email available for creator creation",
-                {
-                  customerId,
-                  email,
-                  userId,
-                }
-              );
             }
+
+            console.log("Creator record processed successfully:", {
+              userId: userRecord.id,
+              customerId: customerId
+            });
           } else {
             console.log("Payment not paid, skipping creator creation");
           }
@@ -386,7 +406,7 @@ app.post(
       }
       res.json({ received: true });
     } catch (error) {
-      console.error("Webhook processing error:", error.message);
+      console.error("Webhook processing error:", error);
       res.status(500).json({ error: "Webhook processing failed" });
     }
   }
@@ -677,7 +697,7 @@ app.get("/api-config", (req, res) => {
 });
 
 // API route to publish an alter to the marketplace
-app.post("/api/publish-alter", async (req, res) => {
+app.post("/api/publish-alter", isCreator, async (req, res) => {
   try {
     // Get Firebase UID from session
     const firebaseUid = req.session.userId;
@@ -753,7 +773,7 @@ app.post("/api/publish-alter", async (req, res) => {
 });
 
 // API route to get user's published alters (for Creator Studio)
-app.get("/api/user-alters", async (req, res) => {
+app.get("/api/user-alters", isCreator, async (req, res) => {
   try {
     // Get Firebase UID from session
     const firebaseUid = req.session.userId;
@@ -895,6 +915,59 @@ app.get("/api/auth/status", (req, res) => {
     isCreator: !!req.session.isCreator,
     allowedAccess: !!req.session.allowedAccess,
   });
+});
+
+// Route to check creator status
+app.get("/api/check-creator-status", async (req, res) => {
+  try {
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      console.log("No Firebase UID in session");
+      return res.json({ isCreator: false });
+    }
+
+    // First get the user's Supabase ID
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('firebase_uid', firebaseUid)
+      .single();
+
+    if (userError) {
+      console.error('Error finding user:', userError);
+      return res.json({ isCreator: false });
+    }
+
+    if (!userData) {
+      console.log('User not found in users table');
+      return res.json({ isCreator: false });
+    }
+
+    console.log('Found user in Supabase:', userData);
+
+    // Then check creator status
+    const { data: creatorData, error: creatorError } = await supabaseAdmin
+      .from('creatorsuser')
+      .select('is_creator')
+      .eq('id', userData.id)
+      .single();
+
+    if (creatorError) {
+      if (creatorError.code === 'PGRST116') {
+        console.log('No creator record found for user');
+        return res.json({ isCreator: false });
+      }
+      console.error('Error checking creator status:', creatorError);
+      return res.json({ isCreator: false });
+    }
+
+    const isCreator = creatorData?.is_creator || false;
+    console.log('Creator status check result:', { userId: userData.id, isCreator });
+    res.json({ isCreator });
+  } catch (error) {
+    console.error('Error in check-creator-status:', error);
+    res.json({ isCreator: false });
+  }
 });
 
 // Serve static files

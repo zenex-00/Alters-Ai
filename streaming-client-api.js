@@ -1,5 +1,3 @@
-"use strict";
-
 class VideoAgent {
   constructor() {
     this.peerConnection = null;
@@ -18,13 +16,25 @@ class VideoAgent {
     this.talkVideo = document.getElementById("talk-video");
     this.avatarImage = document.getElementById("avatar-image");
 
-    // Load custom avatar URL from localStorage
+    // Set default avatar URL
+    const defaultAvatarUrl = "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+    
+    // Load custom avatar URL from localStorage or use default
     const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
-    this.customAvatarUrl = settings.avatarUrl || null;
-    console.log(
-      "Loaded customAvatarUrl from localStorage:",
-      this.customAvatarUrl
-    );
+    this.customAvatarUrl = settings.avatarUrl || defaultAvatarUrl;
+    console.log("Loaded customAvatarUrl:", this.customAvatarUrl);
+
+    // Set initial display state
+    if (this.avatarImage) {
+      this.avatarImage.src = this.customAvatarUrl;
+      this.avatarImage.style.display = "block";
+    }
+    if (this.idleVideo) {
+      this.idleVideo.style.display = "none";
+    }
+    if (this.talkVideo) {
+      this.talkVideo.style.display = "none";
+    }
 
     this.init();
   }
@@ -39,11 +49,11 @@ class VideoAgent {
       this.API_CONFIG = await response.json();
 
       if (!this.API_CONFIG?.key)
-        throw new Error("Missing D-ID API key in configuration");
+        throw new Error("Missing video streaming configuration");
       if (!this.API_CONFIG?.openai_key)
-        throw new Error("Missing OpenAI API key in configuration");
+        throw new Error("Missing AI chat configuration");
       if (!this.API_CONFIG?.elevenlabs_key)
-        throw new Error("Missing Eleven Labs API key in configuration");
+        throw new Error("Missing voice synthesis configuration");
       if (this.API_CONFIG.url) this.DID_API_URL = this.API_CONFIG.url;
 
       this.talkVideo.setAttribute("playsinline", "");
@@ -55,7 +65,10 @@ class VideoAgent {
       console.log("Initialized successfully");
     } catch (error) {
       console.error("streaming-client-api.js: init error:", error);
-      this.showToast("Initialization failed. Please check your configuration.");
+      this.showToast(
+        "Unable to initialize the application. Please refresh and try again.",
+        "error"
+      );
     }
   }
 
@@ -118,7 +131,7 @@ class VideoAgent {
       // Validate size
       const maxSizeMB = 25 * 1024 * 1024;
       if (imgBlob.size > maxSizeMB) {
-        throw new Error("Image exceeds D-ID requirements (max 25MB)");
+        throw new Error("Image exceeds size requirements");
       }
 
       // Log dimensions for debugging (non-blocking)
@@ -157,10 +170,10 @@ class VideoAgent {
       this.idleVideo.style.display = "none";
       this.talkVideo.style.display = "none";
 
-      // Recreate D-ID stream with new avatar
+      // Recreate stream with new avatar
       await this.handleConnectWithRetry();
 
-      this.showToast("Custom avatar set successfully", "success");
+      this.showToast("Avatar updated successfully!", "success");
     } catch (error) {
       console.error(
         "streaming-client-api.js: Error setting custom avatar:",
@@ -169,14 +182,23 @@ class VideoAgent {
       this.avatarImage.src = "";
       this.avatarImage.style.display = "none";
       this.idleVideo.style.display = "block";
+
       if (error.message.includes("Invalid image format")) {
-        this.showToast("Please try another image (JPEG or PNG only)");
+        this.showToast("Please use a JPEG or PNG image format", "warning");
       } else if (error.message.includes("Failed to load image")) {
-        this.showToast("Image failed to load, please try again.");
+        this.showToast(
+          "Unable to load the image. Please try a different one",
+          "error"
+        );
       } else if (error.message.includes("Image URL inaccessible")) {
-        this.showToast("Uploaded image is not accessible. Please try again.");
+        this.showToast("Image upload failed. Please try again", "error");
+      } else if (error.message.includes("size requirements")) {
+        this.showToast(
+          "Image is too large. Please use an image under 25MB",
+          "warning"
+        );
       } else {
-        this.showToast("Failed to set avatar: " + error.message);
+        this.showToast("Unable to set avatar. Please try again", "error");
       }
       throw error;
     }
@@ -206,6 +228,7 @@ class VideoAgent {
         enterButton.classList.remove("loading");
         this.updateUI(true);
         document.getElementById("user-input-field").focus();
+        this.showToast("Connected successfully!", "success");
         return;
       } catch (error) {
         console.error(
@@ -213,11 +236,17 @@ class VideoAgent {
           error
         );
         if (attempt === maxRetries) {
-          this.showToast(
-            error.message.includes("D-ID rejected")
-              ? "Image rejected by D-ID. Please try another JPEG/PNG image."
-              : "Failed to connect after multiple attempts. Please try again."
-          );
+          if (error.message.includes("rejected")) {
+            this.showToast(
+              "Avatar image not supported. Please try a different image",
+              "warning"
+            );
+          } else {
+            this.showToast(
+              "Unable to connect. Please check your internet and try again",
+              "error"
+            );
+          }
           enterButton.classList.remove("loading");
           this.cleanup();
           throw error;
@@ -248,7 +277,7 @@ class VideoAgent {
         console.log(
           "streaming-client-api.js: handleTalk: No user message provided"
         );
-        this.showToast("Please enter a message.");
+        this.showToast("Please enter a message to send", "info");
         return;
       }
 
@@ -267,7 +296,7 @@ class VideoAgent {
       }
       inputContainer.classList.add("loading");
 
-      // Get OpenAI response
+      // Get AI response
       const { fetchOpenAIResponse } = await import("./openai.js");
       aiResponse = await fetchOpenAIResponse(
         this.API_CONFIG.openai_key,
@@ -282,14 +311,15 @@ class VideoAgent {
 
       // Get the current alter's image URL
       const selectedAlter = window.selectedAlter;
-      const avatarUrl = selectedAlter?.image || 
-                       selectedAlter?.avatar_url || 
-                       this.customAvatarUrl ||
-                       "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+      const avatarUrl =
+        selectedAlter?.image ||
+        selectedAlter?.avatar_url ||
+        this.customAvatarUrl ||
+        "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
 
       // Log the audio URL and avatar URL for debugging
-      console.log("D-ID API audio URL:", audioUrl);
-      console.log("D-ID API source_url:", avatarUrl);
+      console.log("Audio URL:", audioUrl);
+      console.log("Avatar URL:", avatarUrl);
 
       // Verify audio URL accessibility
       const urlCheck = await fetch(audioUrl, { method: "HEAD" });
@@ -298,7 +328,7 @@ class VideoAgent {
         throw new Error("Audio URL is not publicly accessible");
       }
 
-      // Send to D-ID API with retry logic
+      // Send to video streaming service with retry logic
       let talkResponse;
       let errorData;
       for (let attempt = 1; attempt <= 3; attempt++) {
@@ -328,14 +358,14 @@ class VideoAgent {
 
           errorData = await talkResponse.json().catch(() => ({}));
           console.warn(
-            `D-ID API attempt ${attempt} failed:`,
+            `Video streaming attempt ${attempt} failed:`,
             JSON.stringify(errorData, null, 2)
           );
           if (talkResponse.status === 400 && attempt < 3) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
             continue;
           }
-          throw new Error(errorData.message || "D-ID API error");
+          throw new Error(errorData.message || "Video streaming error");
         } catch (error) {
           if (attempt === 3) throw error;
         }
@@ -343,22 +373,17 @@ class VideoAgent {
 
       if (!talkResponse.ok) {
         console.error(
-          "D-ID API error details:",
+          "Video streaming error details:",
           JSON.stringify(errorData, null, 2)
         );
         if (talkResponse.status === 400) {
-          throw new Error(
-            errorData.message ||
-              "Invalid request. Please check the audio URL or try again."
-          );
+          throw new Error("Unable to process request. Please try again");
         } else if (talkResponse.status === 402) {
-          throw new Error("Payment required for D-ID API");
+          throw new Error("Service temporarily unavailable");
         } else if (talkResponse.status === 404) {
-          throw new Error("Stream not found. Please try reconnecting.");
+          throw new Error("Connection lost. Please refresh and try again");
         } else {
-          throw new Error(
-            "D-ID API error: " + (errorData.message || "Unknown error")
-          );
+          throw new Error("Video streaming error");
         }
       }
 
@@ -376,8 +401,8 @@ class VideoAgent {
     } catch (error) {
       console.error("streaming-client-api.js: handleTalk: Error:", error);
       this.showToast(
-        error.message ||
-          "Server error during message processing. Please try again."
+        "Unable to process your message. Please try again",
+        "error"
       );
       throw error;
     } finally {
@@ -393,18 +418,14 @@ class VideoAgent {
       );
     }
   }
+
   async generateElevenLabsAudio(text) {
     try {
       const settings = JSON.parse(
         localStorage.getItem("avatarSettings") || "{}"
       );
-      let voiceId = settings.voiceId || "21m00Tcm4TlvDq8ikWAM";
-      console.log(
-        "Generating audio with Eleven Labs, voice ID:",
-        voiceId,
-        "text:",
-        text
-      );
+      const voiceId = settings.voiceId || "21m00Tcm4TlvDq8ikWAM";
+      console.log("Generating audio with voice ID:", voiceId, "text:", text);
 
       const response = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
@@ -431,10 +452,10 @@ class VideoAgent {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error(
-          "Eleven Labs API error:",
+          "Voice synthesis error:",
           JSON.stringify(errorData, null, 2)
         );
-        throw new Error("Failed to generate audio from Eleven Labs");
+        throw new Error("Voice synthesis failed");
       }
 
       const audioBlob = await response.blob();
@@ -457,7 +478,7 @@ class VideoAgent {
       });
       formData.append("audio", audioFile);
 
-      console.log("Uploading audio to Supabase");
+      console.log("Uploading audio to storage");
       const uploadResponse = await fetch("/upload-audio", {
         method: "POST",
         body: formData,
@@ -466,11 +487,11 @@ class VideoAgent {
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
         console.error("Audio upload failed:", errorText);
-        throw new Error(`Failed to upload audio: ${errorText}`);
+        throw new Error("Audio upload failed");
       }
 
       const { url } = await uploadResponse.json();
-      console.log("Audio uploaded to Supabase:", url);
+      console.log("Audio uploaded successfully:", url);
 
       if (!url.startsWith("https://")) {
         throw new Error("Invalid audio URL: Must be an HTTPS URL");
@@ -478,13 +499,15 @@ class VideoAgent {
 
       return url;
     } catch (error) {
-      console.error("Error generating Eleven Labs audio:", error);
+      console.error("Error generating audio:", error);
       this.showToast(
-        error.message || "Failed to generate audio. Please try again."
+        "Unable to generate voice response. Please try again",
+        "error"
       );
       throw error;
     }
   }
+
   async handleDestroy() {
     try {
       if (this.streamId) {
@@ -492,7 +515,10 @@ class VideoAgent {
       }
     } catch (error) {
       console.error("streaming-client-api.js: Destroy error:", error);
-      this.showToast("Failed to disconnect. Please try again.");
+      this.showToast(
+        "Unable to disconnect properly. Please refresh the page",
+        "warning"
+      );
     } finally {
       this.cleanup();
       this.updateUI(false);
@@ -506,23 +532,28 @@ class VideoAgent {
 
     if (selectedAlter) {
       // For premade or customized alters
-      if (selectedAlter.type === 'premade' || selectedAlter.type === 'customized') {
+      if (
+        selectedAlter.type === "premade" ||
+        selectedAlter.type === "customized"
+      ) {
         avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
-      } 
+      }
       // For new custom alters
-      else if (selectedAlter.type === 'custom') {
+      else if (selectedAlter.type === "custom") {
         avatarUrl = this.customAvatarUrl;
       }
       // Fallback for any other case
       else {
-        avatarUrl = selectedAlter.image || 
-                   selectedAlter.avatar_url || 
-                   this.customAvatarUrl;
+        avatarUrl =
+          selectedAlter.image ||
+          selectedAlter.avatar_url ||
+          this.customAvatarUrl;
       }
     } else {
       // If no selected alter, use custom avatar or default
-      avatarUrl = this.customAvatarUrl || 
-                 "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+      avatarUrl =
+        this.customAvatarUrl ||
+        "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
     }
 
     console.log(
@@ -569,18 +600,16 @@ class VideoAgent {
       try {
         errorData = await response.json();
       } catch {
-        errorData = { message: "Failed to parse D-ID error response" };
+        errorData = { message: "Failed to parse error response" };
       }
       console.error(
-        "streaming-client-api.js: D-ID create stream error:",
+        "streaming-client-api.js: Stream creation error:",
         JSON.stringify(errorData, null, 2)
       );
       if (response.status === 400 || response.status === 422) {
-        throw new Error("D-ID rejected the image");
+        throw new Error("Avatar image not supported");
       }
-      throw new Error(
-        "Failed to create stream: " + (errorData.message || "Unknown error")
-      );
+      throw new Error("Failed to create video stream");
     }
 
     return response;
@@ -624,7 +653,7 @@ class VideoAgent {
               "streaming-client-api.js: ICE candidate error:",
               error
             );
-            this.showToast("Failed to establish connection. Please try again.");
+            this.showToast("Connection issue detected. Please try again");
           })
           .finally(() => clearTimeout(timeoutId));
       }
@@ -664,7 +693,7 @@ class VideoAgent {
                         error
                       );
                       this.isPlayingPromise = false;
-                      this.showToast("Failed to play video stream.");
+                      this.showToast("Video playback issue. Please try again");
                     });
                 } else {
                   console.log("streaming-client-api.js: Video stream stopped");
@@ -673,13 +702,14 @@ class VideoAgent {
                     this.talkVideo.pause();
                     this.talkVideo.srcObject = null;
                     this.talkVideo.style.display = "none";
-                    
+
                     // Get the current alter's image URL
                     const selectedAlter = window.selectedAlter;
-                    const avatarUrl = selectedAlter?.image || 
-                                    selectedAlter?.avatar_url || 
-                                    this.customAvatarUrl;
-                    
+                    const avatarUrl =
+                      selectedAlter?.image ||
+                      selectedAlter?.avatar_url ||
+                      this.customAvatarUrl;
+
                     if (avatarUrl) {
                       this.avatarImage.src = avatarUrl;
                       this.avatarImage.style.display = "block";
@@ -700,7 +730,7 @@ class VideoAgent {
 
     this.peerConnection.addEventListener("connectionstatechange", () => {
       if (this.peerConnection.connectionState === "connected") {
-        console.log("Connected to D-ID stream with optimized settings");
+        console.log("Connected to video stream successfully");
       }
     });
 
@@ -768,23 +798,28 @@ class VideoAgent {
 
       if (selectedAlter) {
         // For premade or customized alters
-        if (selectedAlter.type === 'premade' || selectedAlter.type === 'customized') {
+        if (
+          selectedAlter.type === "premade" ||
+          selectedAlter.type === "customized"
+        ) {
           avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
-        } 
+        }
         // For new custom alters
-        else if (selectedAlter.type === 'custom') {
+        else if (selectedAlter.type === "custom") {
           avatarUrl = this.customAvatarUrl;
         }
         // Fallback for any other case
         else {
-          avatarUrl = selectedAlter.image || 
-                     selectedAlter.avatar_url || 
-                     this.customAvatarUrl;
+          avatarUrl =
+            selectedAlter.image ||
+            selectedAlter.avatar_url ||
+            this.customAvatarUrl;
         }
       } else {
         // If no selected alter, use custom avatar or default
-        avatarUrl = this.customAvatarUrl || 
-                   "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+        avatarUrl =
+          this.customAvatarUrl ||
+          "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
       }
 
       if (avatarUrl) {
@@ -807,7 +842,6 @@ class VideoAgent {
       clearInterval(this.statsIntervalId);
       this.statsIntervalId = null;
     }
-
     ["peer", "ice", "iceGathering", "signaling", "streaming"].forEach(
       (type) => {
         this.updateStatus(
@@ -835,18 +869,70 @@ class VideoAgent {
   }
 
   showToast(message, type = "error") {
-    console[type === "error" ? "error" : "log"](message);
+    // Create toast container if it doesn't exist
+    let container = document.querySelector(".toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "toast-container";
+      document.body.appendChild(container);
+    }
+
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
+
+    // Add icon based on type
+    const icons = {
+      success: "fa-check-circle",
+      error: "fa-exclamation-circle",
+      warning: "fa-exclamation-triangle",
+      info: "fa-info-circle",
+    };
+
+    // Create unique ID for this toast
+    const toastId = `toast-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+    toast.id = toastId;
+
+    toast.innerHTML = `
+    <div class="toast-icon-wrapper">
+      <i class="fas ${icons[type] || icons.error} toast-icon"></i>
+    </div>
+    <div class="toast-content">
+      <div class="toast-message">${message}</div>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="toast-progress"></div>
+  `;
+
+    container.appendChild(toast);
+
+    // Trigger animation
     setTimeout(() => {
       toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
     }, 100);
+
+    // Start progress bar animation
+    const progressBar = toast.querySelector(".toast-progress");
+    setTimeout(() => {
+      progressBar.style.transform = "scaleX(0)";
+    }, 200);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      if (document.getElementById(toastId)) {
+        toast.classList.remove("show");
+        setTimeout(() => {
+          if (toast.parentElement) {
+            toast.remove();
+          }
+        }, 400);
+      }
+    }, 4000);
+
+    console[type === "error" ? "error" : "log"](message);
   }
 }
 
