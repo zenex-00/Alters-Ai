@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const fs = require("fs");
@@ -11,7 +11,7 @@ const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const getRawBody = require("raw-body");
-const { isCreator } = require('./middleware');
+const { isCreator } = require("./middleware");
 
 // Initialize Firebase Admin with service account
 const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -289,7 +289,9 @@ app.post(
       });
     } catch (error) {
       console.error("Webhook signature verification failed:", error.message);
-      return res.status(400).json({ error: "Webhook signature verification failed" });
+      return res
+        .status(400)
+        .json({ error: "Webhook signature verification failed" });
     }
 
     try {
@@ -343,14 +345,18 @@ app.post(
             }
 
             // Check if creator record already exists
-            const { data: existingCreator, error: creatorCheckError } = await supabaseAdmin
-              .from("creatorsuser")
-              .select("*")
-              .eq("user_id", userRecord.id)
-              .single();
+            const { data: existingCreator, error: creatorCheckError } =
+              await supabaseAdmin
+                .from("creatorsuser")
+                .select("*")
+                .eq("user_id", userRecord.id)
+                .single();
 
-            if (creatorCheckError && creatorCheckError.code !== 'PGRST116') {
-              console.error("Error checking existing creator:", creatorCheckError);
+            if (creatorCheckError && creatorCheckError.code !== "PGRST116") {
+              console.error(
+                "Error checking existing creator:",
+                creatorCheckError
+              );
               throw creatorCheckError;
             }
 
@@ -393,7 +399,7 @@ app.post(
 
             console.log("Creator record processed successfully:", {
               userId: userRecord.id,
-              customerId: customerId
+              customerId: customerId,
             });
           } else {
             console.log("Payment not paid, skipping creator creation");
@@ -927,44 +933,47 @@ app.get("/api/check-creator-status", async (req, res) => {
 
     // First get the user's Supabase ID
     const { data: userData, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('firebase_uid', firebaseUid)
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
       .single();
 
     if (userError) {
-      console.error('Error finding user:', userError);
+      console.error("Error finding user:", userError);
       return res.json({ isCreator: false });
     }
 
     if (!userData) {
-      console.log('User not found in users table');
+      console.log("User not found in users table");
       return res.json({ isCreator: false });
     }
 
-    console.log('Found user in Supabase:', userData);
+    console.log("Found user in Supabase:", userData);
 
     // Then check creator status
     const { data: creatorData, error: creatorError } = await supabaseAdmin
-      .from('creatorsuser')
-      .select('is_creator')
-      .eq('user_id', userData.id)
-      .single();
+      .from("creatorsuser")
+      .select("is_creator")
+      .eq("user_id", userData.id)
+      .maybeSingle();
 
     if (creatorError) {
-      if (creatorError.code === 'PGRST116') {
-        console.log('No creator record found for user');
+      if (creatorError.code === "PGRST116") {
+        console.log("No creator record found for user");
         return res.json({ isCreator: false });
       }
-      console.error('Error checking creator status:', creatorError);
+      console.error("Error checking creator status:", creatorError);
       return res.json({ isCreator: false });
     }
 
     const isCreator = creatorData?.is_creator || false;
-    console.log('Creator status check result:', { userId: userData.id, isCreator });
+    console.log("Creator status check result:", {
+      userId: userData.id,
+      isCreator,
+    });
     res.json({ isCreator });
   } catch (error) {
-    console.error('Error in check-creator-status:', error);
+    console.error("Error in check-creator-status:", error);
     res.json({ isCreator: false });
   }
 });
