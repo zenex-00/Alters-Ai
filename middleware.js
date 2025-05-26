@@ -48,7 +48,7 @@ const isCreator = async (req, res, next) => {
     const { data: creatorData, error: creatorError } = await supabaseAdmin
       .from('creatorsuser')
       .select('is_creator')
-      .eq('id', userData.id)
+      .eq('user_id', userData.id)
       .single();
 
     if (creatorError) {

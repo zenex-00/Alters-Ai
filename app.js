@@ -346,7 +346,7 @@ app.post(
             const { data: existingCreator, error: creatorCheckError } = await supabaseAdmin
               .from("creatorsuser")
               .select("*")
-              .eq("id", userRecord.id)
+              .eq("user_id", userRecord.id)
               .single();
 
             if (creatorCheckError && creatorCheckError.code !== 'PGRST116') {
@@ -364,7 +364,7 @@ app.post(
                   is_creator: true,
                   updated_at: new Date().toISOString(),
                 })
-                .eq("id", userRecord.id);
+                .eq("user_id", userRecord.id);
 
               if (updateError) {
                 console.error("Error updating creator:", updateError);
@@ -377,7 +377,6 @@ app.post(
                 .from("creatorsuser")
                 .insert([
                   {
-                    id: userRecord.id,
                     user_id: userRecord.id,
                     stripe_customer_id: customerId,
                     is_creator: true,
@@ -949,7 +948,7 @@ app.get("/api/check-creator-status", async (req, res) => {
     const { data: creatorData, error: creatorError } = await supabaseAdmin
       .from('creatorsuser')
       .select('is_creator')
-      .eq('id', userData.id)
+      .eq('user_id', userData.id)
       .single();
 
     if (creatorError) {
