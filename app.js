@@ -946,8 +946,6 @@ app.get("/api/check-creator-status", async (req, res) => {
     const isCreator =
       creatorRows && creatorRows.length > 0 ? creatorRows[0].is_creator : false;
     res.json({ isCreator });
-
-    res.json({ isCreator });
   } catch (error) {
     console.error("Error in check-creator-status:", error);
     res.json({ isCreator: false });

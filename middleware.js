@@ -63,12 +63,12 @@ const isCreator = async (req, res, next) => {
       return res.status(500).json({ error: "Failed to verify creator status" });
     }
 
-    if (!creatorData) {
+    if (!creatorData || creatorData.length === 0) {
       console.log("No creator record found for user");
       return res.status(403).json({ error: "Not authorized as a creator" });
     }
 
-    if (!creatorData.is_creator) {
+    if (!creatorData[0].is_creator) {
       console.log("User is not a creator");
       return res.status(403).json({ error: "Not authorized as a creator" });
     }
