@@ -20,7 +20,7 @@ admin.initializeApp({
 });
 
 const port = process.env.PORT || 3000; // Use Render.com PORT or default to 3000
-
+const app = express();
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -147,7 +147,6 @@ app.post(
   }
 );
 
-const app = express();
 app.use(express.json());
 
 // Initialize Stripe with secret key from environment variables
