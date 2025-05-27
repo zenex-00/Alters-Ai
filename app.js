@@ -21,6 +21,132 @@ admin.initializeApp({
 
 const port = process.env.PORT || 3000; // Use Render.com PORT or default to 3000
 
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    console.log("Webhook triggered - Received event");
+
+    const sig = req.headers["stripe-signature"];
+    console.log("Stripe signature:", sig);
+
+    let event;
+    try {
+      // No need for getRawBody since express.raw() already gives us the raw body
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+      console.log("Webhook event constructed successfully:", event.type);
+    } catch (err) {
+      console.error("Webhook Error:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    if (event.type === "checkout.session.completed") {
+      console.log("Processing checkout.session.completed event");
+      const session = event.data.object;
+      console.log("Session data:", {
+        clientReferenceId: session.client_reference_id,
+        customerId: session.customer,
+        paymentStatus: session.payment_status,
+      });
+
+      try {
+        // Get the Firebase UID from the client_reference_id
+        const firebaseUid = session.client_reference_id;
+        console.log("Firebase UID from session:", firebaseUid);
+
+        if (!firebaseUid) {
+          console.error("No Firebase UID found in session");
+          return res.status(400).json({ error: "No Firebase UID found" });
+        }
+
+        // First, get the user's Supabase ID
+        console.log(
+          "Querying Supabase for user with Firebase UID:",
+          firebaseUid
+        );
+        const { data: userData, error: userError } = await supabaseAdmin
+          .from("users")
+          .select("id")
+          .eq("firebase_uid", firebaseUid)
+          .limit(1);
+
+        if (userError) {
+          console.error("Supabase user query error:", userError);
+          return res.status(500).json({ error: "Failed to find user" });
+        }
+
+        console.log("Supabase user query result:", userData);
+
+        if (!userData || userData.length === 0) {
+          console.error("No user found in Supabase");
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const userId = userData[0].id;
+        console.log("Found Supabase user ID:", userId);
+
+        // Check if user already exists in creatorsuser table
+        console.log("Checking existing creator record for user:", userId);
+        const { data: existingCreator, error: checkError } = await supabaseAdmin
+          .from("creatorsuser")
+          .select("is_creator")
+          .eq("user_id", userId)
+          .limit(1);
+
+        if (checkError) {
+          console.error("Error checking existing creator:", checkError);
+          return res
+            .status(500)
+            .json({ error: "Failed to check creator status" });
+        }
+
+        console.log("Existing creator check result:", existingCreator);
+
+        if (existingCreator && existingCreator.length > 0) {
+          // Update existing record
+          console.log("Updating existing creator record");
+          const { error: updateError } = await supabaseAdmin
+            .from("creatorsuser")
+            .update({ is_creator: true })
+            .eq("user_id", userId);
+
+          if (updateError) {
+            console.error("Error updating creator status:", updateError);
+            return res
+              .status(500)
+              .json({ error: "Failed to update creator status" });
+          }
+          console.log("Successfully updated creator status");
+        } else {
+          // Insert new record
+          console.log("Creating new creator record");
+          const { error: insertError } = await supabaseAdmin
+            .from("creatorsuser")
+            .insert([{ user_id: userId, is_creator: true }]);
+
+          if (insertError) {
+            console.error("Error inserting creator record:", insertError);
+            return res
+              .status(500)
+              .json({ error: "Failed to create creator record" });
+          }
+          console.log("Successfully created creator record");
+        }
+      } catch (error) {
+        console.error("Webhook processing error:", error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    }
+
+    res.json({ received: true });
+  }
+);
+
 const app = express();
 app.use(express.json());
 
@@ -268,118 +394,6 @@ app.get("/payment-success", async (req, res) => {
 });
 
 // Webhook endpoint for Stripe events
-app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  console.log("Webhook triggered - Received event");
-  
-  const sig = req.headers["stripe-signature"];
-  console.log("Stripe signature:", sig);
-
-  let event;
-  try {
-    // No need for getRawBody since express.raw() already gives us the raw body
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-    console.log("Webhook event constructed successfully:", event.type);
-  } catch (err) {
-    console.error("Webhook Error:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  if (event.type === "checkout.session.completed") {
-    console.log("Processing checkout.session.completed event");
-    const session = event.data.object;
-    console.log("Session data:", {
-      clientReferenceId: session.client_reference_id,
-      customerId: session.customer,
-      paymentStatus: session.payment_status
-    });
-
-    try {
-      // Get the Firebase UID from the client_reference_id
-      const firebaseUid = session.client_reference_id;
-      console.log("Firebase UID from session:", firebaseUid);
-
-      if (!firebaseUid) {
-        console.error("No Firebase UID found in session");
-        return res.status(400).json({ error: "No Firebase UID found" });
-      }
-
-      // First, get the user's Supabase ID
-      console.log("Querying Supabase for user with Firebase UID:", firebaseUid);
-      const { data: userData, error: userError } = await supabaseAdmin
-        .from("users")
-        .select("id")
-        .eq("firebase_uid", firebaseUid)
-        .limit(1);
-
-      if (userError) {
-        console.error("Supabase user query error:", userError);
-        return res.status(500).json({ error: "Failed to find user" });
-      }
-
-      console.log("Supabase user query result:", userData);
-
-      if (!userData || userData.length === 0) {
-        console.error("No user found in Supabase");
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      const userId = userData[0].id;
-      console.log("Found Supabase user ID:", userId);
-
-      // Check if user already exists in creatorsuser table
-      console.log("Checking existing creator record for user:", userId);
-      const { data: existingCreator, error: checkError } = await supabaseAdmin
-        .from("creatorsuser")
-        .select("is_creator")
-        .eq("user_id", userId)
-        .limit(1);
-
-      if (checkError) {
-        console.error("Error checking existing creator:", checkError);
-        return res.status(500).json({ error: "Failed to check creator status" });
-      }
-
-      console.log("Existing creator check result:", existingCreator);
-
-      if (existingCreator && existingCreator.length > 0) {
-        // Update existing record
-        console.log("Updating existing creator record");
-        const { error: updateError } = await supabaseAdmin
-          .from("creatorsuser")
-          .update({ is_creator: true })
-          .eq("user_id", userId);
-
-        if (updateError) {
-          console.error("Error updating creator status:", updateError);
-          return res.status(500).json({ error: "Failed to update creator status" });
-        }
-        console.log("Successfully updated creator status");
-      } else {
-        // Insert new record
-        console.log("Creating new creator record");
-        const { error: insertError } = await supabaseAdmin
-          .from("creatorsuser")
-          .insert([{ user_id: userId, is_creator: true }]);
-
-        if (insertError) {
-          console.error("Error inserting creator record:", insertError);
-          return res.status(500).json({ error: "Failed to create creator record" });
-        }
-        console.log("Successfully created creator record");
-      }
-    } catch (error) {
-      console.error("Webhook processing error:", error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  res.json({ received: true });
-});
 
 // Test route to confirm server is running
 app.get("/test", (req, res) => {
