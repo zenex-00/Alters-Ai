@@ -12,6 +12,7 @@ const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const getRawBody = require("raw-body");
 const { isCreator } = require("./middleware");
+const crypto = require("crypto");
 
 // Initialize Firebase Admin with service account
 const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -127,7 +128,11 @@ app.post(
           console.log("Creating new creator record");
           const { error: insertError } = await supabaseAdmin
             .from("creatorsuser")
-            .insert([{ user_id: userId, is_creator: true }]);
+            .insert([{ 
+              id: crypto.randomUUID(), // Add UUID for id field
+              user_id: userId, 
+              is_creator: true 
+            }]);
 
           if (insertError) {
             console.error("Error inserting creator record:", insertError);
