@@ -129,8 +129,7 @@ app.post(
           const { error: insertError } = await supabaseAdmin
             .from("creatorsuser")
             .insert([{ 
-              id: userId, // Use the user's ID from users table
-              user_id: userId, 
+              user_id: userId, // Only user_id is needed now
               is_creator: true 
             }]);
 
