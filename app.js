@@ -129,7 +129,7 @@ app.post(
           const { error: insertError } = await supabaseAdmin
             .from("creatorsuser")
             .insert([{ 
-              id: crypto.randomUUID(), // Add UUID for id field
+              id: userId, // Use the user's ID from users table
               user_id: userId, 
               is_creator: true 
             }]);
