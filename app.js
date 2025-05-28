@@ -862,7 +862,11 @@ app.delete("/api/published-alters/:alterId", async (req, res) => {
       return res.status(404).json({ error: "Alter not found" });
     }
 
-    if (alterData.user_id !== userId) {
+    if (!alterData || alterData.length === 0) {
+      return res.status(404).json({ error: "Alter not found" });
+    }
+
+    if (alterData[0].user_id !== userId) {
       return res
         .status(403)
         .json({ error: "You don't have permission to delete this alter" });
