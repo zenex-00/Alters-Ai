@@ -54,8 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // Get avatar settings from localStorage
-      const avatarSettings = JSON.parse(localStorage.getItem("avatarSettings"));
-      const currentAlter = JSON.parse(sessionStorage.getItem("currentAlter") || "{}");
+      const avatarSettings = JSON.parse(localStorage.getItem("avatarSettings") || "{}" );
+      const currentAlter = JSON.parse(sessionStorage.getItem("currentAlter") || "{}" );
 
       if (!avatarSettings && !currentAlter.name) {
         throw new Error(
@@ -71,17 +71,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Prepare alter data - prioritize current alter settings over avatarSettings
       const alterData = {
-        name: currentAlter.name || avatarSettings.name || "Untitled Alter",
+        name: currentAlter?.name || avatarSettings?.name || "Untitled Alter",
         description: description,
         category: category,
         avatar_url: avatarImage.src,
-        personality: currentAlter.personality || avatarSettings.personality || "Friendly and helpful",
-        prompt: currentAlter.prompt || avatarSettings.prompt || "You are a helpful AI assistant.",
-        knowledge: currentAlter.knowledge || avatarSettings.knowledge || category.toLowerCase(),
-        voice_id: currentAlter.voiceId || avatarSettings.voiceId || "",
+        personality: currentAlter?.personality || avatarSettings?.personality || "Friendly and helpful",
+        prompt: currentAlter?.prompt || avatarSettings?.prompt || "You are a helpful AI assistant.",
+        knowledge: currentAlter?.knowledge || avatarSettings?.knowledge || category.toLowerCase(),
+        voice_id: currentAlter?.voiceId || avatarSettings?.voiceId || "",
         is_public: true,
-        type: currentAlter.type || "custom",
-        documentContent: currentAlter.documentContent || avatarSettings.documentContent || ""
+        type: currentAlter?.type || "custom",
+        documentContent: currentAlter?.documentContent || avatarSettings?.documentContent || ""
       };
 
       // Validate required fields
