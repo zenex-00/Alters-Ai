@@ -562,6 +562,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ idToken }),
+                credentials: 'include'
               })
                 .then((response) => response.json())
                 .then((data) => {

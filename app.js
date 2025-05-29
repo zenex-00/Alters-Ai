@@ -20,8 +20,124 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+// Initialize Supabase clients
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Create a Supabase session store
+class SupabaseSessionStore extends session.Store {
+  constructor(supabase) {
+    super();
+    this.supabase = supabase;
+  }
+
+  async get(sid, callback) {
+    try {
+      const { data, error } = await this.supabase
+        .from('sessions')
+        .select('sess')
+        .eq('sid', sid)
+        .maybeSingle(); // Use maybeSingle instead of single to handle no rows case
+
+      if (error) {
+        console.error('Session get error:', error);
+        return callback(error);
+      }
+      
+      if (!data) {
+        return callback(null, null);
+      }
+
+      try {
+        const session = JSON.parse(data.sess);
+        callback(null, session);
+      } catch (parseError) {
+        console.error('Session parse error:', parseError);
+        callback(parseError);
+      }
+    } catch (err) {
+      console.error('Session get error:', err);
+      callback(err);
+    }
+  }
+
+  async set(sid, sess, callback) {
+    try {
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const { error } = await this.supabase
+        .from('sessions')
+        .upsert({
+          sid,
+          sess: JSON.stringify(sess),
+          expires,
+          created_at: new Date()
+        }, {
+          onConflict: 'sid'
+        });
+
+      if (error) {
+        console.error('Session set error:', error);
+        return callback(error);
+      }
+      callback();
+    } catch (err) {
+      console.error('Session set error:', err);
+      callback(err);
+    }
+  }
+
+  async destroy(sid, callback) {
+    try {
+      const { error } = await this.supabase
+        .from('sessions')
+        .delete()
+        .eq('sid', sid);
+
+      if (error) {
+        console.error('Session destroy error:', error);
+        return callback(error);
+      }
+      callback();
+    } catch (err) {
+      console.error('Session destroy error:', err);
+      callback(err);
+    }
+  }
+}
+
 const port = process.env.PORT || 3000; // Use Render.com PORT or default to 3000
 const app = express();
+
+// Initialize session store with Supabase
+const sessionStore = new SupabaseSessionStore(supabaseAdmin);
+
+// Middleware to track session state
+app.use(
+  session({
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || "alter-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+    },
+    proxy: process.env.NODE_ENV === "production", // Trust the reverse proxy
+  })
+);
+
+// Initialize Stripe with secret key from environment variables
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -165,33 +281,19 @@ app.post(
         }
 
         console.log("Purchase successfully recorded in database");
-        res.json({ received: true });
+        return res.json({ received: true });
       } catch (error) {
         console.error("Webhook processing error:", error);
         return res.status(500).json({ error: "Internal server error" });
       }
     }
 
-    res.json({ received: true });
+    // For any other event type, just acknowledge receipt
+    return res.json({ received: true });
   }
 );
 
 app.use(express.json());
-
-// Initialize Stripe with secret key from environment variables
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-// Initialize Supabase client with anon key for general use
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-
-// Initialize Supabase client with service_role key for server-side operations
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 // Function to ensure admin user exists
 async function ensureAdminUser() {
@@ -339,22 +441,6 @@ const documentUpload = multer({
     }
   },
 }).single("document");
-
-// Middleware to track session state
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "alter-session-secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      httpOnly: true,
-    },
-    proxy: process.env.NODE_ENV === "production", // Trust the reverse proxy
-  })
-);
 
 // Middleware to protect premium routes (not used for creator-studio, customize, or chat)
 function guardRoute(req, res, next) {
