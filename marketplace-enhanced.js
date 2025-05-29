@@ -439,14 +439,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.preventDefault();
 
         const alterId = btn.getAttribute("data-alter-id");
-        const isPurchased = localStorage.getItem(`purchased_alter_${alterId}`) === 'true';
+        const buttonText = btn.querySelector(".button-text").textContent;
+        const alterData = JSON.parse(decodeURIComponent(btn.getAttribute("data-alter")));
 
-        if (isPurchased) {
-          // If already purchased, start chat
-          const alterData = JSON.parse(decodeURIComponent(btn.getAttribute("data-alter")));
+        if (buttonText === "Chat Now") {
+          // If button says "Chat Now", redirect to chat
           chatWithAlter(alterData);
         } else {
-          // If not purchased, initiate purchase
+          // If button says "Buy Now", initiate purchase
           await buyAlter(alterId);
         }
       });
