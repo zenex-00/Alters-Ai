@@ -1259,160 +1259,142 @@
         import alterImageManager from "./alter-image-manager.js";
 
         document.addEventListener("DOMContentLoaded", () => {
-          console.log("chat-interface.js: DOMContentLoaded fired");
+          console.log("chat-alter.js: DOMContentLoaded fired");
 
           const userInputField = document.getElementById("user-input-field");
           const voiceButton = document.getElementById("voice-button");
           const enterButton = document.getElementById("enter-button");
           const chatHistory = document.getElementById("chat-history");
+          const chatHeader = document.querySelector(".chat-header h2");
+          const avatarImage = document.getElementById("avatar-image");
+          const idleVideo = document.getElementById("idle-video");
 
           let recognition = null;
           let isRecording = false;
           let isSending = false;
 
-          // Function to handle image loading with fallbacks
-          async function loadAlterImage(alter) {
-            const avatarImage = document.getElementById("avatar-image");
-            if (!avatarImage) {
-              console.error("Avatar image element not found");
-              return;
-            }
-
-            const imageSources = [
-              alter.image,
-              alter.avatar_url,
-              alter.avatarUrl,
-              alter.profile_image,
-              alter.profileImage,
-              "/placeholder.svg",
-            ].filter(Boolean);
-
-            for (const imageUrl of imageSources) {
+          // Function to initialize alter data
+          function initializeAlter() {
+            // Get alter data from localStorage (marketplace uses 'selectedAlter')
+            const alterData =
+              localStorage.getItem("selectedAlter") ||
+              localStorage.getItem("alterSelectedAlter");
+            if (alterData) {
               try {
-                const imageLoadPromise = new Promise((resolve, reject) => {
-                  const img = new Image();
-                  img.onload = () => resolve(imageUrl);
-                  img.onerror = () =>
-                    reject(new Error(`Failed to load image: ${imageUrl}`));
-                  img.src = imageUrl;
-                });
+                const alter = JSON.parse(alterData);
+                console.log("Loading alter data:", alter);
 
-                const loadedUrl = await Promise.race([
-                  imageLoadPromise,
-                  new Promise((_, reject) =>
-                    setTimeout(
-                      () => reject(new Error("Image load timeout")),
-                      5000
-                    )
-                  ),
-                ]);
+                // Initialize alter with proper properties based on type
+                let initializedAlter = { ...alter };
 
-                avatarImage.src = loadedUrl;
-                avatarImage.style.display = "block";
-                console.log("Successfully loaded alter image:", loadedUrl);
-                return true;
-              } catch (error) {
-                console.warn(`Failed to load image from ${imageUrl}:`, error);
-                continue;
-              }
-            }
+                if (alter.type === "premade") {
+                  // Use hardcoded premade alter properties
+                  const premadeAlters = {
+                    1: {
+                      name: "Doctor Emma",
+                      description: "Professional Medical Consultant",
+                      personality:
+                        "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
+                      prompt:
+                        "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
+                      knowledge:
+                        "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
+                      category: "professional",
+                      image:
+                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish",
+                      price: 9.99,
+                    },
+                    2: {
+                      name: "Business Man",
+                      description: "Corporate Executive Assistant",
+                      personality:
+                        "Professional, strategic, results-oriented business executive who provides expert business advice and corporate guidance.",
+                      prompt:
+                        "You are Business Man, a corporate executive assistant. You are professional, strategic, and results-oriented. You provide expert business advice, help with corporate decisions, and offer guidance on professional matters. You understand business operations, management principles, and corporate strategy.",
+                      knowledge:
+                        "Business strategy, corporate management, professional development, leadership advice",
+                      category: "professional",
+                      image:
+                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish",
+                      price: 9.99,
+                    },
+                    3: {
+                      name: "Gym Guide",
+                      description: "Personal Fitness Trainer",
+                      personality:
+                        "Motivating, energetic, encouraging personal fitness trainer who helps people achieve their health and fitness goals.",
+                      prompt:
+                        "You are Gym Guide, a personal fitness trainer. You are motivating, energetic, and encouraging. You help people achieve their health and fitness goals by providing workout routines, nutrition advice, and motivation. You understand exercise science, proper form, and how to create effective fitness programs.",
+                      knowledge:
+                        "Fitness training, exercise routines, nutrition advice, workout planning, health and wellness",
+                      category: "fitness",
+                      image:
+                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
+                      price: 9.99,
+                    },
+                  };
 
-            console.error("All image sources failed to load");
-            avatarImage.src = "/placeholder.svg";
-            avatarImage.style.display = "block";
-            return false;
-          }
-
-          // Check for avatar settings from customization first
-          const avatarSettings = localStorage.getItem("alterAvatarSettings");
-          if (avatarSettings) {
-            try {
-              const settings = JSON.parse(avatarSettings);
-              console.log("Loading custom avatar settings:", settings);
-
-              // Clear any existing alter data
-              localStorage.removeItem("alterSelectedAlter");
-              sessionStorage.removeItem("alterCurrentAlter");
-
-              // Set up the custom alter
-              window.selectedAlter = {
-                type: "custom",
-                name: settings.name,
-                prompt: settings.prompt,
-                personality: settings.personality,
-                knowledge: settings.knowledge,
-                voiceId: settings.voiceId,
-                documentContent: settings.documentContent || "",
-                // Start with placeholder image
-                image: "/placeholder.svg",
-              };
-
-              // Update chat header
-              const chatHeader = document.querySelector(".chat-header h2");
-              if (chatHeader && settings.name) {
-                chatHeader.textContent = `Chat with ${settings.name}`;
-              }
-
-              // Store in sessionStorage for persistence
-              sessionStorage.setItem(
-                "alterCurrentAlter",
-                JSON.stringify(window.selectedAlter)
-              );
-
-              // Note: We don't remove avatarSettings from localStorage here anymore
-              // It will be removed after successful publishing
-            } catch (e) {
-              console.error(
-                "Failed to parse avatarSettings from localStorage:",
-                e
-              );
-            }
-          } else {
-            // Check for selected alter from marketplace
-            const selectedAlter = localStorage.getItem("alterSelectedAlter");
-            if (selectedAlter) {
-              try {
-                const alter = JSON.parse(selectedAlter);
-
-                // Clear any existing avatar settings to prevent interference
-                localStorage.removeItem("alterAvatarSettings");
-
-                // Use the image manager to handle the alter image
-                alterImageManager.handleAlterImage(alter);
-
-                // Set chat header name if available
-                const chatHeader = document.querySelector(".chat-header h2");
-                if (chatHeader && alter.name) {
-                  chatHeader.textContent = `Chat with ${alter.name}`;
+                  const premadeData =
+                    premadeAlters[alter.id] ||
+                    premadeAlters[alter.id.replace("premade_", "")];
+                  if (premadeData) {
+                    initializedAlter = {
+                      ...alter,
+                      ...premadeData,
+                      id: alter.id,
+                      type: "premade",
+                    };
+                  }
+                } else if (alter.type === "published") {
+                  // For published alters, the data should already be complete from the marketplace
+                  // But ensure we have all required fields
+                  initializedAlter = {
+                    ...alter,
+                    personality:
+                      alter.personality ||
+                      "Helpful and knowledgeable AI assistant",
+                    prompt:
+                      alter.prompt ||
+                      `You are ${alter.name}. ${
+                        alter.description || ""
+                      } Be helpful and engaging in your responses.`,
+                    knowledge:
+                      alter.knowledge || "General knowledge and assistance",
+                    type: "published",
+                  };
                 }
 
-                // Store alter data for later use
-                window.selectedAlter = {
-                  ...alter,
-                  type: alter.type || "custom",
-                  prompt:
-                    alter.type === "premade" || alter.type === "customized"
-                      ? alter.prompt || alter.system_prompt
-                      : alter.prompt || alter.system_prompt || "",
-                  personality:
-                    alter.personality || alter.personality_description,
-                  name: alter.name,
-                  knowledge: alter.knowledge || alter.category || "general",
-                  documentContent: alter.documentContent || "",
-                };
+                window.selectedAlter = initializedAlter;
+
+                // Update chat header with alter name
+                if (chatHeader && initializedAlter.name) {
+                  chatHeader.textContent = `Chat with ${initializedAlter.name}`;
+                }
+
+                // Handle alter image using image manager
+                if (initializedAlter.image || initializedAlter.avatar_url) {
+                  alterImageManager.setAlterData(initializedAlter);
+                }
 
                 // Store in sessionStorage for persistence
                 sessionStorage.setItem(
                   "alterCurrentAlter",
-                  JSON.stringify(window.selectedAlter)
+                  JSON.stringify(initializedAlter)
                 );
 
-                // Remove from localStorage after loading
+                // Clear the localStorage after loading
+                localStorage.removeItem("selectedAlter");
                 localStorage.removeItem("alterSelectedAlter");
-              } catch (e) {
-                console.error(
-                  "Failed to parse selectedAlter from localStorage:",
-                  e
+
+                console.log(
+                  "Successfully initialized alter:",
+                  initializedAlter
+                );
+              } catch (error) {
+                console.error("Error initializing alter:", error);
+                showToast(
+                  "Failed to load alter data. Please try again.",
+                  "error"
                 );
               }
             } else {
@@ -1424,22 +1406,39 @@
                   window.selectedAlter = alter;
 
                   // Update chat header
-                  const chatHeader = document.querySelector(".chat-header h2");
                   if (chatHeader && alter.name) {
                     chatHeader.textContent = `Chat with ${alter.name}`;
                   }
 
-                  // Update image
-                  alterImageManager.handleAlterImage(alter);
-                } catch (e) {
+                  // Update image using image manager
+                  if (alter.image || alter.avatar_url) {
+                    alterImageManager.setAlterData(alter);
+                  }
+
+                  console.log("Loaded alter from sessionStorage:", alter);
+                } catch (error) {
                   console.error(
-                    "Failed to parse currentAlter from sessionStorage:",
-                    e
+                    "Error loading alter from sessionStorage:",
+                    error
                   );
                 }
+              } else {
+                console.warn(
+                  "No alter data found in localStorage or sessionStorage"
+                );
+                showToast(
+                  "No alter selected. Redirecting to marketplace...",
+                  "warning"
+                );
+                setTimeout(() => {
+                  window.location.href = "/marketplace";
+                }, 2000);
               }
             }
           }
+
+          // Initialize alter data
+          initializeAlter();
 
           if (userInputField.dataset.alterListenersAttached) {
             console.log(
@@ -1825,6 +1824,187 @@
             particlesContainer.appendChild(particle);
           }
         }
+      </script>
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          // Check authentication first
+          fetch("/api/auth/status")
+            .then((response) => response.json())
+            .then((data) => {
+              if (!data.authenticated) {
+                console.log("Not authenticated, redirecting to login");
+                window.location.href = "/login";
+                return;
+              }
+
+              // Get alter data from localStorage (set by marketplace)
+              const alterData =
+                localStorage.getItem("selectedAlter") ||
+                localStorage.getItem("alterSelectedAlter");
+
+              if (!alterData) {
+                console.log("No alter data found, checking sessionStorage");
+                const sessionAlter =
+                  sessionStorage.getItem("alterCurrentAlter");
+                if (!sessionAlter) {
+                  console.log(
+                    "No alter data in session either, redirecting to marketplace"
+                  );
+                  if (window.showToast) {
+                    window.showToast(
+                      "No alter selected. Please select an alter from marketplace.",
+                      "warning"
+                    );
+                  }
+                  setTimeout(() => {
+                    window.location.href = "/marketplace";
+                  }, 2000);
+                  return;
+                }
+                // Use session data if localStorage is empty
+                try {
+                  const alter = JSON.parse(sessionAlter);
+                  console.log("Using alter data from sessionStorage:", alter);
+                  initializeChat(alter);
+                  return;
+                } catch (error) {
+                  console.error("Error parsing session alter data:", error);
+                  window.location.href = "/marketplace";
+                  return;
+                }
+              }
+
+              try {
+                const alter = JSON.parse(alterData);
+                let alterId;
+
+                // Extract the correct alter ID based on type
+                if (alter.type === "premade") {
+                  // For premade alters, use the clean ID (without 'premade_' prefix)
+                  alterId = alter.id.toString().replace("premade_", "");
+                } else if (alter.type === "published") {
+                  // For published alters, use originalId or id
+                  alterId = alter.originalId || alter.id;
+                } else {
+                  // For custom alters or others, just use the id
+                  alterId = alter.id;
+                }
+
+                console.log(
+                  "Checking purchase for alter ID:",
+                  alterId,
+                  "Type:",
+                  alter.type
+                );
+
+                // Check if user has purchased this alter with retry logic
+                let retryCount = 0;
+                const maxRetries = 3;
+
+                const checkPurchaseWithRetry = () => {
+                  fetch(`/api/check-purchase/${alterId}`)
+                    .then((response) => {
+                      if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                      }
+                      return response.json();
+                    })
+                    .then((purchaseData) => {
+                      if (!purchaseData.purchased && retryCount < maxRetries) {
+                        console.log(
+                          `Purchase not found, retry ${
+                            retryCount + 1
+                          }/${maxRetries}`
+                        );
+                        retryCount++;
+                        setTimeout(checkPurchaseWithRetry, 2000); // Wait 2 seconds before retry
+                        return;
+                      }
+
+                      if (!purchaseData.purchased) {
+                        console.log(
+                          "User has not purchased this alter after retries"
+                        );
+                        // Only show error for paid alters
+                        if (alter.price && alter.price > 0) {
+                          if (window.showToast) {
+                            window.showToast(
+                              "Purchase verification failed. Please try again or contact support.",
+                              "error"
+                            );
+                          }
+                          setTimeout(() => {
+                            window.location.href = "/marketplace";
+                          }, 3000);
+                          return;
+                        }
+                      }
+
+                      console.log(
+                        "Purchase verified or free alter, proceeding with chat"
+                      );
+                      // User has purchased the alter or it's free, proceed with chat initialization
+                      initializeChat(alter);
+                    })
+                    .catch((error) => {
+                      console.error("Error checking purchase status:", error);
+
+                      if (retryCount < maxRetries) {
+                        console.log(
+                          `Purchase check failed, retry ${
+                            retryCount + 1
+                          }/${maxRetries}`
+                        );
+                        retryCount++;
+                        setTimeout(checkPurchaseWithRetry, 2000);
+                        return;
+                      }
+
+                      // After all retries failed, allow access anyway (could be network issue)
+                      console.log(
+                        "Purchase verification failed after retries, allowing access"
+                      );
+                      if (window.showToast) {
+                        window.showToast(
+                          "Unable to verify purchase, but allowing access. If you encounter issues, please contact support.",
+                          "warning"
+                        );
+                      }
+                      initializeChat(alter);
+                    });
+                };
+
+                // Start the purchase check
+                checkPurchaseWithRetry();
+              } catch (error) {
+                console.error("Error parsing alter data:", error);
+                if (window.showToast) {
+                  window.showToast(
+                    "Invalid alter data. Please select an alter from marketplace.",
+                    "error"
+                  );
+                }
+                setTimeout(() => {
+                  window.location.href = "/marketplace";
+                }, 2000);
+              }
+            })
+            .catch((error) => {
+              console.error("Auth check error:", error);
+              window.location.href = "/login";
+            });
+
+          function initializeChat(alter) {
+            console.log("Initializing chat with alter:", alter);
+            // Store alter data for use by other scripts
+            window.selectedAlter = alter;
+            sessionStorage.setItem("alterCurrentAlter", JSON.stringify(alter));
+
+            // Clear localStorage after successful initialization
+            localStorage.removeItem("selectedAlter");
+            localStorage.removeItem("alterSelectedAlter");
+          }
+        });
       </script>
     </main>
   </body>

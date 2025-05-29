@@ -11,7 +11,7 @@ const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const getRawBody = require("raw-body");
-const { isCreator } = require("./middleware");
+const { isCreator, hasPurchasedAlter } = require("./middleware");
 const crypto = require("crypto");
 
 // Initialize Firebase Admin with service account
@@ -466,12 +466,26 @@ function guardRoute(req, res, next) {
   }
 }
 
+// Middleware to check if user is authenticated
+const isAuthenticated = (req, res, next) => {
+  if (req.session.userId) {
+    next();
+  } else {
+    res.redirect("/login");
+  }
+};
+
 // Routes
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/chat-alter", (req, res) => {
+app.get("/chat-alter", isAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, "chat-alter.html"));
+});
+
+app.get("/chat-alter/:alterId", isAuthenticated, (req, res) => {
+  // Pass the alterId to the frontend via a script tag or query parameter
   res.sendFile(path.join(__dirname, "chat-alter.html"));
 });
 
@@ -483,35 +497,23 @@ app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "About.html"));
 });
 
-app.get("/marketplace", (req, res) => {
-  res.sendFile(path.join(__dirname, "Marketplace.html"));
+app.get("/marketplace", isAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, "marketplace.html"));
 });
 
 app.get("/creator-page", (req, res) => {
   res.sendFile(path.join(__dirname, "Creator-Page.html"));
 });
 
-app.get("/creator-studio", isCreator, (req, res) => {
-  console.log("Accessing /creator-studio, session:", {
-    isCreator: req.session.isCreator,
-    allowedAccess: req.session.allowedAccess,
-  });
-  res.sendFile(path.join(__dirname, "Creator-Studio.html"));
+app.get("/creator-studio", isAuthenticated, isCreator, (req, res) => {
+  res.sendFile(path.join(__dirname, "creator-studio.html"));
 });
 
-app.get("/customize", (req, res) => {
-  console.log("Accessing /customize, session:", {
-    isCreator: req.session.isCreator,
-    allowedAccess: req.session.allowedAccess,
-  });
+app.get("/customize", isAuthenticated, isCreator, (req, res) => {
   res.sendFile(path.join(__dirname, "customize.html"));
 });
 
-app.get("/chat", (req, res) => {
-  console.log("Accessing /chat, session:", {
-    isCreator: req.session.isCreator,
-    allowedAccess: req.session.allowedAccess,
-  });
+app.get("/chat", isAuthenticated, isCreator, (req, res) => {
   res.sendFile(path.join(__dirname, "chat.html"));
 });
 
@@ -1211,8 +1213,33 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
     // Get Firebase UID from session
     const firebaseUid = req.session.userId;
     if (!firebaseUid) {
+      console.log("No Firebase UID in session for purchase check");
       return res.json({ purchased: false });
     }
+
+    const alterId = req.params.alterId;
+    console.log("Checking purchase for alter ID:", alterId);
+
+    // For premade alters (numeric IDs), check if user is authenticated (they should have access)
+    const isNumericId = /^\d+$/.test(alterId);
+
+    if (isNumericId) {
+      console.log("Premade alter detected, checking authentication");
+      // For premade alters, we just need to verify the user is authenticated
+      // and the alter exists in our predefined list
+      const premadeAlterIds = ["1", "2", "3"]; // Add all valid premade alter IDs
+
+      if (premadeAlterIds.includes(alterId)) {
+        console.log("Valid premade alter, user authenticated - access granted");
+        return res.json({ purchased: true });
+      } else {
+        console.log("Invalid premade alter ID");
+        return res.json({ purchased: false });
+      }
+    }
+
+    // For published alters (UUIDs), check actual purchase
+    console.log("Published alter detected, checking purchase records");
 
     // Get the user's Supabase ID
     const { data: userData, error: userError } = await supabaseAdmin
@@ -1222,11 +1249,11 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
       .limit(1);
 
     if (userError || !userData || userData.length === 0) {
+      console.log("User not found in Supabase");
       return res.json({ purchased: false });
     }
 
     const userId = userData[0].id;
-    const alterId = req.params.alterId;
 
     // Check if the alter has been purchased using the purchases table
     const { data: purchaseData, error: purchaseError } = await supabaseAdmin
@@ -1241,7 +1268,10 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
       return res.json({ purchased: false });
     }
 
-    res.json({ purchased: purchaseData && purchaseData.length > 0 });
+    const purchased = purchaseData && purchaseData.length > 0;
+    console.log("Purchase check result:", purchased);
+
+    res.json({ purchased });
   } catch (error) {
     console.error("Error in check-purchase:", error);
     res.json({ purchased: false });
@@ -1385,3 +1415,7 @@ app.get("/alter-purchase-success", async (req, res) => {
     res.redirect("/marketplace");
   }
 });
+
+// Note: chat-alter routes are now defined above in the main routes section
+
+// Note: Purchase checking API is already defined above in the main API routes section
