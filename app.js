@@ -486,7 +486,7 @@ app.get("/about", (req, res) => {
 });
 
 app.get("/marketplace", isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, "marketplace.html"));
+  res.sendFile(path.join(__dirname, "Marketplace.html"));
 });
 
 app.get("/creator-page", (req, res) => {
