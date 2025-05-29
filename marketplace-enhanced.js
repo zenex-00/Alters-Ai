@@ -214,7 +214,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function filterAndDisplayAlters() {
-    const currentAlters = currentTab === "premade" ? premadeAlters : publishedAlters;
+    const currentAlters =
+      currentTab === "premade" ? premadeAlters : publishedAlters;
     const searchTerm = searchInput.value.toLowerCase();
     const category = categoryFilter.value;
     const sortBy = sortFilter.value;
@@ -256,7 +257,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function displayAlters() {
-    const container = currentTab === "premade" ? premadeContent : publishedContent;
+    const container =
+      currentTab === "premade" ? premadeContent : publishedContent;
 
     if (filteredAlters.length === 0) {
       container.innerHTML = "";
@@ -265,7 +267,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     showNoResults(false);
-    
+
     // Create all alter cards asynchronously
     const alterCards = await Promise.all(filteredAlters.map(createAlterCard));
     container.innerHTML = alterCards.join("");
@@ -305,9 +307,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Error checking purchase status:", error);
     }
 
-    const buttonText = isPurchased ? 'Chat Now' : 'Buy Now';
-    const buttonIcon = isPurchased ? 'ri-chat-3-line' : 'ri-shopping-cart-line';
-    const buttonTitle = isPurchased ? `Chat with ${alter.name}` : `Buy ${alter.name}`;
+    const buttonText = isPurchased ? "Chat Now" : "Buy Now";
+    const buttonIcon = isPurchased ? "ri-chat-3-line" : "ri-shopping-cart-line";
+    const buttonTitle = isPurchased
+      ? `Chat with ${alter.name}`
+      : `Buy ${alter.name}`;
 
     return `
       <div class="alter-card fade-in" data-alter-id="${alterId}">
@@ -326,18 +330,32 @@ document.addEventListener("DOMContentLoaded", async () => {
           </div>
           
           <div class="absolute bottom-3 left-3">
-            <span class="badge badge-primary capitalize">${alter.category}</span>
+            <span class="badge badge-primary capitalize">${
+              alter.category
+            }</span>
           </div>
           
-          ${alter.featured ? '<div class="absolute top-3 left-3"><span class="badge badge-featured">Featured</span></div>' : ''}
+          ${
+            alter.featured
+              ? '<div class="absolute top-3 left-3"><span class="badge badge-featured">Featured</span></div>'
+              : ""
+          }
           
-          ${isOwner ? `<button class="delete-button" data-alter-id="${alter.id}" title="Delete alter"><i class="ri-delete-bin-line"></i></button>` : ''}
+          ${
+            isOwner
+              ? `<button class="delete-button" data-alter-id="${alter.id}" title="Delete alter"><i class="ri-delete-bin-line"></i></button>`
+              : ""
+          }
         </div>
         
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-bold text-lg truncate">
-              ${alter.link ? `<a href="${alter.link}" class="hover:text-primary transition-colors">${alter.name}</a>` : alter.name}
+              ${
+                alter.link
+                  ? `<a href="${alter.link}" class="hover:text-primary transition-colors">${alter.name}</a>`
+                  : alter.name
+              }
             </h3>
             <div class="flex items-center text-yellow-400 text-sm">
               <i class="ri-star-fill"></i>
@@ -345,16 +363,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             </div>
           </div>
           
-          <p class="text-gray-400 text-sm mb-4 truncate">${alter.description}</p>
+          <p class="text-gray-400 text-sm mb-4 truncate">${
+            alter.description
+          }</p>
           
           <div class="flex items-center mb-4">
-            <img src="${alter.creatorAvatar || alter.creator_avatar || "/placeholder.svg"}" 
+            <img src="${
+              alter.creatorAvatar || alter.creator_avatar || "/placeholder.svg"
+            }" 
                  alt="${alter.creator || alter.creator_name}" 
                  class="w-6 h-6 rounded-full mr-2">
             <span class="text-sm text-gray-400">
-              by <span class="text-primary">${alter.creator || alter.creator_name || "Unknown"}</span>
+              by <span class="text-primary">${
+                alter.creator || alter.creator_name || "Unknown"
+              }</span>
             </span>
-            ${alter.verified ? '<div class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"><i class="ri-check-line text-primary text-xs"></i></div>' : ''}
+            ${
+              alter.verified
+                ? '<div class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"><i class="ri-check-line text-primary text-xs"></i></div>'
+                : ""
+            }
           </div>
           
           <div class="flex items-center justify-between">
@@ -362,7 +390,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             <div class="flex gap-2">
               <button class="bg-primary px-4 py-2 rounded-lg buy-alter-btn flex items-center justify-center min-w-[120px]" 
                       data-alter-id="${alter.id}" 
-                      data-alter="${encodeURIComponent(JSON.stringify(enhancedAlter))}"
+                      data-alter="${encodeURIComponent(
+                        JSON.stringify(enhancedAlter)
+                      )}"
                       title="${buttonTitle}">
                 <i class="${buttonIcon} mr-2"></i>
                 <span class="button-text">${buttonText}</span>
@@ -440,7 +470,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const alterId = btn.getAttribute("data-alter-id");
         const buttonText = btn.querySelector(".button-text").textContent;
-        const alterData = JSON.parse(decodeURIComponent(btn.getAttribute("data-alter")));
+        const alterData = JSON.parse(
+          decodeURIComponent(btn.getAttribute("data-alter"))
+        );
 
         if (buttonText === "Chat Now") {
           // If button says "Chat Now", redirect to chat
@@ -503,30 +535,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function chatWithAlter(alter) {
-    // Store the complete alter data in localStorage with a specific key for chat-alter.html
-    const alterData = {
+    // Prepare comprehensive alter data for the chat page
+    const alterForChat = {
       id: alter.id,
       name: alter.name,
-      image: alter.image || alter.avatar_url || alter.avatarUrl,
-      prompt: alter.prompt || alter.system_prompt,
-      personality: alter.personality || alter.personality_description,
-      category: alter.category,
       description: alter.description,
-      type: alter.type || 'premade',
-      knowledge: alter.knowledge,
-      voiceId: alter.voiceId,
-      documentContent: alter.documentContent || '',
-      // Add any other properties that might be needed
-      creator_id: alter.creator_id,
+      // Ensure all possible image properties are included
+      image: alter.image,
+      avatar_url: alter.avatar_url,
+      avatarUrl: alter.avatarUrl,
+      profile_image: alter.profile_image,
+      profileImage: alter.profileImage,
+      // Always use the specific personality and prompt from the alter
+      personality: alter.personality || alter.personality_description,
+      prompt: alter.prompt || alter.system_prompt,
+      knowledge: alter.knowledge || alter.category || "general",
+      voice_id: alter.voice_id || alter.voiceId || "",
+      category: alter.category,
+      creator: alter.creator || alter.creator_name,
+      rating: alter.rating,
       price: alter.price,
-      created_at: alter.created_at
+      type: alter.type,
+      // Additional fields for published alters
+      documentContent: alter.documentContent || "",
+      documentUrl: alter.documentUrl || "",
+      documentName: alter.documentName || "",
     };
 
-    // Store in localStorage with a specific key for chat-alter.html
-    localStorage.setItem('alterSelectedAlter', JSON.stringify(alterData));
-    
-    // Redirect to chat-alter.html
-    window.location.href = '/chat-alter.html';
+    // Clear any existing avatar settings to prevent interference
+    localStorage.removeItem("avatarSettings");
+
+    // Pre-load the image using the image manager
+    alterImageManager.handleAlterImage(alterForChat);
+
+    // Save alter data for the chat page
+    localStorage.setItem("selectedAlter", JSON.stringify(alterForChat));
+
+    // Redirect to chat
+    window.location.href = "/chat-alter";
   }
 
   function toggleFavorite(btn) {
@@ -628,11 +674,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (result.error) {
         throw new Error(result.error.message);
       }
-
     } catch (error) {
       console.error("Error in buyAlter:", error);
       showError(error.message || "Failed to process purchase");
-      
+
       // Reset button state on error
       if (buyButton) {
         const buttonText = buyButton.querySelector(".button-text");

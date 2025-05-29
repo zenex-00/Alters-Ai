@@ -11,7 +11,7 @@ const session = require("express-session");
 const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const getRawBody = require("raw-body");
-const { isCreator, hasPurchasedAlter } = require("./middleware");
+const { isCreator } = require("./middleware");
 const crypto = require("crypto");
 
 // Initialize Firebase Admin with service account
@@ -466,15 +466,6 @@ function guardRoute(req, res, next) {
   }
 }
 
-// Middleware to check if user is authenticated
-const isAuthenticated = (req, res, next) => {
-  if (req.session.userId) {
-    next();
-  } else {
-    res.redirect("/login");
-  }
-};
-
 // Routes
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -492,7 +483,7 @@ app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "About.html"));
 });
 
-app.get("/marketplace", isAuthenticated, (req, res) => {
+app.get("/marketplace", (req, res) => {
   res.sendFile(path.join(__dirname, "Marketplace.html"));
 });
 
@@ -500,15 +491,27 @@ app.get("/creator-page", (req, res) => {
   res.sendFile(path.join(__dirname, "Creator-Page.html"));
 });
 
-app.get("/creator-studio", isAuthenticated, isCreator, (req, res) => {
+app.get("/creator-studio", isCreator, (req, res) => {
+  console.log("Accessing /creator-studio, session:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
-app.get("/customize", isAuthenticated, isCreator, (req, res) => {
+app.get("/customize", (req, res) => {
+  console.log("Accessing /customize, session:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   res.sendFile(path.join(__dirname, "customize.html"));
 });
 
-app.get("/chat", isAuthenticated, isCreator, (req, res) => {
+app.get("/chat", (req, res) => {
+  console.log("Accessing /chat, session:", {
+    isCreator: req.session.isCreator,
+    allowedAccess: req.session.allowedAccess,
+  });
   res.sendFile(path.join(__dirname, "chat.html"));
 });
 
@@ -1380,57 +1383,5 @@ app.get("/alter-purchase-success", async (req, res) => {
   } catch (error) {
     console.error("Error handling successful purchase:", error);
     res.redirect("/marketplace");
-  }
-});
-
-// Protected routes
-app.get(
-  "/chat-alter/:alterId",
-  isAuthenticated,
-  hasPurchasedAlter,
-  (req, res) => {
-    res.sendFile(path.join(__dirname, "chat-alter.html"));
-  }
-);
-
-// API endpoint to check if user has purchased an alter
-app.get("/api/check-purchase/:alterId", isAuthenticated, async (req, res) => {
-  try {
-    const firebaseUid = req.session.userId;
-    const alterId = req.params.alterId;
-
-    // First get the user's Supabase ID
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userError || !userData || userData.length === 0) {
-      console.error("Error finding user:", userError);
-      return res.status(500).json({ error: "Failed to find user" });
-    }
-
-    const userId = userData[0].id;
-
-    // Check if user has purchased this alter
-    const { data: purchaseData, error: purchaseError } = await supabaseAdmin
-      .from("purchases")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("alter_id", alterId)
-      .limit(1);
-
-    if (purchaseError) {
-      console.error("Error checking purchase status:", purchaseError);
-      return res.status(500).json({ error: "Failed to check purchase status" });
-    }
-
-    res.json({
-      hasPurchased: purchaseData && purchaseData.length > 0,
-    });
-  } catch (error) {
-    console.error("Error in check-purchase endpoint:", error);
-    res.status(500).json({ error: "Internal server error" });
   }
 });
