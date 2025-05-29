@@ -41,16 +41,16 @@ class SupabaseSessionStore extends session.Store {
   async get(sid, callback) {
     try {
       const { data, error } = await this.supabase
-        .from('sessions')
-        .select('sess')
-        .eq('sid', sid)
+        .from("sessions")
+        .select("sess")
+        .eq("sid", sid)
         .maybeSingle(); // Use maybeSingle instead of single to handle no rows case
 
       if (error) {
-        console.error('Session get error:', error);
+        console.error("Session get error:", error);
         return callback(error);
       }
-      
+
       if (!data) {
         return callback(null, null);
       }
@@ -59,11 +59,11 @@ class SupabaseSessionStore extends session.Store {
         const session = JSON.parse(data.sess);
         callback(null, session);
       } catch (parseError) {
-        console.error('Session parse error:', parseError);
+        console.error("Session parse error:", parseError);
         callback(parseError);
       }
     } catch (err) {
-      console.error('Session get error:', err);
+      console.error("Session get error:", err);
       callback(err);
     }
   }
@@ -71,24 +71,25 @@ class SupabaseSessionStore extends session.Store {
   async set(sid, sess, callback) {
     try {
       const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      const { error } = await this.supabase
-        .from('sessions')
-        .upsert({
+      const { error } = await this.supabase.from("sessions").upsert(
+        {
           sid,
           sess: JSON.stringify(sess),
           expires,
-          created_at: new Date()
-        }, {
-          onConflict: 'sid'
-        });
+          created_at: new Date(),
+        },
+        {
+          onConflict: "sid",
+        }
+      );
 
       if (error) {
-        console.error('Session set error:', error);
+        console.error("Session set error:", error);
         return callback(error);
       }
       callback();
     } catch (err) {
-      console.error('Session set error:', err);
+      console.error("Session set error:", err);
       callback(err);
     }
   }
@@ -96,17 +97,17 @@ class SupabaseSessionStore extends session.Store {
   async destroy(sid, callback) {
     try {
       const { error } = await this.supabase
-        .from('sessions')
+        .from("sessions")
         .delete()
-        .eq('sid', sid);
+        .eq("sid", sid);
 
       if (error) {
-        console.error('Session destroy error:', error);
+        console.error("Session destroy error:", error);
         return callback(error);
       }
       callback();
     } catch (err) {
-      console.error('Session destroy error:', err);
+      console.error("Session destroy error:", err);
       callback(err);
     }
   }
@@ -168,7 +169,7 @@ app.post(
         clientReferenceId: session.client_reference_id,
         customerId: session.customer,
         paymentStatus: session.payment_status,
-        metadata: session.metadata
+        metadata: session.metadata,
       });
 
       try {
@@ -189,7 +190,10 @@ app.post(
         }
 
         // First, get the user's Supabase ID
-        console.log("Querying Supabase for user with Firebase UID:", firebaseUid);
+        console.log(
+          "Querying Supabase for user with Firebase UID:",
+          firebaseUid
+        );
         const { data: userData, error: userError } = await supabaseAdmin
           .from("users")
           .select("id")
@@ -217,7 +221,10 @@ app.post(
 
         // Check if alterId is numeric (premade alter) or UUID (published alter)
         const isNumericId = /^\d+$/.test(alterId);
-        console.log("Alter ID type:", isNumericId ? "numeric (premade)" : "UUID (published)");
+        console.log(
+          "Alter ID type:",
+          isNumericId ? "numeric (premade)" : "UUID (published)"
+        );
 
         let creatorId = adminId; // Default to admin for premade alters
 
@@ -267,11 +274,11 @@ app.post(
               user_id: userId,
               creator_id: creatorUserId,
               alter_identifier: alterId,
-              type: isNumericId ? 'premade_alter' : 'published_alter',
+              type: isNumericId ? "premade_alter" : "published_alter",
               purchase_date: new Date().toISOString(),
               payment_id: session.payment_intent,
               amount: session.amount_total / 100,
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
             },
           ]);
 
@@ -321,8 +328,8 @@ async function ensureAdminUser() {
             email: "admin@alters.ai",
             display_name: "Admin",
             firebase_uid: "admin",
-            is_admin: true
-          }
+            is_admin: true,
+          },
         ])
         .select()
         .single();
@@ -358,8 +365,8 @@ async function ensureAdminUser() {
           {
             user_id: adminId,
             is_creator: true,
-            created_at: new Date().toISOString()
-          }
+            created_at: new Date().toISOString(),
+          },
         ]);
 
       if (createCreatorError) {
@@ -464,7 +471,7 @@ const isAuthenticated = (req, res, next) => {
   if (req.session.userId) {
     next();
   } else {
-    res.redirect('/login');
+    res.redirect("/login");
   }
 };
 
@@ -494,7 +501,7 @@ app.get("/creator-page", (req, res) => {
 });
 
 app.get("/creator-studio", isAuthenticated, isCreator, (req, res) => {
-  res.sendFile(path.join(__dirname, "creator-studio.html"));
+  res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
 app.get("/customize", isAuthenticated, isCreator, (req, res) => {
@@ -590,8 +597,8 @@ app.post("/create-alter-checkout-session", async (req, res) => {
       success_url: `${baseUrl}/alter-purchase-success?session_id={CHECKOUT_SESSION_ID}&alter_id=${alterId}`,
       cancel_url: `${baseUrl}/marketplace`,
       metadata: {
-        alter_id: alterId // Add alter ID to metadata
-      }
+        alter_id: alterId, // Add alter ID to metadata
+      },
     };
 
     // Include client_reference_id if user is logged in
@@ -1300,12 +1307,12 @@ app.get("/api/creator/earnings-stats", async (req, res) => {
         purchaseDate.getMonth() === thisMonth &&
         purchaseDate.getFullYear() === thisYear
       ) {
-        monthlyRevenue += purchase.amount * 0.70; // 70% of purchase amount
+        monthlyRevenue += purchase.amount * 0.7; // 70% of purchase amount
       }
     });
 
     // Calculate 70% of total amount
-    totalEarnings = totalAmount * 0.70;
+    totalEarnings = totalAmount * 0.7;
 
     // Count active alters
     const { data: alters, error: altersError } = await supabaseAdmin
@@ -1377,9 +1384,14 @@ app.get("/alter-purchase-success", async (req, res) => {
 });
 
 // Protected routes
-app.get("/chat-alter/:alterId", isAuthenticated, hasPurchasedAlter, (req, res) => {
-  res.sendFile(path.join(__dirname, "chat-alter.html"));
-});
+app.get(
+  "/chat-alter/:alterId",
+  isAuthenticated,
+  hasPurchasedAlter,
+  (req, res) => {
+    res.sendFile(path.join(__dirname, "chat-alter.html"));
+  }
+);
 
 // API endpoint to check if user has purchased an alter
 app.get("/api/check-purchase/:alterId", isAuthenticated, async (req, res) => {
@@ -1415,7 +1427,7 @@ app.get("/api/check-purchase/:alterId", isAuthenticated, async (req, res) => {
     }
 
     res.json({
-      hasPurchased: purchaseData && purchaseData.length > 0
+      hasPurchased: purchaseData && purchaseData.length > 0,
     });
   } catch (error) {
     console.error("Error in check-purchase endpoint:", error);
