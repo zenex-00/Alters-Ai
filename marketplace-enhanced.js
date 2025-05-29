@@ -1,7 +1,12 @@
 import alterImageManager from "./alter-image-manager.js";
 
+// Initialize Stripe
+const stripe = Stripe(
+  "pk_test_51RGlGVI7ArCWlaxqdMKur3Eb3SCI17n6eWHknRzqdSGKjPCYZilKB9wXCIBKdhGWMzDOxMw01b17eSiDl1L5kiap009eiIlIPt"
+);
+
 // Enhanced marketplace functionality with proper tab integration
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   console.log("Marketplace Enhanced: Script loaded");
 
   // DOM Elements
@@ -84,15 +89,44 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ];
 
+  // Add styles for buy button loading state
+  const style = document.createElement("style");
+  style.textContent = `
+    .buy-alter-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .buy-alter-btn .spinner {
+      transition: opacity 0.2s ease-in-out;
+    }
+    .buy-alter-btn .spinner.hidden {
+      opacity: 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
   // Tab switching functionality
   premadeTab.addEventListener("click", () => {
     switchTab("premade");
   });
-
-  publishedTab.addEventListener("click", () => {
-    switchTab("published");
-    if (publishedAlters.length === 0) {
-      loadPublishedAlters();
+  publishedTab.addEventListener("click", async () => {
+    // Show loading state when switching to published tab
+    showLoading(true);
+    try {
+      // Switch tab first
+      switchTab("published");
+      // Then load/refresh published alters
+      await loadPublishedAlters();
+      console.log("Published alters loaded after tab switch");
+    } catch (error) {
+      console.error("Error loading published alters on tab switch:", error);
+      showError(
+        "Failed to load published alters. Please try refreshing the page."
+      );
+    } finally {
+      showLoading(false);
     }
   });
 
@@ -125,15 +159,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // Filter and display current tab's alters
     filterAndDisplayAlters();
   }
-
   async function loadPublishedAlters() {
     try {
+      console.log("Starting to load published alters...");
       showLoading(true);
+
       const response = await fetch("/api/published-alters");
+      console.log("Published alters API response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to fetch published alters");
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(
+          `Failed to fetch published alters: ${response.status} ${errorText}`
+        );
       }
+
       const alters = await response.json();
+      console.log("Raw published alters data count:", alters.length);
+
       publishedAlters = alters.map((alter) => ({
         ...alter,
         type: "published",
@@ -141,20 +185,36 @@ document.addEventListener("DOMContentLoaded", () => {
         rating: alter.rating || 4.5,
         verified: true,
         featured: false,
+        // Ensure all required display fields are present
+        image: alter.avatar_url || alter.image || "/placeholder.svg",
+        name: alter.name || "Unnamed Alter",
+        description: alter.description || "No description available",
+        creator: alter.creator_name || "Unknown Creator",
+        category: alter.category || "Other",
       }));
-      console.log("Published alters loaded:", publishedAlters);
-      filterAndDisplayAlters();
+
+      console.log("Processed published alters count:", publishedAlters.length);
+
+      // Always update display if we have data, regardless of current tab
+      if (publishedAlters.length > 0) {
+        console.log("Updating display with published alters");
+        filterAndDisplayAlters();
+      } else {
+        console.log("No published alters to display");
+        if (currentTab === "published") {
+          showNoResults(true);
+        }
+      }
     } catch (error) {
       console.error("Error loading published alters:", error);
-      showError("Failed to load published alters");
+      showError("Failed to load published alters: " + error.message);
     } finally {
       showLoading(false);
     }
   }
 
-  function filterAndDisplayAlters() {
-    const currentAlters =
-      currentTab === "premade" ? premadeAlters : publishedAlters;
+  async function filterAndDisplayAlters() {
+    const currentAlters = currentTab === "premade" ? premadeAlters : publishedAlters;
     const searchTerm = searchInput.value.toLowerCase();
     const category = categoryFilter.value;
     const sortBy = sortFilter.value;
@@ -191,13 +251,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    displayAlters();
+    await displayAlters();
     updateResultsCount();
   }
 
-  function displayAlters() {
-    const container =
-      currentTab === "premade" ? premadeContent : publishedContent;
+  async function displayAlters() {
+    const container = currentTab === "premade" ? premadeContent : publishedContent;
 
     if (filteredAlters.length === 0) {
       container.innerHTML = "";
@@ -206,13 +265,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     showNoResults(false);
-    container.innerHTML = filteredAlters.map(createAlterCard).join("");
+    
+    // Create all alter cards asynchronously
+    const alterCards = await Promise.all(filteredAlters.map(createAlterCard));
+    container.innerHTML = alterCards.join("");
 
     // Add event listeners to new cards
     addCardEventListeners(container);
   }
 
-  function createAlterCard(alter) {
+  async function createAlterCard(alter) {
     const isOwner = alter.is_owner || false;
 
     // Ensure alter has all necessary fields for chat
@@ -224,8 +286,31 @@ document.addEventListener("DOMContentLoaded", () => {
       prompt: alter.prompt || generatePromptFromAlter(alter),
     };
 
+    // Get the alter ID, maintaining original format (could be numeric or UUID)
+    const alterId = alter.id;
+    if (!alterId) {
+      console.error("Missing alter ID:", alter);
+      return "";
+    }
+
+    // Check if alter is purchased from the database
+    let isPurchased = false;
+    try {
+      const response = await fetch(`/api/check-purchase/${alterId}`);
+      if (response.ok) {
+        const { purchased } = await response.json();
+        isPurchased = purchased;
+      }
+    } catch (error) {
+      console.error("Error checking purchase status:", error);
+    }
+
+    const buttonText = isPurchased ? 'Chat Now' : 'Buy Now';
+    const buttonIcon = isPurchased ? 'ri-chat-3-line' : 'ri-shopping-cart-line';
+    const buttonTitle = isPurchased ? `Chat with ${alter.name}` : `Buy ${alter.name}`;
+
     return `
-      <div class="alter-card fade-in" data-alter-id="${alter.id}">
+      <div class="alter-card fade-in" data-alter-id="${alterId}">
         <div class="relative">
           <img src="${alter.image || alter.avatar_url || "/placeholder.svg"}" 
                alt="${alter.name}" 
@@ -241,32 +326,18 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           
           <div class="absolute bottom-3 left-3">
-            <span class="badge badge-primary capitalize">${
-              alter.category
-            }</span>
+            <span class="badge badge-primary capitalize">${alter.category}</span>
           </div>
           
-          ${
-            alter.featured
-              ? '<div class="absolute top-3 left-3"><span class="badge badge-featured">Featured</span></div>'
-              : ""
-          }
+          ${alter.featured ? '<div class="absolute top-3 left-3"><span class="badge badge-featured">Featured</span></div>' : ''}
           
-          ${
-            isOwner
-              ? `<button class="delete-button" data-alter-id="${alter.id}" title="Delete alter"><i class="ri-delete-bin-line"></i></button>`
-              : ""
-          }
+          ${isOwner ? `<button class="delete-button" data-alter-id="${alter.id}" title="Delete alter"><i class="ri-delete-bin-line"></i></button>` : ''}
         </div>
         
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-bold text-lg truncate">
-              ${
-                alter.link
-                  ? `<a href="${alter.link}" class="hover:text-primary transition-colors">${alter.name}</a>`
-                  : alter.name
-              }
+              ${alter.link ? `<a href="${alter.link}" class="hover:text-primary transition-colors">${alter.name}</a>` : alter.name}
             </h3>
             <div class="flex items-center text-yellow-400 text-sm">
               <i class="ri-star-fill"></i>
@@ -274,34 +345,30 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
           
-          <p class="text-gray-400 text-sm mb-4 truncate">${
-            alter.description
-          }</p>
+          <p class="text-gray-400 text-sm mb-4 truncate">${alter.description}</p>
           
           <div class="flex items-center mb-4">
-            <img src="${
-              alter.creatorAvatar || alter.creator_avatar || "/placeholder.svg"
-            }" 
+            <img src="${alter.creatorAvatar || alter.creator_avatar || "/placeholder.svg"}" 
                  alt="${alter.creator || alter.creator_name}" 
                  class="w-6 h-6 rounded-full mr-2">
             <span class="text-sm text-gray-400">
-              by <span class="text-primary">${
-                alter.creator || alter.creator_name || "Unknown"
-              }</span>
+              by <span class="text-primary">${alter.creator || alter.creator_name || "Unknown"}</span>
             </span>
-            ${
-              alter.verified
-                ? '<div class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"><i class="ri-check-line text-primary text-xs"></i></div>'
-                : ""
-            }
+            ${alter.verified ? '<div class="ml-2 w-4 h-4 bg-primary bg-opacity-20 rounded-full flex items-center justify-center"><i class="ri-check-line text-primary text-xs"></i></div>' : ''}
           </div>
           
           <div class="flex items-center justify-between">
             <div class="text-xl font-bold">$${alter.price}</div>
-            <div class="flex gap-2">              <button class="btn-primary px-4 py-2 rounded-lg chat-alter-btn" data-alter="${encodeURIComponent(
-              JSON.stringify(enhancedAlter)
-            )}" title="Chat with ${alter.name}">
-                <i class="ri-chat-3-line mr-2"></i>Chat Now
+            <div class="flex gap-2">
+              <button class="bg-primary px-4 py-2 rounded-lg buy-alter-btn flex items-center justify-center min-w-[120px]" 
+                      data-alter-id="${alter.id}" 
+                      data-alter="${encodeURIComponent(JSON.stringify(enhancedAlter))}"
+                      title="${buttonTitle}">
+                <i class="${buttonIcon} mr-2"></i>
+                <span class="button-text">${buttonText}</span>
+                <div class="hidden spinner ml-2">
+                  <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
               </button>
             </div>
           </div>
@@ -365,20 +432,23 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Try alter buttons
-    container.querySelectorAll(".try-alter-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+    // Buy/Chat buttons
+    container.querySelectorAll(".buy-alter-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
         e.stopPropagation();
-        const alter = JSON.parse(btn.getAttribute("data-alter"));
-        tryAlter(alter);
-      });
-    }); // Chat buttons
-    container.querySelectorAll(".chat-alter-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const alterJson = decodeURIComponent(btn.getAttribute("data-alter"));
-        const alter = JSON.parse(alterJson);
-        chatWithAlter(alter);
+        e.preventDefault();
+
+        const alterId = btn.getAttribute("data-alter-id");
+        const isPurchased = localStorage.getItem(`purchased_alter_${alterId}`) === 'true';
+
+        if (isPurchased) {
+          // If already purchased, start chat
+          const alterData = JSON.parse(decodeURIComponent(btn.getAttribute("data-alter")));
+          chatWithAlter(alterData);
+        } else {
+          // If not purchased, initiate purchase
+          await buyAlter(alterId);
+        }
       });
     });
 
@@ -503,6 +573,92 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+  async function buyAlter(alterId) {
+    let buyButton;
+    try {
+      // Find and update the buy button state
+      buyButton = document.querySelector(
+        `.buy-alter-btn[data-alter-id="${alterId}"]`
+      );
+      if (buyButton) {
+        const buttonText = buyButton.querySelector(".button-text");
+        const spinner = buyButton.querySelector(".spinner");
+        buttonText.textContent = "Processing...";
+        spinner.classList.remove("hidden");
+        buyButton.disabled = true;
+      }
+
+      // Show loading state
+      showLoading(true);
+      console.log("Starting buyAlter for ID:", alterId);
+      const id = alterId;
+      if (!id) {
+        throw new Error(`Missing alter ID`);
+      }
+
+      // Make sure we have data to search through
+      if (premadeAlters.length === 0) {
+        console.log("No premade alters loaded, initializing...");
+        premadeAlters = mockPremadeAlters;
+      }
+      if (publishedAlters.length === 0) {
+        console.log("No published alters loaded, fetching...");
+        await loadPublishedAlters();
+      }
+
+      // Find the alter in our current lists
+      const alter = [...premadeAlters, ...publishedAlters].find(
+        (a) => String(a.id) === String(id)
+      );
+
+      if (!alter) {
+        throw new Error(`Alter not found with ID: ${id}`);
+      }
+
+      // Create checkout session
+      const response = await fetch("/create-alter-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          alterId: id,
+          alterName: alter.name,
+          price: alter.price,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
+      const { id: sessionId } = await response.json();
+
+      // Redirect to Stripe Checkout
+      const result = await stripe.redirectToCheckout({
+        sessionId: sessionId,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+    } catch (error) {
+      console.error("Error in buyAlter:", error);
+      showError(error.message || "Failed to process purchase");
+      
+      // Reset button state on error
+      if (buyButton) {
+        const buttonText = buyButton.querySelector(".button-text");
+        const spinner = buyButton.querySelector(".spinner");
+        buttonText.textContent = "Buy Now";
+        spinner.classList.add("hidden");
+        buyButton.disabled = false;
+      }
+    } finally {
+      showLoading(false);
+    }
+  }
 
   function updateResultsCount() {
     const count = filteredAlters.length;
@@ -539,11 +695,35 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 5000);
   }
-
-  // Initialize
+  // Initialize arrays and load initial data
   premadeAlters = mockPremadeAlters;
-  showLoading(false);
-  filterAndDisplayAlters();
+  publishedAlters = [];
 
-  console.log("Marketplace Enhanced: Initialization complete");
+  // Initialize with loading state
+  showLoading(true);
+  console.log("Starting marketplace initialization...");
+
+  try {
+    // Start with premade alters immediately
+    filterAndDisplayAlters();
+
+    // Load published alters in parallel
+    await loadPublishedAlters();
+
+    console.log("Initial data load complete");
+  } catch (error) {
+    console.error("Error during initialization:", error);
+    showError("Some content failed to load. Please refresh the page.");
+  } finally {
+    showLoading(false);
+    console.log("Marketplace Enhanced: Initialization complete");
+  }
+
+  // Debug helper
+  window.debugMarketplace = {
+    getPremadeAlters: () => premadeAlters,
+    getPublishedAlters: () => publishedAlters,
+    getCurrentTab: () => currentTab,
+    refreshPublished: () => loadPublishedAlters(),
+  };
 });

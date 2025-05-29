@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchase Successful - Alters.ai</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: { primary: "#ff8a2b", secondary: "#1a1a1a" },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      .success-animation {
+        animation: successPulse 2s ease-out;
+      }
+      @keyframes successPulse {
+        0% {
+          transform: scale(0.8);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar"></div>
+
+    <div class="min-h-screen flex items-center justify-center px-4">
+      <div class="max-w-lg w-full text-center">
+        <div class="mb-8 success-animation">
+          <div
+            class="w-24 h-24 rounded-full bg-primary bg-opacity-20 mx-auto flex items-center justify-center"
+          >
+            <i class="ri-check-line text-5xl text-primary"></i>
+          </div>
+        </div>
+
+        <h1 class="text-4xl font-bold mb-4">Purchase Successful!</h1>
+        <p class="text-xl text-gray-400 mb-8">
+          Your alter has been successfully purchased. You can now start chatting
+          with it!
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="/chat-alter"
+            class="bg-primary text-white px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all"
+          >
+            <i class="ri-chat-3-line mr-2"></i>
+            Start Chatting
+          </a>
+          <a
+            href="/marketplace"
+            class="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all"
+          >
+            <i class="ri-store-2-line mr-2"></i>
+            Back to Marketplace
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/navbar.js"></script>
+  </body>
+</html>

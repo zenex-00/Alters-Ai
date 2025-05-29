@@ -273,6 +273,7 @@
       }
     </style>
     <script src="/navbar.js" defer></script>
+    <script src="https://js.stripe.com/v3/"></script>
   </head>
 
   <body>
@@ -808,23 +809,28 @@
 
         // Handle alter parameter in URL
         const urlParams = new URLSearchParams(window.location.search);
-        const alterId = urlParams.get('alter');
-        
+        const alterId = urlParams.get("alter");
+
         if (alterId) {
           // Wait for alters to load
           const checkForAlter = setInterval(() => {
-            const alterElement = document.querySelector(`[data-alter-id="${alterId}"]`);
+            const alterElement = document.querySelector(
+              `[data-alter-id="${alterId}"]`
+            );
             if (alterElement) {
               clearInterval(checkForAlter);
               // Scroll to the alter
-              alterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              alterElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
               // Highlight the alter temporarily
-              alterElement.style.transition = 'all 0.3s ease';
-              alterElement.style.transform = 'scale(1.05)';
-              alterElement.style.boxShadow = '0 0 30px rgba(255, 138, 43, 0.4)';
+              alterElement.style.transition = "all 0.3s ease";
+              alterElement.style.transform = "scale(1.05)";
+              alterElement.style.boxShadow = "0 0 30px rgba(255, 138, 43, 0.4)";
               setTimeout(() => {
-                alterElement.style.transform = 'scale(1)';
-                alterElement.style.boxShadow = 'none';
+                alterElement.style.transform = "scale(1)";
+                alterElement.style.boxShadow = "none";
               }, 2000);
             }
           }, 100);

@@ -1371,6 +1371,9 @@
                 "currentAlter",
                 JSON.stringify(window.selectedAlter)
               );
+
+              // Clear avatarSettings after successful load
+              localStorage.removeItem("avatarSettings");
             } catch (e) {
               console.error(
                 "Failed to parse avatarSettings from localStorage:",
@@ -1383,16 +1386,20 @@
               if (idleVideo) idleVideo.style.display = "block";
             }
           } else {
-            // Check for selected alter from marketplace
-            const selectedAlter = localStorage.getItem("selectedAlter");
-            if (selectedAlter) {
+            // Check sessionStorage first for existing alter data
+            const currentAlter = sessionStorage.getItem("currentAlter");
+            if (currentAlter) {
               try {
-                const alter = JSON.parse(selectedAlter);
+                const alter = JSON.parse(currentAlter);
+                window.selectedAlter = alter;
 
-                // Clear any existing avatar settings to prevent interference
-                localStorage.removeItem("avatarSettings");
+                // Update chat header
+                const chatHeader = document.querySelector(".chat-header h2");
+                if (chatHeader && alter.name) {
+                  chatHeader.textContent = `Chat with ${alter.name}`;
+                }
 
-                // Use the image manager to handle the alter image with error handling
+                // Update image with error handling
                 try {
                   alterImageManager.handleAlterImage(alter);
                 } catch (imageError) {
@@ -1402,39 +1409,9 @@
                   );
                   loadAlterImage(alter);
                 }
-
-                // Set chat header name if available
-                const chatHeader = document.querySelector(".chat-header h2");
-                if (chatHeader && alter.name) {
-                  chatHeader.textContent = `Chat with ${alter.name}`;
-                }
-
-                // Store alter data for later use
-                window.selectedAlter = {
-                  ...alter,
-                  type: alter.type || "custom",
-                  prompt:
-                    alter.type === "premade" || alter.type === "customized"
-                      ? alter.prompt || alter.system_prompt
-                      : alter.prompt || alter.system_prompt || "",
-                  personality:
-                    alter.personality || alter.personality_description,
-                  name: alter.name,
-                  knowledge: alter.knowledge || alter.category || "general",
-                  documentContent: alter.documentContent || "",
-                };
-
-                // Store in sessionStorage for persistence
-                sessionStorage.setItem(
-                  "currentAlter",
-                  JSON.stringify(window.selectedAlter)
-                );
-
-                // Remove from localStorage after loading
-                localStorage.removeItem("selectedAlter");
               } catch (e) {
                 console.error(
-                  "Failed to parse selectedAlter from localStorage:",
+                  "Failed to parse currentAlter from sessionStorage:",
                   e
                 );
                 // Show default video on error
@@ -1444,20 +1421,13 @@
                 if (idleVideo) idleVideo.style.display = "block";
               }
             } else {
-              // Check sessionStorage for existing alter data
-              const currentAlter = sessionStorage.getItem("currentAlter");
-              if (currentAlter) {
+              // Check for selected alter from marketplace
+              const selectedAlter = localStorage.getItem("selectedAlter");
+              if (selectedAlter) {
                 try {
-                  const alter = JSON.parse(currentAlter);
-                  window.selectedAlter = alter;
+                  const alter = JSON.parse(selectedAlter);
 
-                  // Update chat header
-                  const chatHeader = document.querySelector(".chat-header h2");
-                  if (chatHeader && alter.name) {
-                    chatHeader.textContent = `Chat with ${alter.name}`;
-                  }
-
-                  // Update image with error handling
+                  // Use the image manager to handle the alter image with error handling
                   try {
                     alterImageManager.handleAlterImage(alter);
                   } catch (imageError) {
@@ -1467,9 +1437,39 @@
                     );
                     loadAlterImage(alter);
                   }
+
+                  // Set chat header name if available
+                  const chatHeader = document.querySelector(".chat-header h2");
+                  if (chatHeader && alter.name) {
+                    chatHeader.textContent = `Chat with ${alter.name}`;
+                  }
+
+                  // Store alter data for later use
+                  window.selectedAlter = {
+                    ...alter,
+                    type: alter.type || "premade",
+                    prompt:
+                      alter.type === "premade" || alter.type === "customized"
+                        ? alter.prompt || alter.system_prompt
+                        : alter.prompt || alter.system_prompt || "",
+                    personality:
+                      alter.personality || alter.personality_description,
+                    name: alter.name,
+                    knowledge: alter.knowledge || alter.category || "general",
+                    documentContent: alter.documentContent || "",
+                  };
+
+                  // Store in sessionStorage for persistence
+                  sessionStorage.setItem(
+                    "currentAlter",
+                    JSON.stringify(window.selectedAlter)
+                  );
+
+                  // Remove from localStorage after loading
+                  localStorage.removeItem("selectedAlter");
                 } catch (e) {
                   console.error(
-                    "Failed to parse currentAlter from sessionStorage:",
+                    "Failed to parse selectedAlter from localStorage:",
                     e
                   );
                   // Show default video on error

@@ -33,7 +33,6 @@ app.post(
 
     let event;
     try {
-      // No need for getRawBody since express.raw() already gives us the raw body
       event = stripe.webhooks.constructEvent(
         req.body,
         sig,
@@ -53,6 +52,7 @@ app.post(
         clientReferenceId: session.client_reference_id,
         customerId: session.customer,
         paymentStatus: session.payment_status,
+        metadata: session.metadata
       });
 
       try {
@@ -65,11 +65,15 @@ app.post(
           return res.status(400).json({ error: "No Firebase UID found" });
         }
 
+        // Get the alter ID from metadata
+        const alterId = session.metadata?.alter_id;
+        if (!alterId) {
+          console.error("No alter ID found in session metadata");
+          return res.status(400).json({ error: "No alter ID found" });
+        }
+
         // First, get the user's Supabase ID
-        console.log(
-          "Querying Supabase for user with Firebase UID:",
-          firebaseUid
-        );
+        console.log("Querying Supabase for user with Firebase UID:", firebaseUid);
         const { data: userData, error: userError } = await supabaseAdmin
           .from("users")
           .select("id")
@@ -91,56 +95,77 @@ app.post(
         const userId = userData[0].id;
         console.log("Found Supabase user ID:", userId);
 
-        // Check if user already exists in creatorsuser table
-        console.log("Checking existing creator record for user:", userId);
-        const { data: existingCreator, error: checkError } = await supabaseAdmin
+        // Get the admin user ID
+        const adminId = await ensureAdminUser();
+        console.log("Using admin ID:", adminId);
+
+        // Check if alterId is numeric (premade alter) or UUID (published alter)
+        const isNumericId = /^\d+$/.test(alterId);
+        console.log("Alter ID type:", isNumericId ? "numeric (premade)" : "UUID (published)");
+
+        let creatorId = adminId; // Default to admin for premade alters
+
+        if (!isNumericId) {
+          // Only query published_alters for UUIDs
+          const { data: alterData, error: alterError } = await supabaseAdmin
+            .from("published_alters")
+            .select("user_id")
+            .eq("id", alterId)
+            .limit(1);
+
+          if (alterError) {
+            console.error("Error fetching alter:", alterError);
+            return res.status(500).json({ error: "Failed to fetch alter" });
+          }
+
+          if (alterData && alterData.length > 0) {
+            creatorId = alterData[0].user_id;
+          }
+        }
+
+        // Get the creatorsuser.id for the creator
+        const { data: creatorData, error: creatorError } = await supabaseAdmin
           .from("creatorsuser")
-          .select("is_creator")
-          .eq("user_id", userId)
+          .select("id")
+          .eq("user_id", creatorId)
           .limit(1);
 
-        if (checkError) {
-          console.error("Error checking existing creator:", checkError);
-          return res
-            .status(500)
-            .json({ error: "Failed to check creator status" });
+        if (creatorError) {
+          console.error("Error fetching creator:", creatorError);
+          return res.status(500).json({ error: "Failed to fetch creator" });
         }
 
-        console.log("Existing creator check result:", existingCreator);
-
-        if (existingCreator && existingCreator.length > 0) {
-          // Update existing record
-          console.log("Updating existing creator record");
-          const { error: updateError } = await supabaseAdmin
-            .from("creatorsuser")
-            .update({ is_creator: true })
-            .eq("user_id", userId);
-
-          if (updateError) {
-            console.error("Error updating creator status:", updateError);
-            return res
-              .status(500)
-              .json({ error: "Failed to update creator status" });
-          }
-          console.log("Successfully updated creator status");
-        } else {
-          // Insert new record
-          console.log("Creating new creator record");
-          const { error: insertError } = await supabaseAdmin
-            .from("creatorsuser")
-            .insert([{ 
-              user_id: userId, // Only user_id is needed now
-              is_creator: true 
-            }]);
-
-          if (insertError) {
-            console.error("Error inserting creator record:", insertError);
-            return res
-              .status(500)
-              .json({ error: "Failed to create creator record" });
-          }
-          console.log("Successfully created creator record");
+        if (!creatorData || creatorData.length === 0) {
+          console.error("No creator found for user ID:", creatorId);
+          return res.status(500).json({ error: "Creator not found" });
         }
+
+        const creatorUserId = creatorData[0].id;
+        console.log("Using creator ID:", creatorUserId);
+
+        // Store the purchase in the database
+        const { error: purchaseError } = await supabaseAdmin
+          .from("purchases")
+          .insert([
+            {
+              user_id: userId,
+              creator_id: creatorUserId,
+              alter_identifier: alterId,
+              type: isNumericId ? 'premade_alter' : 'published_alter',
+              purchase_date: new Date().toISOString(),
+              payment_id: session.payment_intent,
+              amount: session.amount_total / 100,
+              created_at: new Date().toISOString()
+            },
+          ]);
+
+        if (purchaseError) {
+          console.error("Error storing purchase:", purchaseError);
+          return res.status(500).json({ error: "Failed to store purchase" });
+        }
+
+        console.log("Purchase successfully recorded in database");
+        res.json({ received: true });
       } catch (error) {
         console.error("Webhook processing error:", error);
         return res.status(500).json({ error: "Internal server error" });
@@ -167,6 +192,91 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Function to ensure admin user exists
+async function ensureAdminUser() {
+  try {
+    // Check if admin user exists in users table
+    const { data: adminData, error: adminError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", "admin@alters.ai")
+      .limit(1);
+
+    if (adminError) {
+      console.error("Error checking admin user:", adminError);
+      throw adminError;
+    }
+
+    let adminId;
+
+    if (!adminData || adminData.length === 0) {
+      // Create admin user if it doesn't exist
+      const { data: newAdmin, error: createError } = await supabaseAdmin
+        .from("users")
+        .insert([
+          {
+            email: "admin@alters.ai",
+            display_name: "Admin",
+            firebase_uid: "admin",
+            is_admin: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating admin user:", createError);
+        throw createError;
+      }
+
+      console.log("Admin user created:", newAdmin);
+      adminId = newAdmin.id;
+    } else {
+      adminId = adminData[0].id;
+    }
+
+    // Check if admin exists in creatorsuser table
+    const { data: creatorData, error: creatorError } = await supabaseAdmin
+      .from("creatorsuser")
+      .select("user_id")
+      .eq("user_id", adminId)
+      .limit(1);
+
+    if (creatorError) {
+      console.error("Error checking admin creator status:", creatorError);
+      throw creatorError;
+    }
+
+    if (!creatorData || creatorData.length === 0) {
+      // Create admin in creatorsuser table
+      const { error: createCreatorError } = await supabaseAdmin
+        .from("creatorsuser")
+        .insert([
+          {
+            user_id: adminId,
+            is_creator: true,
+            created_at: new Date().toISOString()
+          }
+        ]);
+
+      if (createCreatorError) {
+        console.error("Error creating admin creator:", createCreatorError);
+        throw createCreatorError;
+      }
+
+      console.log("Admin creator created");
+    }
+
+    return adminId;
+  } catch (error) {
+    console.error("Error in ensureAdminUser:", error);
+    throw error;
+  }
+}
+
+// Call ensureAdminUser when server starts
+ensureAdminUser().catch(console.error);
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "uploads");
@@ -366,6 +476,54 @@ app.post("/create-checkout-session", async (req, res) => {
   }
 });
 
+// Create Stripe checkout session for alter purchase
+app.post("/create-alter-checkout-session", async (req, res) => {
+  try {
+    const { alterId, alterName, price } = req.body;
+
+    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+    const host =
+      process.env.NODE_ENV === "production"
+        ? req.headers.host
+        : `localhost:${port}`;
+    const baseUrl = `${protocol}://${host}`;
+
+    const sessionConfig = {
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `Alter: ${alterName}`,
+              description: "AI Digital Twin purchase",
+            },
+            unit_amount: Math.round(price * 100), // Convert price to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${baseUrl}/alter-purchase-success?session_id={CHECKOUT_SESSION_ID}&alter_id=${alterId}`,
+      cancel_url: `${baseUrl}/marketplace`,
+      metadata: {
+        alter_id: alterId // Add alter ID to metadata
+      }
+    };
+
+    // Include client_reference_id if user is logged in
+    if (req.session.userId && req.session.userId.trim() !== "") {
+      sessionConfig.client_reference_id = req.session.userId;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    res.json({ id: session.id });
+  } catch (error) {
+    console.error("Stripe checkout error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Handle successful payment
 app.get("/payment-success", async (req, res) => {
   const sessionId = req.query.session_id;
@@ -395,8 +553,6 @@ app.get("/payment-success", async (req, res) => {
     res.redirect("/creator-page");
   }
 });
-
-// Webhook endpoint for Stripe events
 
 // Test route to confirm server is running
 app.get("/test", (req, res) => {
@@ -956,6 +1112,49 @@ app.get("/api/check-creator-status", async (req, res) => {
   }
 });
 
+// Check if an alter has been purchased
+app.get("/api/check-purchase/:alterId", async (req, res) => {
+  try {
+    // Get Firebase UID from session
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.json({ purchased: false });
+    }
+
+    // Get the user's Supabase ID
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userError || !userData || userData.length === 0) {
+      return res.json({ purchased: false });
+    }
+
+    const userId = userData[0].id;
+    const alterId = req.params.alterId;
+
+    // Check if the alter has been purchased using the purchases table
+    const { data: purchaseData, error: purchaseError } = await supabaseAdmin
+      .from("purchases")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("alter_identifier", alterId)
+      .limit(1);
+
+    if (purchaseError) {
+      console.error("Error checking purchase:", purchaseError);
+      return res.json({ purchased: false });
+    }
+
+    res.json({ purchased: purchaseData && purchaseData.length > 0 });
+  } catch (error) {
+    console.error("Error in check-purchase:", error);
+    res.json({ purchased: false });
+  }
+});
+
 // Serve static files
 app.use("/Uploads", express.static(uploadsDir));
 app.use(express.static(__dirname));
@@ -985,4 +1184,113 @@ process.on("SIGINT", gracefulShutdown);
 
 server.listen(port, () => {
   console.log(`Server started on port ${port}`);
+});
+
+// Handle successful alter purchase
+app.get("/alter-purchase-success", async (req, res) => {
+  const { session_id, alter_id } = req.query;
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.payment_status === "paid") {
+      // Get Firebase UID from session
+      const firebaseUid = session.client_reference_id;
+      if (!firebaseUid) {
+        console.error("No Firebase UID found in session");
+        return res.redirect("/marketplace");
+      }
+
+      // Get the user's Supabase ID
+      const { data: userData, error: userError } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("firebase_uid", firebaseUid)
+        .limit(1);
+
+      if (userError || !userData || userData.length === 0) {
+        console.error("Error finding user:", userError);
+        return res.redirect("/marketplace");
+      }
+
+      const userId = userData[0].id;
+
+      // Get the admin user ID
+      const adminId = await ensureAdminUser();
+      console.log("Using admin ID:", adminId);
+
+      // Check if alterId is numeric (premade alter) or UUID (published alter)
+      const isNumericId = /^\d+$/.test(alter_id);
+      console.log("Alter ID type:", isNumericId ? "numeric (premade)" : "UUID (published)");
+
+      let creatorId = adminId; // Default to admin for premade alters
+      let purchaseType = isNumericId ? 'premade_alter' : 'published_alter';
+
+      if (!isNumericId) {
+        // Only query published_alters for UUIDs
+        const { data: alterData, error: alterError } = await supabaseAdmin
+          .from("published_alters")
+          .select("user_id")
+          .eq("id", alter_id)
+          .limit(1);
+
+        if (alterError) {
+          console.error("Error fetching alter:", alterError);
+          return res.redirect("/marketplace");
+        }
+
+        if (alterData && alterData.length > 0) {
+          creatorId = alterData[0].user_id;
+        }
+      }
+
+      // Get the creatorsuser.id for the creator
+      const { data: creatorData, error: creatorError } = await supabaseAdmin
+        .from("creatorsuser")
+        .select("id")
+        .eq("user_id", creatorId)
+        .limit(1);
+
+      if (creatorError) {
+        console.error("Error fetching creator:", creatorError);
+        return res.redirect("/marketplace");
+      }
+
+      if (!creatorData || creatorData.length === 0) {
+        console.error("No creator found for user ID:", creatorId);
+        return res.redirect("/marketplace");
+      }
+
+      const creatorUserId = creatorData[0].id;
+      console.log("Using creator ID:", creatorUserId);
+
+      // Store the purchase in the database
+      const { error: purchaseError } = await supabaseAdmin
+        .from("purchases")
+        .insert([
+          {
+            user_id: userId,
+            creator_id: creatorUserId,
+            alter_identifier: alter_id,
+            type: purchaseType,
+            purchase_date: new Date().toISOString(),
+            payment_id: session.payment_intent,
+            amount: session.amount_total / 100,
+            created_at: new Date().toISOString()
+          },
+        ]);
+
+      if (purchaseError) {
+        console.error("Error storing purchase:", purchaseError);
+        return res.redirect("/marketplace");
+      }
+
+      // Serve the success page
+      res.sendFile(path.join(__dirname, "alter-purchase-success.html"));
+    } else {
+      res.redirect("/marketplace");
+    }
+  } catch (error) {
+    console.error("Error handling successful purchase:", error);
+    res.redirect("/marketplace");
+  }
 });
