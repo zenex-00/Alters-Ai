@@ -503,44 +503,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function chatWithAlter(alter) {
-    // Prepare comprehensive alter data for the chat page
-    const alterForChat = {
+    // Store the complete alter data in localStorage with a specific key for chat-alter.html
+    const alterData = {
       id: alter.id,
       name: alter.name,
-      description: alter.description,
-      // Ensure all possible image properties are included
-      image: alter.image,
-      avatar_url: alter.avatar_url,
-      avatarUrl: alter.avatarUrl,
-      profile_image: alter.profile_image,
-      profileImage: alter.profileImage,
-      // Always use the specific personality and prompt from the alter
-      personality: alter.personality || alter.personality_description,
+      image: alter.image || alter.avatar_url || alter.avatarUrl,
       prompt: alter.prompt || alter.system_prompt,
-      knowledge: alter.knowledge || alter.category || "general",
-      voice_id: alter.voice_id || alter.voiceId || "",
+      personality: alter.personality || alter.personality_description,
       category: alter.category,
-      creator: alter.creator || alter.creator_name,
-      rating: alter.rating,
+      description: alter.description,
+      type: alter.type || 'premade',
+      knowledge: alter.knowledge,
+      voiceId: alter.voiceId,
+      documentContent: alter.documentContent || '',
+      // Add any other properties that might be needed
+      creator_id: alter.creator_id,
       price: alter.price,
-      type: alter.type,
-      // Additional fields for published alters
-      documentContent: alter.documentContent || "",
-      documentUrl: alter.documentUrl || "",
-      documentName: alter.documentName || "",
+      created_at: alter.created_at
     };
 
-    // Clear any existing avatar settings to prevent interference
-    localStorage.removeItem("avatarSettings");
-
-    // Pre-load the image using the image manager
-    alterImageManager.handleAlterImage(alterForChat);
-
-    // Save alter data for the chat page
-    localStorage.setItem("selectedAlter", JSON.stringify(alterForChat));
-
-    // Redirect to chat
-    window.location.href = "/chat-alter";
+    // Store in localStorage with a specific key for chat-alter.html
+    localStorage.setItem('alterSelectedAlter', JSON.stringify(alterData));
+    
+    // Redirect to chat-alter.html
+    window.location.href = '/chat-alter.html';
   }
 
   function toggleFavorite(btn) {

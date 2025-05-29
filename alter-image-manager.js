@@ -32,8 +32,8 @@ class AlterImageManager {
     localStorage.setItem('serverState', currentServerState);
   }
 
-  getAlterImageKey(alterId) {
-    return `alterImage_${alterId}`;
+  getAlterImageKey(alterId, type) {
+    return `alterImage_${type}_${alterId}`;
   }
 
   async loadCachedAlterData() {
@@ -44,7 +44,9 @@ class AlterImageManager {
         
         // Check if we have a persistent image URL for this specific alter
         if (this.alterData.id) {
-          const persistentImage = localStorage.getItem(this.getAlterImageKey(this.alterData.id));
+          const persistentImage = localStorage.getItem(
+            this.getAlterImageKey(this.alterData.id, this.alterData.type)
+          );
           if (persistentImage) {
             this.alterData.avatar_url = persistentImage;
             this.alterData.image = persistentImage;
@@ -72,7 +74,9 @@ class AlterImageManager {
 
     // For published alters, check for alter-specific persistent image first
     if (this.alterData.type === 'published' && this.alterData.id) {
-      const persistentImage = localStorage.getItem(this.getAlterImageKey(this.alterData.id));
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(this.alterData.id, 'published')
+      );
       if (persistentImage) {
         console.log('Using persistent image for published alter:', persistentImage);
         this.setImage(avatarImage, persistentImage);
@@ -85,12 +89,39 @@ class AlterImageManager {
         console.log('Using Supabase URL for published alter:', supabaseUrl);
         this.setImage(avatarImage, supabaseUrl);
         // Store this as persistent for this specific alter
-        localStorage.setItem(this.getAlterImageKey(this.alterData.id), supabaseUrl);
+        localStorage.setItem(
+          this.getAlterImageKey(this.alterData.id, 'published'),
+          supabaseUrl
+        );
         return;
       }
     }
 
-    // For premade alters or if no persistent/Supabase URL is available
+    // For premade alters
+    if (this.alterData.type === 'premade') {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(this.alterData.id, 'premade')
+      );
+      if (persistentImage) {
+        console.log('Using persistent image for premade alter:', persistentImage);
+        this.setImage(avatarImage, persistentImage);
+        return;
+      }
+    }
+
+    // For custom alters (from chat.html)
+    if (this.alterData.type === 'custom') {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(this.alterData.id, 'custom')
+      );
+      if (persistentImage) {
+        console.log('Using persistent image for custom alter:', persistentImage);
+        this.setImage(avatarImage, persistentImage);
+        return;
+      }
+    }
+
+    // If no persistent image found, try loading from sources
     const imageSources = this.getImageSources();
     
     // Try to load from cache first
@@ -124,9 +155,11 @@ class AlterImageManager {
   getImageSources() {
     if (!this.alterData) return ['/placeholder.svg'];
 
-    // For published alters, check alter-specific persistent storage first
-    if (this.alterData.type === 'published' && this.alterData.id) {
-      const persistentImage = localStorage.getItem(this.getAlterImageKey(this.alterData.id));
+    // For published alters
+    if (this.alterData.type === 'published') {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(this.alterData.id, 'published')
+      );
       if (persistentImage) {
         return [persistentImage, '/placeholder.svg'];
       }
@@ -137,7 +170,27 @@ class AlterImageManager {
       }
     }
 
-    // For premade alters or if no persistent/Supabase URL is available
+    // For premade alters
+    if (this.alterData.type === 'premade') {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(this.alterData.id, 'premade')
+      );
+      if (persistentImage) {
+        return [persistentImage, '/placeholder.svg'];
+      }
+    }
+
+    // For custom alters
+    if (this.alterData.type === 'custom') {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(this.alterData.id, 'custom')
+      );
+      if (persistentImage) {
+        return [persistentImage, '/placeholder.svg'];
+      }
+    }
+
+    // Default image sources
     return [
       this.alterData.image,
       this.alterData.avatar_url,
@@ -154,7 +207,7 @@ class AlterImageManager {
     // Skip verification for Supabase URLs and persistent images
     if (url.includes('supabase') || 
         (this.alterData && this.alterData.id && 
-         url === localStorage.getItem(this.getAlterImageKey(this.alterData.id)))) {
+         url === localStorage.getItem(this.getAlterImageKey(this.alterData.id, this.alterData.type)))) {
       return true;
     }
 
@@ -196,9 +249,12 @@ class AlterImageManager {
     sessionStorage.setItem('currentAlterImage', imageUrl);
     
     // For published alters, store the image URL persistently for this specific alter
-    if (this.alterData && this.alterData.type === 'published' && this.alterData.id) {
+    if (this.alterData && this.alterData.id) {
       if (imageUrl.includes('supabase') || imageUrl !== '/placeholder.svg') {
-        localStorage.setItem(this.getAlterImageKey(this.alterData.id), imageUrl);
+        localStorage.setItem(
+          this.getAlterImageKey(this.alterData.id, this.alterData.type),
+          imageUrl
+        );
       }
     }
     
@@ -207,10 +263,17 @@ class AlterImageManager {
   }
 
   setAlterData(alterData) {
+    // Ensure we have a type
+    if (!alterData.type) {
+      alterData.type = 'custom'; // Default to custom if not specified
+    }
+
     // For published alters, ensure we preserve the image URL for this specific alter
     if (alterData.type === 'published' && alterData.id) {
       // Check for alter-specific persistent image first
-      const persistentImage = localStorage.getItem(this.getAlterImageKey(alterData.id));
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(alterData.id, 'published')
+      );
       if (persistentImage) {
         alterData.avatar_url = persistentImage;
         alterData.image = persistentImage;
@@ -221,8 +284,33 @@ class AlterImageManager {
           alterData.avatar_url = supabaseUrl;
           alterData.image = supabaseUrl;
           // Store as persistent for this specific alter
-          localStorage.setItem(this.getAlterImageKey(alterData.id), supabaseUrl);
+          localStorage.setItem(
+            this.getAlterImageKey(alterData.id, 'published'),
+            supabaseUrl
+          );
         }
+      }
+    }
+
+    // For premade alters
+    if (alterData.type === 'premade' && alterData.id) {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(alterData.id, 'premade')
+      );
+      if (persistentImage) {
+        alterData.avatar_url = persistentImage;
+        alterData.image = persistentImage;
+      }
+    }
+
+    // For custom alters
+    if (alterData.type === 'custom' && alterData.id) {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(alterData.id, 'custom')
+      );
+      if (persistentImage) {
+        alterData.avatar_url = persistentImage;
+        alterData.image = persistentImage;
       }
     }
 
@@ -243,10 +331,17 @@ class AlterImageManager {
 
   // Method to handle both premade and published alters
   async handleAlterImage(alter) {
+    // Ensure we have a type
+    if (!alter.type) {
+      alter.type = 'custom'; // Default to custom if not specified
+    }
+
     // For published alters, ensure we preserve the image URL for this specific alter
     if (alter.type === 'published' && alter.id) {
       // Check for alter-specific persistent image first
-      const persistentImage = localStorage.getItem(this.getAlterImageKey(alter.id));
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(alter.id, 'published')
+      );
       if (persistentImage) {
         alter.avatar_url = persistentImage;
         alter.image = persistentImage;
@@ -257,8 +352,33 @@ class AlterImageManager {
           alter.avatar_url = supabaseUrl;
           alter.image = supabaseUrl;
           // Store as persistent for this specific alter
-          localStorage.setItem(this.getAlterImageKey(alter.id), supabaseUrl);
+          localStorage.setItem(
+            this.getAlterImageKey(alter.id, 'published'),
+            supabaseUrl
+          );
         }
+      }
+    }
+
+    // For premade alters
+    if (alter.type === 'premade' && alter.id) {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(alter.id, 'premade')
+      );
+      if (persistentImage) {
+        alter.avatar_url = persistentImage;
+        alter.image = persistentImage;
+      }
+    }
+
+    // For custom alters
+    if (alter.type === 'custom' && alter.id) {
+      const persistentImage = localStorage.getItem(
+        this.getAlterImageKey(alter.id, 'custom')
+      );
+      if (persistentImage) {
+        alter.avatar_url = persistentImage;
+        alter.image = persistentImage;
       }
     }
 

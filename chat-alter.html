@@ -1259,187 +1259,80 @@
         import alterImageManager from "./alter-image-manager.js";
 
         document.addEventListener("DOMContentLoaded", () => {
-          console.log("chat-interface.js: DOMContentLoaded fired");
+          console.log("chat-alter.js: DOMContentLoaded fired");
 
           const userInputField = document.getElementById("user-input-field");
           const voiceButton = document.getElementById("voice-button");
           const enterButton = document.getElementById("enter-button");
           const chatHistory = document.getElementById("chat-history");
+          const chatHeader = document.querySelector(".chat-header h2");
+          const avatarImage = document.getElementById("avatar-image");
+          const idleVideo = document.getElementById("idle-video");
 
           let recognition = null;
           let isRecording = false;
           let isSending = false;
 
-          // Function to handle image loading with fallbacks
-          async function loadAlterImage(alter) {
-            const avatarImage = document.getElementById("avatar-image");
-            if (!avatarImage) {
-              console.error("Avatar image element not found");
-              return;
-            }
-
-            const imageSources = [
-              alter.image,
-              alter.avatar_url,
-              alter.avatarUrl,
-              alter.profile_image,
-              alter.profileImage,
-              "/placeholder.svg",
-            ].filter(Boolean);
-
-            for (const imageUrl of imageSources) {
+          // Function to initialize alter data
+          function initializeAlter() {
+            // Get alter data from localStorage
+            const alterData = localStorage.getItem('alterSelectedAlter');
+            if (alterData) {
               try {
-                const imageLoadPromise = new Promise((resolve, reject) => {
-                  const img = new Image();
-                  img.onload = () => resolve(imageUrl);
-                  img.onerror = () =>
-                    reject(new Error(`Failed to load image: ${imageUrl}`));
-                  img.src = imageUrl;
-                });
+                const alter = JSON.parse(alterData);
+                window.selectedAlter = alter;
 
-                const loadedUrl = await Promise.race([
-                  imageLoadPromise,
-                  new Promise((_, reject) =>
-                    setTimeout(
-                      () => reject(new Error("Image load timeout")),
-                      5000
-                    )
-                  ),
-                ]);
-
-                avatarImage.src = loadedUrl;
-                avatarImage.style.display = "block";
-                console.log("Successfully loaded alter image:", loadedUrl);
-                return true;
-              } catch (error) {
-                console.warn(`Failed to load image from ${imageUrl}:`, error);
-                continue;
-              }
-            }
-
-            console.error("All image sources failed to load");
-            avatarImage.src = "/placeholder.svg";
-            avatarImage.style.display = "block";
-            return false;
-          }
-
-          // Check for avatar settings from customization first
-          const avatarSettings = localStorage.getItem("alterAvatarSettings");
-          if (avatarSettings) {
-            try {
-              const settings = JSON.parse(avatarSettings);
-              console.log("Loading custom avatar settings:", settings);
-
-              // Clear any existing alter data
-              localStorage.removeItem("alterSelectedAlter");
-              sessionStorage.removeItem("alterCurrentAlter");
-
-              // Set up the custom alter
-              window.selectedAlter = {
-                type: "custom",
-                name: settings.name,
-                prompt: settings.prompt,
-                personality: settings.personality,
-                knowledge: settings.knowledge,
-                voiceId: settings.voiceId,
-                documentContent: settings.documentContent || "",
-                // Start with placeholder image
-                image: "/placeholder.svg",
-              };
-
-              // Update chat header
-              const chatHeader = document.querySelector(".chat-header h2");
-              if (chatHeader && settings.name) {
-                chatHeader.textContent = `Chat with ${settings.name}`;
-              }
-
-              // Store in sessionStorage for persistence
-              sessionStorage.setItem(
-                "alterCurrentAlter",
-                JSON.stringify(window.selectedAlter)
-              );
-
-              // Note: We don't remove avatarSettings from localStorage here anymore
-              // It will be removed after successful publishing
-            } catch (e) {
-              console.error(
-                "Failed to parse avatarSettings from localStorage:",
-                e
-              );
-            }
-          } else {
-            // Check for selected alter from marketplace
-            const selectedAlter = localStorage.getItem("alterSelectedAlter");
-            if (selectedAlter) {
-              try {
-                const alter = JSON.parse(selectedAlter);
-
-                // Clear any existing avatar settings to prevent interference
-                localStorage.removeItem("alterAvatarSettings");
-
-                // Use the image manager to handle the alter image
-                alterImageManager.handleAlterImage(alter);
-
-                // Set chat header name if available
-                const chatHeader = document.querySelector(".chat-header h2");
+                // Update chat header with alter name
                 if (chatHeader && alter.name) {
                   chatHeader.textContent = `Chat with ${alter.name}`;
                 }
 
-                // Store alter data for later use
-                window.selectedAlter = {
-                  ...alter,
-                  type: alter.type || "custom",
-                  prompt:
-                    alter.type === "premade" || alter.type === "customized"
-                      ? alter.prompt || alter.system_prompt
-                      : alter.prompt || alter.system_prompt || "",
-                  personality:
-                    alter.personality || alter.personality_description,
-                  name: alter.name,
-                  knowledge: alter.knowledge || alter.category || "general",
-                  documentContent: alter.documentContent || "",
-                };
+                // Handle alter image
+                if (alter.image) {
+                  avatarImage.src = alter.image;
+                  avatarImage.style.display = 'block';
+                  if (idleVideo) idleVideo.style.display = 'none';
+                }
 
                 // Store in sessionStorage for persistence
-                sessionStorage.setItem(
-                  "alterCurrentAlter",
-                  JSON.stringify(window.selectedAlter)
-                );
+                sessionStorage.setItem('alterCurrentAlter', JSON.stringify(alter));
 
-                // Remove from localStorage after loading
-                localStorage.removeItem("alterSelectedAlter");
-              } catch (e) {
-                console.error(
-                  "Failed to parse selectedAlter from localStorage:",
-                  e
-                );
+                // Clear the localStorage after loading
+                localStorage.removeItem('alterSelectedAlter');
+
+                console.log('Successfully initialized alter:', alter);
+              } catch (error) {
+                console.error('Error initializing alter:', error);
+                showToast('Failed to load alter data. Please try again.', 'error');
               }
             } else {
               // Check sessionStorage for existing alter data
-              const currentAlter = sessionStorage.getItem("alterCurrentAlter");
+              const currentAlter = sessionStorage.getItem('alterCurrentAlter');
               if (currentAlter) {
                 try {
                   const alter = JSON.parse(currentAlter);
                   window.selectedAlter = alter;
 
                   // Update chat header
-                  const chatHeader = document.querySelector(".chat-header h2");
                   if (chatHeader && alter.name) {
                     chatHeader.textContent = `Chat with ${alter.name}`;
                   }
 
                   // Update image
-                  alterImageManager.handleAlterImage(alter);
-                } catch (e) {
-                  console.error(
-                    "Failed to parse currentAlter from sessionStorage:",
-                    e
-                  );
+                  if (alter.image) {
+                    avatarImage.src = alter.image;
+                    avatarImage.style.display = 'block';
+                    if (idleVideo) idleVideo.style.display = 'none';
+                  }
+                } catch (error) {
+                  console.error('Error loading alter from sessionStorage:', error);
                 }
               }
             }
           }
+
+          // Initialize alter data
+          initializeAlter();
 
           if (userInputField.dataset.alterListenersAttached) {
             console.log("chat-alter.js: Event listeners already attached, skipping.");
@@ -1818,6 +1711,62 @@
             particlesContainer.appendChild(particle);
           }
         }
+      </script>
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          // Get alterId from URL
+          const alterId = window.location.pathname.split('/').pop();
+          
+          // Check authentication and purchase status
+          fetch("/api/auth/status")
+            .then((response) => response.json())
+            .then((data) => {
+              if (!data.authenticated) {
+                console.log("Not authenticated, redirecting to login");
+                window.location.href = "/login";
+                return;
+              }
+
+              // Check if user has purchased this alter
+              fetch(`/api/check-purchase/${alterId}`)
+                .then(response => response.json())
+                .then(purchaseData => {
+                  if (!purchaseData.hasPurchased) {
+                    console.log("User has not purchased this alter");
+                    // Show a toast notification
+                    const toast = document.createElement("div");
+                    toast.className = "toast error";
+                    toast.innerHTML = `
+                      <i class="ri-error-warning-line"></i>
+                      <span>You need to purchase this alter to chat with it. Redirecting to marketplace...</span>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    // Redirect after a short delay
+                    setTimeout(() => {
+                      window.location.href = "/marketplace";
+                    }, 2000);
+                    return;
+                  }
+
+                  // User has purchased the alter, proceed with chat initialization
+                  initializeChat(alterId);
+                })
+                .catch(error => {
+                  console.error("Error checking purchase status:", error);
+                  window.location.href = "/marketplace";
+                });
+            })
+            .catch((error) => {
+              console.error("Auth check error:", error);
+              window.location.href = "/login";
+            });
+
+          function initializeChat(alterId) {
+            // Your existing chat initialization code here
+            // Make sure to use the alterId parameter
+          }
+        });
       </script>
     </main>
   </body>
