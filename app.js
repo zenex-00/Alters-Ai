@@ -1241,6 +1241,95 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
   }
 });
 
+// API route to get creator's earnings stats (7% commission for published alters)
+app.get("/api/creator/earnings-stats", async (req, res) => {
+  try {
+    // Get Firebase UID from session
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Look up the Supabase UUID from users table
+    const { data: userRows, error: userLookupError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userLookupError || !userRows || userRows.length === 0) {
+      return res.status(401).json({ error: "User not found in users table" });
+    }
+    const userId = userRows[0].id;
+
+    // Get the creator's row in creatorsuser
+    const { data: creatorRows, error: creatorError } = await supabaseAdmin
+      .from("creatorsuser")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    if (creatorError || !creatorRows || creatorRows.length === 0) {
+      return res.status(401).json({ error: "Creator not found" });
+    }
+    const creatorUserId = creatorRows[0].id;
+
+    // Get all purchases for this creator (published alters only)
+    const { data: purchases, error: purchasesError } = await supabaseAdmin
+      .from("purchases")
+      .select("amount, type, purchase_date")
+      .eq("creator_id", creatorUserId)
+      .eq("type", "published_alter");
+
+    if (purchasesError) {
+      return res.status(500).json({ error: "Failed to fetch purchases" });
+    }
+
+    // Calculate stats
+    let totalEarnings = 0;
+    let totalSales = 0;
+    let monthlyRevenue = 0;
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    // Calculate total amount first
+    let totalAmount = 0;
+    purchases.forEach((purchase) => {
+      totalAmount += purchase.amount;
+      totalSales += 1;
+      const purchaseDate = new Date(purchase.purchase_date);
+      if (
+        purchaseDate.getMonth() === thisMonth &&
+        purchaseDate.getFullYear() === thisYear
+      ) {
+        monthlyRevenue += purchase.amount * 0.70; // 70% of purchase amount
+      }
+    });
+
+    // Calculate 70% of total amount
+    totalEarnings = totalAmount * 0.70;
+
+    // Count active alters
+    const { data: alters, error: altersError } = await supabaseAdmin
+      .from("published_alters")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_public", true);
+    const activeAlters = alters && alters.length ? alters.length : 0;
+
+    res.json({
+      totalEarnings,
+      totalSales,
+      activeAlters,
+      monthlyRevenue,
+    });
+  } catch (err) {
+    console.error("Earnings stats error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Serve static files
 app.use("/Uploads", express.static(uploadsDir));
 app.use(express.static(__dirname));

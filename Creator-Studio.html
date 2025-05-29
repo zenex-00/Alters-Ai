@@ -884,6 +884,76 @@
           </div>
         </div>
 
+        <!-- Earnings & Sales Statistics -->
+        <div class="mb-10">
+          <h3 class="text-xl font-bold mb-6">Earnings & Sales Overview</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Total Earnings Card -->
+            <div
+              class="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl p-6"
+            >
+              <div
+                class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-4"
+              >
+                <i
+                  class="ri-money-dollar-circle-line text-green-400 text-2xl"
+                ></i>
+              </div>
+              <h4 class="font-bold mb-1">Total Earnings</h4>
+              <p class="text-3xl font-bold text-green-400" id="totalEarnings">
+                $0.00
+              </p>
+              <p class="text-gray-400 text-sm mt-2">Lifetime earnings</p>
+            </div>
+
+            <!-- Alters Sold Card -->
+            <div
+              class="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl p-6"
+            >
+              <div
+                class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-shopping-cart-line text-blue-400 text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-1">Alters Sold</h4>
+              <p class="text-3xl font-bold text-blue-400" id="altersSold">0</p>
+              <p class="text-gray-400 text-sm mt-2">Total sales</p>
+            </div>
+
+            <!-- Active Alters Card -->
+            <div
+              class="bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl p-6"
+            >
+              <div
+                class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-user-star-line text-purple-400 text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-1">Active Alters</h4>
+              <p class="text-3xl font-bold text-purple-400" id="activeAlters">
+                0
+              </p>
+              <p class="text-gray-400 text-sm mt-2">Currently published</p>
+            </div>
+
+            <!-- Monthly Revenue Card -->
+            <div
+              class="bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl p-6"
+            >
+              <div
+                class="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mb-4"
+              >
+                <i class="ri-line-chart-line text-orange-400 text-2xl"></i>
+              </div>
+              <h4 class="font-bold mb-1">Monthly Revenue</h4>
+              <p class="text-3xl font-bold text-orange-400" id="monthlyRevenue">
+                $0.00
+              </p>
+              <p class="text-gray-400 text-sm mt-2">This month</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Enhanced Published Alters Section -->
         <div class="studio-container">
           <div class="published-alters-section">
@@ -1020,24 +1090,26 @@
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         // Check authentication status
-        fetch('/api/auth/status')
-          .then(response => response.json())
-          .then(data => {
+        fetch("/api/auth/status")
+          .then((response) => response.json())
+          .then((data) => {
             if (!data.authenticated) {
-              console.log('Not authenticated, redirecting to login');
-              window.location.href = '/login';
+              console.log("Not authenticated, redirecting to login");
+              window.location.href = "/login";
               return;
             }
-            
+
             if (!data.isCreator && !data.allowedAccess) {
-              console.log('Not authorized for creator studio, redirecting to creator page');
-              window.location.href = '/creator-page';
+              console.log(
+                "Not authorized for creator studio, redirecting to creator page"
+              );
+              window.location.href = "/creator-page";
               return;
             }
           })
-          .catch(error => {
-            console.error('Auth check error:', error);
-            window.location.href = '/login';
+          .catch((error) => {
+            console.error("Auth check error:", error);
+            window.location.href = "/login";
           });
 
         const createAlterButton = document.querySelector(".create-alter-btn");
@@ -1134,9 +1206,48 @@
       window.showConfirmDialog = showConfirmDialog;
       window.closeConfirmDialog = closeConfirmDialog;
 
-      // Using the original API integration logic with enhanced card design
+      // Fetch and update earnings statistics
+      async function fetchEarningsStats() {
+        try {
+          const response = await fetch("/api/creator/earnings-stats");
+          if (!response.ok) {
+            throw new Error("Failed to fetch earnings statistics");
+          }
+
+          const stats = await response.json();
+
+          // Update the statistics in the UI
+          document.getElementById("totalEarnings").textContent = formatCurrency(
+            stats.totalEarnings || 0
+          );
+          document.getElementById("altersSold").textContent =
+            stats.totalSales || 0;
+          document.getElementById("activeAlters").textContent =
+            stats.activeAlters || 0;
+          document.getElementById("monthlyRevenue").textContent =
+            formatCurrency(stats.monthlyRevenue || 0);
+        } catch (error) {
+          console.error("Error fetching earnings stats:", error);
+          showError("Failed to load earnings statistics");
+        }
+      }
+
+      // Format currency with proper symbol and decimals
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: 2,
+        }).format(amount);
+      }
+
+      // Existing code...
       document.addEventListener("DOMContentLoaded", async () => {
         try {
+          // Fetch earnings statistics
+          await fetchEarningsStats();
+
+          // Existing alter loading code
           showLoading(true);
           const response = await fetch("/api/user-alters");
 
