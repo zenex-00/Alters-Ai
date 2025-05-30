@@ -68,8 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // Check for selected alter from marketplace
+  // Check for selected alter from marketplace or custom alter from sessionStorage
   const selectedAlter = localStorage.getItem("selectedAlter");
+  const currentAlter = sessionStorage.getItem("currentAlter");
+
   if (selectedAlter) {
     try {
       const alter = JSON.parse(selectedAlter);
@@ -90,6 +92,25 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem("selectedAlter");
     } catch (e) {
       console.error("Failed to parse selectedAlter from localStorage:", e);
+    }
+  } else if (currentAlter) {
+    try {
+      const alter = JSON.parse(currentAlter);
+      console.log("Loading custom alter from sessionStorage:", alter);
+
+      // Handle custom alter image
+      alterImageManager.handleAlterImage(alter);
+
+      // Set chat header name
+      const chatHeader = document.querySelector(".chat-header h2");
+      if (chatHeader && alter.name) {
+        chatHeader.textContent = `Chat with ${alter.name}`;
+      }
+
+      // Store alter data for later use
+      window.selectedAlter = alter;
+    } catch (e) {
+      console.error("Failed to parse currentAlter from sessionStorage:", e);
     }
   }
 

@@ -937,6 +937,58 @@ class VideoAgent {
   }
 }
 
+// Use custom alter settings if available
+const avatarSettings = localStorage.getItem("avatarSettings");
+const currentAlter = sessionStorage.getItem("currentAlter");
+
+if (avatarSettings) {
+  try {
+    const settings = JSON.parse(avatarSettings);
+    this.alterName = settings.name || "Custom Avatar";
+    this.alterPersonality = settings.personality || "";
+    this.alterPrompt = settings.prompt || settings.systemPrompt || "";
+    this.alterKnowledge = settings.knowledge || settings.knowledgeBase || "";
+    this.alterVoiceId = settings.voiceId || "";
+    this.alterDocumentContent = settings.documentContent || "";
+    this.personalityTags = settings.personalityTags || [];
+
+    console.log("Loaded custom alter settings:", {
+      name: this.alterName,
+      personality: this.alterPersonality,
+      prompt: this.alterPrompt,
+      knowledge: this.alterKnowledge,
+      voiceId: this.alterVoiceId,
+      personalityTags: this.personalityTags,
+    });
+
+    // Clear settings after loading
+    localStorage.removeItem("avatarSettings");
+  } catch (error) {
+    console.error("Error loading avatar settings:", error);
+  }
+} else if (currentAlter) {
+  try {
+    const settings = JSON.parse(currentAlter);
+    this.alterName = settings.name || "Custom Avatar";
+    this.alterPersonality = settings.personality || "";
+    this.alterPrompt = settings.prompt || settings.systemPrompt || "";
+    this.alterKnowledge = settings.knowledge || settings.knowledgeBase || "";
+    this.alterVoiceId = settings.voiceId || "";
+    this.alterDocumentContent = settings.documentContent || "";
+    this.personalityTags = settings.personalityTags || [];
+
+    console.log("Loaded alter settings from session:", {
+      name: this.alterName,
+      personality: this.alterPersonality,
+      prompt: this.alterPrompt,
+      knowledge: this.alterKnowledge,
+      voiceId: this.alterVoiceId,
+      personalityTags: this.personalityTags,
+    });
+  } catch (error) {
+    console.error("Error loading alter settings from session:", error);
+  }
+}
 document.addEventListener("DOMContentLoaded", () => {
   console.log("streaming-client-api.js: Initializing VideoAgent");
   window.videoAgent = new VideoAgent();

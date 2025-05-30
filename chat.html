@@ -1784,12 +1784,21 @@
               const settings = JSON.parse(avatarSettings);
               console.log("Loading custom alter settings:", settings);
 
-              // Create custom alter object
+              // Create custom alter object with all properties
               const customAlter = {
                 name: settings.name,
-                avatar: settings.avatar,
-                description: settings.description,
+                avatar: settings.avatar || "/placeholder.svg",
+                description:
+                  settings.description || `AI assistant named ${settings.name}`,
+                personality: settings.personality,
+                prompt: settings.prompt || settings.systemPrompt,
+                knowledge: settings.knowledge,
+                voiceId: settings.voiceId,
+                personalityTags: settings.personalityTags || [],
+                documentContent: settings.documentContent,
+                knowledgeBase: settings.knowledgeBase,
                 isCustom: true,
+                createdAt: settings.createdAt,
               };
 
               // Clear any existing alter data
