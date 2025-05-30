@@ -68,9 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // Check for selected alter from marketplace or custom alter from sessionStorage
+  // Check for selected alter from marketplace
   const selectedAlter = localStorage.getItem("selectedAlter");
-  const currentAlter = sessionStorage.getItem("currentAlter");
+  // Check for custom avatar settings from customize page
+  const avatarSettings = localStorage.getItem("avatarSettings");
 
   if (selectedAlter) {
     try {
@@ -93,24 +94,47 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       console.error("Failed to parse selectedAlter from localStorage:", e);
     }
-  } else if (currentAlter) {
+  } else if (avatarSettings) {
     try {
-      const alter = JSON.parse(currentAlter);
-      console.log("Loading custom alter from sessionStorage:", alter);
+      const settings = JSON.parse(avatarSettings);
+      console.log("Loading custom avatar settings:", settings);
 
-      // Handle custom alter image
-      alterImageManager.handleAlterImage(alter);
+      // Create alter object from custom settings
+      const customAlter = {
+        name: settings.name,
+        personality: settings.personality,
+        prompt: settings.prompt,
+        knowledge: settings.knowledge,
+        voiceId: settings.voiceId,
+        voiceName: settings.voiceName,
+        documentName: settings.documentName,
+        documentUrl: settings.documentUrl,
+        documentContent: settings.documentContent,
+        type: "custom",
+      };
+
+      console.log("Custom alter voice ID:", customAlter.voiceId);
 
       // Set chat header name
       const chatHeader = document.querySelector(".chat-header h2");
-      if (chatHeader && alter.name) {
-        chatHeader.textContent = `Chat with ${alter.name}`;
+      if (chatHeader && customAlter.name) {
+        chatHeader.textContent = `Chat with ${customAlter.name}`;
       }
 
       // Store alter data for later use
-      window.selectedAlter = alter;
+      window.selectedAlter = customAlter;
+
+      // Handle avatar image for custom alter
+      const avatarImage = document.getElementById("avatar-image");
+      if (avatarImage) {
+        avatarImage.src = "/placeholder.svg";
+        avatarImage.style.display = "block";
+      }
+
+      // Remove from localStorage after loading
+      localStorage.removeItem("avatarSettings");
     } catch (e) {
-      console.error("Failed to parse currentAlter from sessionStorage:", e);
+      console.error("Failed to parse avatarSettings from localStorage:", e);
     }
   }
 

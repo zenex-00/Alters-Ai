@@ -1488,3 +1488,36 @@ app.get("/alter-purchase-success", async (req, res) => {
 });
 
 // Note: chat-alter routes are now defined above in the main routes section
+
+app.post("/chat", async (req, res) => {
+  try {
+    const { message, history, alterContext } = req.body;
+
+    // You would typically use the message and history to interact with a language model
+    // and the alterContext to customize the response based on the selected alter.
+    // For example, you might adjust the prompt based on the alter's personality.
+
+    // This is placeholder logic. Replace this with your actual chat processing logic.
+    const response = `Echo: ${message}`; // Placeholder response
+
+    res.json({ response });
+  } catch (error) {
+    console.error("Chat processing error:", error);
+    res.status(500).json({ error: "Failed to process chat message" });
+  }
+});
+
+app.post("/generate-audio", async (req, res) => {
+  try {
+    const { text, voiceId } = req.body;
+
+    // Use the voiceId to select the appropriate voice for text-to-speech generation.
+    // This is placeholder logic. Replace this with your actual audio generation logic.
+    const audioUrl = `https://example.com/audio/${voiceId}/${text}`; // Placeholder audio URL
+
+    res.json({ audioUrl });
+  } catch (error) {
+    console.error("Audio generation error:", error);
+    res.status(500).json({ error: "Failed to generate audio" });
+  }
+});

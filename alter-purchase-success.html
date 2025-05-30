@@ -69,13 +69,13 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="/chat-alter"
+          <button
+            id="start-chat-btn"
             class="bg-primary text-white px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all"
           >
             <i class="ri-chat-3-line mr-2"></i>
             Start Chatting
-          </a>
+          </button>
           <a
             href="/marketplace"
             class="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all"
@@ -83,7 +83,104 @@
             <i class="ri-store-2-line mr-2"></i>
             Back to Marketplace
           </a>
-        </div>
+        </div></div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const startChatBtn = document.getElementById('start-chat-btn');
+        
+        // Get alter_id from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const alterId = urlParams.get('alter_id');
+        
+        startChatBtn.addEventListener('click', async () => {
+          if (alterId) {
+            try {
+              // Fetch alter data based on the purchased alter ID
+              let alter = null;
+              
+              // Check if it's a numeric ID (premade alter)
+              const isNumericId = /^\d+$/.test(alterId);
+              
+              if (isNumericId) {
+                // Handle premade alters
+                const premadeAlters = {
+                  "1": {
+                    id: "1",
+                    name: "Doctor Emma",
+                    description: "Professional Medical Consultant",
+                    category: "professional",
+                    image: "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish",
+                    voiceId: "21m00Tcm4TlvDq8ikWAM",
+                    voiceName: "Rachel",
+                    personality: "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
+                    prompt: "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
+                    knowledge: "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
+                    type: "premade"
+                  },
+                  "2": {
+                    id: "2",
+                    name: "Business Man",
+                    description: "Corporate Executive Assistant",
+                    category: "professional",
+                    image: "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish",
+                    voiceId: "29vD33N1CtxCmqQRPOHJ",
+                    voiceName: "Drew",
+                    personality: "Professional, strategic, and results-oriented business executive who provides expert advice on corporate matters, leadership, and business strategy.",
+                    prompt: "You are a Corporate Executive Assistant. You are professional, strategic, and results-oriented. You provide expert advice on corporate matters, leadership, and business strategy while maintaining a professional demeanor.",
+                    knowledge: "Business strategy, corporate management, leadership, finance, marketing",
+                    type: "premade"
+                  },
+                  "3": {
+                    id: "3",
+                    name: "Gym Guide",
+                    description: "Personal Fitness Trainer",
+                    category: "fitness",
+                    image: "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
+                    voiceId: "EXAVITQu4vr4xnSDxMaL",
+                    voiceName: "Bella",
+                    personality: "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
+                    prompt: "You are a Personal Fitness Trainer. You are motivating, energetic, and encouraging. You provide expert guidance on workouts, nutrition, and healthy lifestyle choices while keeping users motivated and focused on their fitness goals.",
+                    knowledge: "Fitness training, workout routines, nutrition, health and wellness, exercise science",
+                    type: "premade"
+                  }
+                };
+                
+                alter = premadeAlters[alterId];
+              } else {
+                // Handle published alters - fetch from API
+                const response = await fetch(`/api/published-alters`);
+                if (response.ok) {
+                  const publishedAlters = await response.json();
+                  alter = publishedAlters.find(a => a.id === alterId);
+                  if (alter) {
+                    alter.type = "published";
+                  }
+                }
+              }
+              
+              if (alter) {
+                // Store the alter data in localStorage for the chat page
+                localStorage.setItem('selectedAlter', JSON.stringify(alter));
+                // Redirect to chat page
+                window.location.href = '/chat-alter';
+              } else {
+                console.error('Alter not found for ID:', alterId);
+                // Fallback to marketplace if alter not found
+                window.location.href = '/marketplace';
+              }
+            } catch (error) {
+              console.error('Error fetching alter data:', error);
+              // Fallback to marketplace on error
+              window.location.href = '/marketplace';
+            }
+          } else {
+            // No alter ID, redirect to marketplace
+            window.location.href = '/marketplace';
+          }
+        });
+      });
+    </script>
       </div>
     </div>
 
