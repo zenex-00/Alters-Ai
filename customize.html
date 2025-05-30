@@ -886,7 +886,7 @@
                 <input
                   type="text"
                   id="avatar-name"
-                  placeholder="e.g., Zunair, Alex, Dr. Smith..."
+                  placeholder="e.g., John, Alex, Dr. Smith..."
                   required
                 />
               </div>
@@ -1519,10 +1519,12 @@
             }
           }
 
-          // Get selected personality tags
-          const selectedTags = Array.from(personalityTags)
-            .filter((t) => t.classList.contains("selected"))
-            .map((t) => t.getAttribute("data-value"));
+          // Get the selected voice name for display
+          const selectedVoiceOption =
+            voiceSelect.options[voiceSelect.selectedIndex];
+          const voiceName = selectedVoiceOption
+            ? selectedVoiceOption.textContent
+            : "";
 
           // Save settings and redirect
           localStorage.setItem(
@@ -1533,18 +1535,10 @@
               prompt,
               knowledge,
               voiceId,
+              voiceName,
               documentName,
               documentUrl,
               documentContent,
-              personalityTags: selectedTags,
-              description: `AI assistant named ${name} with ${selectedTags.join(
-                ", "
-              )} personality traits`,
-              avatar: "/placeholder.svg", // Default avatar
-              systemPrompt: prompt,
-              knowledgeBase: knowledge,
-              isCustom: true,
-              createdAt: new Date().toISOString(),
             })
           );
 

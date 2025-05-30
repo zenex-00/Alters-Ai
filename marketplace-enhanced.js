@@ -46,13 +46,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       category: "professional",
       creator: "AlterStudio",
       creatorAvatar:
-        "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=11&orientation=squarish",
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748638972837-112725298.jpg",
       image:
-        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish",
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748638972837-112725298.jpg",
       verified: true,
       featured: true,
       type: "premade",
       link: "/marketplace/doctor-alter.html",
+      voiceId: "21m00Tcm4TlvDq8ikWAM",
+      voiceName: "Rachel",
+      personality:
+        "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
+      prompt:
+        "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
+      knowledge:
+        "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
     },
     {
       id: "2",
@@ -70,6 +78,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       featured: true,
       type: "premade",
       link: "/marketplace/business-alter.html",
+      voiceId: "29vD33N1CtxCmqQRPOHJ",
+      voiceName: "Drew",
+      personality:
+        "Professional, strategic, and results-oriented business executive who provides expert advice on corporate matters, leadership, and business strategy.",
+      prompt:
+        "You are a Corporate Executive Assistant. You are professional, strategic, and results-oriented. You provide expert advice on corporate matters, leadership, and business strategy while maintaining a professional demeanor.",
+      knowledge:
+        "Business strategy, corporate management, leadership, finance, marketing",
     },
     {
       id: "3",
@@ -87,6 +103,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       featured: false,
       type: "premade",
       link: "/marketplace/gym-guide-alter.html",
+      voiceId: "EXAVITQu4vr4xnSDxMaL",
+      voiceName: "Bella",
+      personality:
+        "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
+      prompt:
+        "You are a Personal Fitness Trainer. You are motivating, energetic, and encouraging. You provide expert guidance on workouts, nutrition, and healthy lifestyle choices while keeping users motivated and focused on their fitness goals.",
+      knowledge:
+        "Fitness training, workout routines, nutrition, health and wellness, exercise science",
     },
   ];
 
