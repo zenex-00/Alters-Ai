@@ -170,6 +170,7 @@ app.post(
         customerId: session.customer,
         paymentStatus: session.payment_status,
         metadata: session.metadata,
+        amount: session.amount_total,
       });
 
       try {
@@ -182,10 +183,63 @@ app.post(
           return res.status(400).json({ error: "No Firebase UID found" });
         }
 
-        // Get the alter ID from metadata
+        // Check if this is a Creator Studio package purchase (amount is $50.00 = 5000 cents)
+        if (session.amount_total === 5000) {
+          console.log("Processing Creator Studio package purchase");
+
+          // First, get the user's Supabase ID
+          const { data: userData, error: userError } = await supabaseAdmin
+            .from("users")
+            .select("id")
+            .eq("firebase_uid", firebaseUid)
+            .limit(1);
+
+          if (userError) {
+            console.error("Supabase user query error:", userError);
+            return res.status(500).json({ error: "Failed to find user" });
+          }
+
+          if (!userData || userData.length === 0) {
+            console.error("No user found in Supabase");
+            return res.status(404).json({ error: "User not found" });
+          }
+
+          const userId = userData[0].id;
+          console.log("Found Supabase user ID:", userId);
+
+          // Create or update creator record
+          const { error: creatorError } = await supabaseAdmin
+            .from("creatorsuser")
+            .upsert(
+              [
+                {
+                  user_id: userId,
+                  is_creator: true,
+                  created_at: new Date().toISOString(),
+                },
+              ],
+              {
+                onConflict: "user_id",
+              }
+            );
+
+          if (creatorError) {
+            console.error("Error creating creator record:", creatorError);
+            return res
+              .status(500)
+              .json({ error: "Failed to create creator record" });
+          }
+
+          console.log("Creator record successfully created/updated");
+          return res.json({ received: true });
+        }
+
+        // Get the alter ID from metadata (for alter purchases)
         const alterId = session.metadata?.alter_id;
         if (!alterId) {
-          console.error("No alter ID found in session metadata");
+          console.error(
+            "No alter ID found in session metadata and not a creator package"
+          );
           return res.status(400).json({ error: "No alter ID found" });
         }
 
@@ -923,6 +977,8 @@ app.post("/auth/signout", (req, res) => {
   });
 });
 
+//```tool_code
+// This commit fixes an issue where the creator status wasn't being properly saved after a Stripe checkout, and updates the webhook handler to correctly process creator package purchases.
 // API configuration endpoint
 app.get("/api-config", (req, res) => {
   res.json({
@@ -1432,5 +1488,3 @@ app.get("/alter-purchase-success", async (req, res) => {
 });
 
 // Note: chat-alter routes are now defined above in the main routes section
-
-// Note: Purchase checking API is already defined above in the main API routes section
