@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initialize premade alters data
   const mockPremadeAlters = [
     {
-      id: "premade_1",
+      id: "1",
       name: "Doctor Emma",
       description: "Professional Medical Consultant",
       price: 9.99,
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       link: "/marketplace/doctor-alter.html",
     },
     {
-      id: "premade_2",
+      id: "2",
       name: "Business Man",
       description: "Corporate Executive Assistant",
       price: 9.99,
@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       link: "/marketplace/business-alter.html",
     },
     {
-      id: "premade_3",
+      id: "3",
       name: "Gym Guide",
       description: "Personal Fitness Trainer",
       price: 9.99,
@@ -336,9 +336,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Check if alter is purchased
     let isPurchased = false;
     try {
-      // For premade alters, use clean ID without prefix
-      const checkId = alter.id.replace(/^premade_/, "");
-      const response = await fetch(`/api/check-purchase/${checkId}`);
+      // For premade alters, use the ID as-is (should be clean already)
+      const response = await fetch(`/api/check-purchase/${alter.id}`);
       if (response.ok) {
         const { purchased } = await response.json();
         isPurchased = purchased;
@@ -421,7 +420,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <div class="text-xl font-bold">$${alter.price}</div>
             <div class="flex gap-2">
               <button class="bg-primary px-4 py-2 rounded-lg buy-alter-btn flex items-center justify-center min-w-[120px]" 
-                      data-alter-id="${alter.id.replace(/^premade_/, "")}" 
+                      data-alter-id="${alter.id}" 
                       data-alter-type="premade"
                       data-alter="${encodeURIComponent(
                         JSON.stringify(enhancedAlter)
@@ -779,9 +778,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function buyPremadeAlter(alterId) {
-    // Extract clean ID for premade alters (remove 'premade_' prefix)
-    const cleanId = alterId.replace(/^premade_/, "");
-    await buyAlter(cleanId, "premade");
+    // alterId should already be clean for premade alters
+    await buyAlter(alterId, "premade");
   }
 
   async function buyPublishedAlter(alterId) {
@@ -813,7 +811,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Find the alter in the appropriate array
       let alter;
       if (alterType === "premade") {
-        alter = premadeAlters.find((a) => a.id === alterId);
+        // For premade alters, match against the clean ID (without prefix)
+        alter = premadeAlters.find(
+          (a) =>
+            a.id.replace(/^premade_/, "") === alterId ||
+            a.id === `premade_${alterId}`
+        );
       } else {
         alter = publishedAlters.find((a) => a.originalId === alterId);
       }

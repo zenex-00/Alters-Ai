@@ -841,6 +841,7 @@
           rgba(37, 99, 235, 0.95) 100%
         );
         color: white;
+
         border-color: rgba(59, 130, 246, 0.3);
         box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25),
           0 8px 16px rgba(59, 130, 246, 0.15),
@@ -1301,7 +1302,7 @@
                         "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
                       category: "professional",
                       image:
-                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish",
+                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%250lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish",
                       price: 9.99,
                     },
                     2: {
@@ -1450,13 +1451,13 @@
 
           async function waitForVideoAgent(timeout = 10000) {
             const start = Date.now();
-            while (!window.alterVideoAgent && Date.now() - start < timeout) {
+            while (!window.videoAgent && Date.now() - start < timeout) {
               await new Promise((resolve) => setTimeout(resolve, 100));
             }
-            if (!window.alterVideoAgent) {
-              throw new Error("AlterVideoAgent not initialized within timeout");
+            if (!window.videoAgent) {
+              throw new Error("VideoAgent not initialized within timeout");
             }
-            return window.alterVideoAgent;
+            return window.videoAgent;
           }
 
           async function monitorConnection() {
@@ -1486,8 +1487,8 @@
                 "chat-alter.js: Error monitoring connection:",
                 error
               );
-              if (window.alterVideoAgent) {
-                window.alterVideoAgent.showToast(
+              if (window.videoAgent) {
+                window.videoAgent.showToast(
                   "Failed to initialize, please refresh."
                 );
               }
@@ -1525,8 +1526,8 @@
               console.error("Speech recognition error", event.error);
               isRecording = false;
               voiceButton.classList.remove("recording");
-              if (window.alterVideoAgent) {
-                window.alterVideoAgent.showToast(
+              if (window.videoAgent) {
+                window.videoAgent.showToast(
                   "Speech recognition failed. Please try again."
                 );
               }
@@ -1534,8 +1535,8 @@
 
             voiceButton.addEventListener("click", () => {
               if (!recognition) {
-                if (window.alterVideoAgent) {
-                  window.alterVideoAgent.showToast(
+                if (window.videoAgent) {
+                  window.videoAgent.showToast(
                     "Speech recognition is not supported in your browser."
                   );
                 }
@@ -1554,8 +1555,8 @@
             });
           } else {
             voiceButton.addEventListener("click", () => {
-              if (window.alterVideoAgent) {
-                window.alterVideoAgent.showToast(
+              if (window.videoAgent) {
+                window.videoAgent.showToast(
                   "Speech recognition is not supported in your browser."
                 );
               }
@@ -1611,17 +1612,17 @@
             // Clear input field
             userInputField.value = "";
 
-            if (window.alterVideoAgent) {
+            if (window.videoAgent) {
               try {
                 console.log(
-                  `chat-interface.js: Calling alterVideoAgent.handleTalk with message: "${message}"`
+                  `chat-alter.js: Calling videoAgent.handleTalk with message: "${message}"`
                 );
-                // Let alterVideoAgent handle adding both user and assistant messages
-                await window.alterVideoAgent.handleTalk(message);
+                // Let videoAgent handle adding both user and assistant messages
+                await window.videoAgent.handleTalk(message);
               } catch (error) {
-                console.error("chat-interface.js: Error in handleTalk:", error);
-                if (window.alterVideoAgent) {
-                  window.alterVideoAgent.showToast(
+                console.error("chat-alter.js: Error in handleTalk:", error);
+                if (window.videoAgent) {
+                  window.videoAgent.showToast(
                     "Server is slow, please try again later."
                   );
                 }
@@ -1633,9 +1634,7 @@
                 userInputField.placeholder = "Type your message here...";
               }
             } else {
-              console.error(
-                "chat-interface.js: window.alterVideoAgent is not defined"
-              );
+              console.error("chat-alter.js: window.videoAgent is not defined");
               removeTypingIndicator(typingDiv);
               isSending = false;
               userInputField.disabled = false;
@@ -1902,6 +1901,7 @@
                 const maxRetries = 3;
 
                 const checkPurchaseWithRetry = () => {
+                  // Check purchase status for all alters (both premade and published)
                   fetch(`/api/check-purchase/${alterId}`)
                     .then((response) => {
                       if (!response.ok) {
@@ -1925,25 +1925,19 @@
                         console.log(
                           "User has not purchased this alter after retries"
                         );
-                        // Only show error for paid alters
-                        if (alter.price && alter.price > 0) {
-                          if (window.showToast) {
-                            window.showToast(
-                              "Purchase verification failed. Please try again or contact support.",
-                              "error"
-                            );
-                          }
-                          setTimeout(() => {
-                            window.location.href = "/marketplace";
-                          }, 3000);
-                          return;
+                        if (window.showToast) {
+                          window.showToast(
+                            "You need to purchase this alter to chat with it. Redirecting to marketplace...",
+                            "error"
+                          );
                         }
+                        setTimeout(() => {
+                          window.location.href = "/marketplace";
+                        }, 3000);
+                        return;
                       }
 
-                      console.log(
-                        "Purchase verified or free alter, proceeding with chat"
-                      );
-                      // User has purchased the alter or it's free, proceed with chat initialization
+                      console.log("Purchase verified, proceeding with chat");
                       initializeChat(alter);
                     })
                     .catch((error) => {
@@ -1960,17 +1954,17 @@
                         return;
                       }
 
-                      // After all retries failed, allow access anyway (could be network issue)
-                      console.log(
-                        "Purchase verification failed after retries, allowing access"
-                      );
+                      // After all retries failed, deny access
+                      console.log("Purchase verification failed after retries");
                       if (window.showToast) {
                         window.showToast(
-                          "Unable to verify purchase, but allowing access. If you encounter issues, please contact support.",
-                          "warning"
+                          "Unable to verify purchase. Please try again or contact support.",
+                          "error"
                         );
                       }
-                      initializeChat(alter);
+                      setTimeout(() => {
+                        window.location.href = "/marketplace";
+                      }, 3000);
                     });
                 };
 

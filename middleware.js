@@ -95,14 +95,76 @@ const hasPurchasedAlter = async (req, res, next) => {
       return next();
     }
 
-    // For premade alters (numeric IDs), just check authentication
+    // Get the user's Supabase ID for purchase verification
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userError || !userData || userData.length === 0) {
+      console.log("User not found in Supabase for purchase check");
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const userId = userData[0].id;
+
+    // For premade alters (numeric IDs), check purchase status
     if (/^\d+$/.test(alterId)) {
+      console.log(`Premade alter ${alterId} - checking purchase status`);
+
+      // Check if the user has purchased this premade alter
+      const { data: purchaseData, error: purchaseError } = await supabaseAdmin
+        .from("purchases")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("alter_identifier", alterId)
+        .eq("type", "premade_alter")
+        .limit(1);
+
+      if (purchaseError) {
+        console.error("Error checking premade alter purchase:", purchaseError);
+        return res.status(500).json({ error: "Error checking purchase" });
+      }
+
+      if (!purchaseData || purchaseData.length === 0) {
+        console.log(
+          `User ${userId} has not purchased premade alter ${alterId}`
+        );
+        return res.status(403).json({ error: "Purchase required" });
+      }
+
+      console.log(
+        `Purchase verified for user ${userId} and premade alter ${alterId}`
+      );
       return next();
     }
 
-    // For published alters, check actual purchase
-    // This would be implemented with your purchase checking logic
-    // For now, allow access if authenticated
+    // For published alters (UUIDs), check actual purchase
+    console.log(`Published alter ${alterId} - checking purchase status`);
+
+    // Check if the alter has been purchased
+    const { data: purchaseData, error: purchaseError } = await supabaseAdmin
+      .from("purchases")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("alter_identifier", alterId)
+      .eq("type", "published_alter")
+      .limit(1);
+
+    if (purchaseError) {
+      console.error("Error checking purchase:", purchaseError);
+      return res.status(500).json({ error: "Error checking purchase" });
+    }
+
+    if (!purchaseData || purchaseData.length === 0) {
+      console.log(
+        `User ${userId} has not purchased published alter ${alterId}`
+      );
+      return res.status(403).json({ error: "Purchase required" });
+    }
+
+    console.log(`Purchase verified for user ${userId} and alter ${alterId}`);
     next();
   } catch (error) {
     console.error("Error checking alter purchase:", error);

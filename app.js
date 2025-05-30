@@ -498,7 +498,7 @@ app.get("/about", (req, res) => {
 });
 
 app.get("/marketplace", isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, "marketplace.html"));
+  res.sendFile(path.join(__dirname, "Marketplace.html"));
 });
 
 app.get("/creator-page", (req, res) => {
@@ -506,7 +506,7 @@ app.get("/creator-page", (req, res) => {
 });
 
 app.get("/creator-studio", isAuthenticated, isCreator, (req, res) => {
-  res.sendFile(path.join(__dirname, "creator-studio.html"));
+  res.sendFile(path.join(__dirname, "Creator-Studio.html"));
 });
 
 app.get("/customize", isAuthenticated, isCreator, (req, res) => {
@@ -1220,27 +1220,6 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
     const alterId = req.params.alterId;
     console.log("Checking purchase for alter ID:", alterId);
 
-    // For premade alters (numeric IDs), check if user is authenticated (they should have access)
-    const isNumericId = /^\d+$/.test(alterId);
-
-    if (isNumericId) {
-      console.log("Premade alter detected, checking authentication");
-      // For premade alters, we just need to verify the user is authenticated
-      // and the alter exists in our predefined list
-      const premadeAlterIds = ["1", "2", "3"]; // Add all valid premade alter IDs
-
-      if (premadeAlterIds.includes(alterId)) {
-        console.log("Valid premade alter, user authenticated - access granted");
-        return res.json({ purchased: true });
-      } else {
-        console.log("Invalid premade alter ID");
-        return res.json({ purchased: false });
-      }
-    }
-
-    // For published alters (UUIDs), check actual purchase
-    console.log("Published alter detected, checking purchase records");
-
     // Get the user's Supabase ID
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
@@ -1254,6 +1233,42 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
     }
 
     const userId = userData[0].id;
+
+    // For premade alters (numeric IDs), check if user has purchased it
+    const isNumericId = /^\d+$/.test(alterId);
+
+    if (isNumericId) {
+      console.log("Premade alter detected, checking purchase status");
+
+      // First verify it's a valid premade alter
+      const premadeAlterIds = ["1", "2", "3"]; // Add all valid premade alter IDs
+
+      if (!premadeAlterIds.includes(alterId)) {
+        console.log("Invalid premade alter ID");
+        return res.json({ purchased: false });
+      }
+
+      // Check if the user has purchased this premade alter
+      const { data: purchaseData, error: purchaseError } = await supabaseAdmin
+        .from("purchases")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("alter_identifier", alterId)
+        .eq("type", "premade_alter")
+        .limit(1);
+
+      if (purchaseError) {
+        console.error("Error checking premade alter purchase:", purchaseError);
+        return res.json({ purchased: false });
+      }
+
+      const purchased = purchaseData && purchaseData.length > 0;
+      console.log("Premade alter purchase check result:", purchased);
+      return res.json({ purchased });
+    }
+
+    // For published alters (UUIDs), check actual purchase
+    console.log("Published alter detected, checking purchase records");
 
     // Check if the alter has been purchased using the purchases table
     const { data: purchaseData, error: purchaseError } = await supabaseAdmin
