@@ -82,6 +82,69 @@ body {
   padding: 15px 0;
 }
 
+/* Mobile Sidebar Styles */
+#mobile-sidebar {
+  box-shadow: -10px 0 25px rgba(0, 0, 0, 0.3);
+}
+
+#mobile-sidebar-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.mobile-nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-nav-link::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 138, 43, 0.1),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.mobile-nav-link:hover::before {
+  left: 100%;
+}
+
+/* Mobile hamburger button animation */
+#mobile-menu-button {
+  transition: transform 0.2s ease;
+}
+
+#mobile-menu-button:active {
+  transform: scale(0.95);
+}
+
+/* Smooth scrolling for mobile sidebar */
+#mobile-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #ff8a2b rgba(255, 255, 255, 0.1);
+}
+
+#mobile-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+#mobile-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+#mobile-sidebar::-webkit-scrollbar-thumb {
+  background: #ff8a2b;
+  border-radius: 2px;
+}
+
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -599,6 +662,7 @@ select#avatar-knowledge:focus {
 }
 
 #video-container {
+  position: relative;
   width: 320px; /* Reduced size */
   height: 320px; /* Reduced size */
   border-radius: 50%;
@@ -607,6 +671,17 @@ select#avatar-knowledge:focus {
   background: linear-gradient(to bottom, #1a1a1a, #0a0a);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
   animation: avatarGlow 3s infinite alternate;
+  /* Ultra-smooth container optimizations */
+  transform: translateZ(0);
+  will-change: contents;
+  contain: layout style paint;
+  /* Hardware acceleration for the container */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* Optimize rendering performance */
+  isolation: isolate;
 }
 
 .dark-mode #video-container {
@@ -658,7 +733,28 @@ select#avatar-knowledge:focus {
 }
 
 #talk-video {
-  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Ultra-smooth video optimizations */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+  image-rendering: optimizeQuality;
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000px;
+  /* Disable any delays or transitions */
+  transition: none !important;
+  animation: none !important;
+  /* Hardware acceleration */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  /* Optimize for real-time video */
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
 }
 
 #upload-avatar-button {
@@ -777,7 +873,6 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
 }
-
 .chat-header h2 {
   margin: 0;
   font-size: 16px; /* Reduced size */
@@ -1224,7 +1319,7 @@ button:disabled {
 }
 
 /* Media queries for responsive design */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .main-container {
     flex-direction: column;
   }
@@ -1241,14 +1336,22 @@ button:disabled {
     width: 100%;
   }
 
+  /* Hide desktop nav on tablet and mobile */
+  .nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
   .nav-container {
     flex-direction: column;
     gap: 10px;
   }
 
-  .nav-links {
-    width: 100%;
-    justify-content: center;
+  /* Ensure mobile sidebar is properly sized */
+  #mobile-sidebar {
+    width: 100vw;
+    max-width: 320px;
   }
 }
 
@@ -1319,13 +1422,31 @@ button:disabled {
     height: 220px; /* Further reduced for mobile */
   }
 
-  .nav-links {
-    flex-direction: column;
-    gap: 5px;
+  /* Mobile sidebar adjustments */
+  #mobile-sidebar {
+    width: 100vw;
+    max-width: 280px;
   }
 
-  .nav-link {
-    text-align: center;
+  /* Improve navigation button spacing */
+  .nav-container {
+    padding: 0 1rem;
+  }
+
+  /* Make logo slightly smaller on very small screens */
+  .nav-container a {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #mobile-sidebar {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .nav-container a {
+    font-size: 1.3rem;
   }
 }
 
@@ -1333,4 +1454,21 @@ button:disabled {
 .theme-transition {
   transition: background 0.5s ease, color 0.5s ease, border-color 0.5s ease,
     box-shadow 0.5s ease;
+}
+
+#avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Ultra-smooth image rendering */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  image-rendering: optimizeQuality;
+  image-rendering: -webkit-optimize-contrast;
+  /* Instant transitions */
+  transition: opacity 0.1s ease-out;
+  /* Hardware acceleration */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  will-change: opacity;
 }

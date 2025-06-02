@@ -96,9 +96,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       category: "fitness",
       creator: "TechAlters",
       creatorAvatar:
-        "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520asian%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=15&orientation=squarish",
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748783405175-569408583.jpg",
       image:
-        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748783405175-569408583.jpg",
       verified: true,
       featured: false,
       type: "premade",

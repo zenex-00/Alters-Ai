@@ -48,9 +48,12 @@
         font-family: "Inter", sans-serif;
         background-color: #0a0a0a;
         color: #ffffff;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
+        flex-direction: column;
       }
+
+      /* Mobile-first responsive design */
       .sidebar {
         transition: width 0.3s ease;
       }
@@ -73,6 +76,8 @@
         transform: translateY(-8px);
         box-shadow: 0 20px 30px -15px rgba(255, 138, 43, 0.2);
       }
+
+      /* Mobile responsive button */
       .create-alter-btn {
         transition: all 0.3s ease;
         position: relative;
@@ -108,166 +113,137 @@
           left: 150%;
         }
       }
-      .custom-checkbox {
-        position: relative;
-        padding-left: 28px;
-        cursor: pointer;
-        user-select: none;
-      }
-      .custom-checkbox input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
-      }
-      .checkmark {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 20px;
-        width: 20px;
-        background-color: transparent;
-        border: 2px solid #666;
-        border-radius: 4px;
-      }
-      .custom-checkbox:hover input ~ .checkmark {
-        border-color: #999;
-      }
-      .custom-checkbox input:checked ~ .checkmark {
-        background-color: #ff8a2b;
-        border-color: #ff8a2b;
-      }
-      .checkmark:after {
-        content: "";
-        position: absolute;
-        display: none;
-      }
-      .custom-checkbox input:checked ~ .checkmark:after {
-        display: block;
-      }
-      .custom-checkbox .checkmark:after {
-        left: 6px;
-        top: 2px;
-        width: 5px;
-        height: 10px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-      }
-      .custom-switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 24px;
-      }
-      .custom-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #333;
-        transition: 0.4s;
-        border-radius: 24px;
-      }
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 50%;
-      }
-      input:checked + .slider {
-        background-color: #ff8a2b;
-      }
-      input:checked + .slider:before {
-        transform: translateX(26px);
-      }
-      .usage-progress {
-        height: 8px;
-        border-radius: 4px;
-        background-color: #333;
-        overflow: hidden;
-      }
-      .usage-progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #ff8a2b, #ff6b2b);
-      }
-      .notification-dot {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 8px;
-        height: 8px;
-        background-color: #ff8a2b;
-        border-radius: 50%;
-      }
-      .fade-in {
-        animation: fadeIn 0.5s ease forwards;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+
+      /* Mobile responsive header */
+      @media (max-width: 768px) {
+        .header-content {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: stretch;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+
+        .header-left {
+          flex-direction: column;
+          gap: 0.75rem;
+          align-items: center;
+          text-align: center;
         }
-      }
-      .pulse {
-        animation: pulse 2s infinite;
-      }
-      @keyframes pulse {
-        0% {
-          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0.4);
+
+        .header-title {
+          font-size: 1.5rem;
         }
-        70% {
-          box-shadow: 0 0 0 10px rgba(255, 138, 43, 0);
+
+        .header-subtitle {
+          font-size: 0.875rem;
         }
-        100% {
-          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0);
+
+        .create-alter-btn {
+          width: 100%;
+          justify-content: center;
+          padding: 0.875rem 1.5rem;
+          font-size: 0.875rem;
         }
-      }
-      input[type="number"]::-webkit-inner-spin-button,
-      input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
+
+        .create-alter-btn span {
+          display: none;
+        }
+
+        .create-alter-btn .mobile-text {
+          display: inline;
+        }
       }
 
-      /* Enhanced Published Alters Section */
-      .published-alters-section {
-        margin-top: 2rem;
-        padding: 2rem;
-        background: rgba(31, 41, 55, 0.3);
-        border-radius: 16px;
-        border: 1px solid rgba(75, 85, 99, 0.3);
-        backdrop-filter: blur(10px);
-      }
-      .published-alters-section h2 {
-        margin-bottom: 2rem;
-        color: #ffffff;
-        font-size: 1.5rem;
-        font-weight: 700;
-      }
-      .alters-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
+      @media (min-width: 769px) {
+        .create-alter-btn .mobile-text {
+          display: none;
+        }
       }
 
-      /* Enhanced Alter Card Styling - Matching Marketplace */
+      /* Mobile responsive welcome section */
+      @media (max-width: 768px) {
+        .welcome-content {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .welcome-text {
+          width: 100%;
+          margin-bottom: 2rem;
+        }
+
+        .welcome-image {
+          width: 100%;
+          max-width: 300px;
+          margin: 0 auto;
+        }
+
+        .welcome-title {
+          font-size: 1.75rem;
+          margin-bottom: 1rem;
+        }
+
+        .welcome-description {
+          font-size: 0.875rem;
+          margin-bottom: 1.5rem;
+        }
+      }
+
+      /* Mobile responsive grids */
+      @media (max-width: 640px) {
+        .quick-actions-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+        }
+
+        .alters-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+      }
+
+      @media (min-width: 641px) and (max-width: 1024px) {
+        .quick-actions-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .alters-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* Mobile responsive cards */
+      @media (max-width: 640px) {
+        .action-card,
+        .stat-card {
+          padding: 1rem;
+        }
+
+        .action-card h4,
+        .stat-card h4 {
+          font-size: 0.875rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .action-card p,
+        .stat-card p {
+          font-size: 0.75rem;
+        }
+
+        .stat-value {
+          font-size: 1.75rem;
+        }
+      }
+
+      /* Mobile responsive alter cards */
       .alter-card {
         background: rgba(31, 41, 55, 0.5);
         border: 1px solid rgba(75, 85, 99, 0.3);
@@ -368,7 +344,35 @@
         gap: 0.5rem;
       }
 
-      /* Overlay Buttons */
+      /* Mobile responsive alter card footer */
+      @media (max-width: 640px) {
+        .alter-card .card-content {
+          padding: 1rem;
+        }
+
+        .alter-card h3 {
+          font-size: 1rem;
+        }
+
+        .alter-card .card-footer {
+          flex-direction: column;
+          gap: 0.75rem;
+          align-items: stretch;
+        }
+
+        .alter-card .card-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .alter-card .card-actions button {
+          flex: 1;
+          font-size: 0.75rem;
+          padding: 0.5rem 0.75rem;
+        }
+      }
+
+      /* Overlay Buttons - Mobile responsive */
       .alter-card .overlay-buttons {
         position: absolute;
         top: 1rem;
@@ -385,6 +389,14 @@
         opacity: 1;
       }
 
+      @media (max-width: 640px) {
+        .alter-card .overlay-buttons {
+          opacity: 1;
+          top: 0.5rem;
+          right: 0.5rem;
+        }
+      }
+
       .btn-icon {
         width: 40px;
         height: 40px;
@@ -398,6 +410,14 @@
         backdrop-filter: blur(10px);
         font-size: 1rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      @media (max-width: 640px) {
+        .btn-icon {
+          width: 32px;
+          height: 32px;
+          font-size: 0.875rem;
+        }
       }
 
       .btn-icon.btn-view {
@@ -420,7 +440,7 @@
         transform: scale(1.1);
       }
 
-      /* Delete Button - Always Visible */
+      /* Delete Button - Mobile responsive */
       .delete-button {
         position: absolute;
         top: 0.75rem;
@@ -441,6 +461,16 @@
         z-index: 10;
         backdrop-filter: blur(10px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      @media (max-width: 640px) {
+        .delete-button {
+          top: 0.5rem;
+          left: 0.5rem;
+          width: 28px;
+          height: 28px;
+          font-size: 0.75rem;
+        }
       }
 
       .delete-button:hover {
@@ -483,10 +513,53 @@
         color: #ffffff;
       }
 
+      /* Enhanced Published Alters Section */
+      .published-alters-section {
+        margin-top: 2rem;
+        padding: 2rem;
+        background: rgba(31, 41, 55, 0.3);
+        border-radius: 16px;
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        backdrop-filter: blur(10px);
+      }
+
+      @media (max-width: 640px) {
+        .published-alters-section {
+          padding: 1rem;
+          margin-top: 1.5rem;
+        }
+      }
+
+      .published-alters-section h2 {
+        margin-bottom: 2rem;
+        color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      @media (max-width: 640px) {
+        .published-alters-section h2 {
+          font-size: 1.25rem;
+          margin-bottom: 1.5rem;
+        }
+      }
+
+      .alters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+
       .loading-spinner-container {
         text-align: center;
         padding: 3rem;
         color: #9ca3af;
+      }
+
+      @media (max-width: 640px) {
+        .loading-spinner-container {
+          padding: 2rem 1rem;
+        }
       }
 
       .loading-spinner {
@@ -514,10 +587,22 @@
         border: 1px dashed rgba(255, 138, 43, 0.3);
       }
 
+      @media (max-width: 640px) {
+        .no-alters-message {
+          padding: 2rem 1rem;
+        }
+      }
+
       .no-alters-message i {
         font-size: 3rem;
         margin-bottom: 1rem;
         opacity: 0.7;
+      }
+
+      @media (max-width: 640px) {
+        .no-alters-message i {
+          font-size: 2rem;
+        }
       }
 
       .no-alters-message h3 {
@@ -526,11 +611,18 @@
         margin-bottom: 0.5rem;
       }
 
+      @media (max-width: 640px) {
+        .no-alters-message h3 {
+          font-size: 1.25rem;
+        }
+      }
+
       .no-alters-message p {
         color: #d1d5db;
         margin-bottom: 1.5rem;
       }
 
+      /* Toast notifications - Mobile responsive */
       .toast {
         position: fixed;
         bottom: 20px;
@@ -544,6 +636,17 @@
         z-index: 1000;
         backdrop-filter: blur(10px);
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        max-width: calc(100vw - 40px);
+      }
+
+      @media (max-width: 640px) {
+        .toast {
+          bottom: 10px;
+          right: 10px;
+          left: 10px;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+        }
       }
 
       .toast.success {
@@ -585,7 +688,16 @@
         z-index: 2;
       }
 
-      /* Custom Confirm Dialog Styles */
+      @media (max-width: 640px) {
+        .featured-badge {
+          top: 0.5rem;
+          left: 0.5rem;
+          font-size: 0.625rem;
+          padding: 0.125rem 0.5rem;
+        }
+      }
+
+      /* Custom Confirm Dialog Styles - Mobile responsive */
       .confirm-dialog-overlay {
         position: fixed;
         top: 0;
@@ -601,6 +713,7 @@
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
+        padding: 1rem;
       }
 
       .confirm-dialog-overlay.show {
@@ -614,14 +727,21 @@
         border-radius: 20px;
         padding: 2rem;
         max-width: 450px;
-        width: 90%;
-        margin: 1rem;
+        width: 100%;
         backdrop-filter: blur(20px);
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         transform: scale(0.9) translateY(20px);
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+      }
+
+      @media (max-width: 640px) {
+        .confirm-dialog {
+          padding: 1.5rem;
+          margin: 1rem;
+          max-width: none;
+        }
       }
 
       .confirm-dialog-overlay.show .confirm-dialog {
@@ -653,6 +773,15 @@
         animation: pulse-warning 2s infinite;
       }
 
+      @media (max-width: 640px) {
+        .confirm-dialog-icon {
+          width: 60px;
+          height: 60px;
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+        }
+      }
+
       @keyframes pulse-warning {
         0%,
         100% {
@@ -671,6 +800,12 @@
         margin-bottom: 1rem;
       }
 
+      @media (max-width: 640px) {
+        .confirm-dialog-title {
+          font-size: 1.25rem;
+        }
+      }
+
       .confirm-dialog-message {
         color: #9ca3af;
         text-align: center;
@@ -679,10 +814,24 @@
         font-size: 1rem;
       }
 
+      @media (max-width: 640px) {
+        .confirm-dialog-message {
+          font-size: 0.875rem;
+          margin-bottom: 1.5rem;
+        }
+      }
+
       .confirm-dialog-actions {
         display: flex;
         gap: 1rem;
         justify-content: center;
+      }
+
+      @media (max-width: 640px) {
+        .confirm-dialog-actions {
+          flex-direction: column;
+          gap: 0.75rem;
+        }
       }
 
       .confirm-btn {
@@ -696,6 +845,14 @@
         min-width: 120px;
         position: relative;
         overflow: hidden;
+      }
+
+      @media (max-width: 640px) {
+        .confirm-btn {
+          width: 100%;
+          min-width: auto;
+          padding: 0.875rem 1.5rem;
+        }
       }
 
       .confirm-btn-cancel {
@@ -750,6 +907,77 @@
       .confirm-btn-delete.loading span {
         opacity: 0;
       }
+
+      /* Mobile responsive padding and margins */
+      @media (max-width: 640px) {
+        .main-content {
+          padding: 0;
+        }
+
+        .content-padding {
+          padding: 1rem;
+        }
+
+        .section-spacing {
+          margin-bottom: 1.5rem;
+        }
+      }
+
+      @media (min-width: 641px) {
+        .content-padding {
+          padding: 1.5rem 2.5rem;
+        }
+
+        .section-spacing {
+          margin-bottom: 2.5rem;
+        }
+      }
+
+      /* Utility classes for mobile */
+      .mobile-hidden {
+        display: none;
+      }
+
+      @media (min-width: 641px) {
+        .mobile-hidden {
+          display: block;
+        }
+
+        .desktop-hidden {
+          display: none;
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(255, 138, 43, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 138, 43, 0);
+        }
+      }
     </style>
   </head>
   <body>
@@ -758,56 +986,71 @@
       <header
         class="bg-secondary bg-opacity-95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-10"
       >
-        <div class="flex items-center justify-between p-6">
-          <div class="flex items-center space-x-6">
+        <div
+          class="header-content flex items-center justify-between p-4 md:p-6"
+        >
+          <div class="header-left flex items-center space-x-4 md:space-x-6">
             <a
               href="/marketplace"
               data-readdy="true"
-              class="w-10 h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary bg-opacity-50 flex items-center justify-center hover:bg-opacity-80 transition-all"
             >
-              <i class="ri-home-line text-xl"></i>
+              <i class="ri-home-line text-lg md:text-xl"></i>
             </a>
             <div>
-              <h1 class="text-2xl font-bold">Creator Studio</h1>
-              <p class="text-gray-400">Create and manage your digital alters</p>
+              <h1 class="header-title text-xl md:text-2xl font-bold">
+                Creator Studio
+              </h1>
+              <p class="header-subtitle text-gray-400 text-sm md:text-base">
+                Create and manage your digital alters
+              </p>
             </div>
           </div>
-          <div class="flex items-center space-x-6">
+          <div class="flex items-center">
             <!-- Create Alter Button -->
             <button
-              class="create-alter-btn bg-gradient-to-r from-primary to-orange-600 text-white px-6 py-3 rounded-button font-medium flex items-center shadow-lg pulse whitespace-nowrap"
+              class="create-alter-btn bg-gradient-to-r from-primary to-orange-600 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-button font-medium flex items-center shadow-lg pulse"
             >
-              <div class="w-5 h-5 mr-2 flex items-center justify-center">
+              <div
+                class="w-4 h-4 md:w-5 md:h-5 mr-2 flex items-center justify-center"
+              >
                 <i class="ri-add-line"></i>
               </div>
-              <span>Create Your Own Alter</span>
+              <span class="hidden md:inline">Create Your Own Alter</span>
+              <span class="mobile-text md:hidden">Create Alter</span>
             </button>
           </div>
         </div>
       </header>
 
       <!-- Dashboard Content -->
-      <div class="p-6 md:p-10">
+      <div class="content-padding">
         <!-- Welcome Section -->
         <div
-          class="bg-gradient-to-r from-secondary to-gray-900 rounded-xl p-8 mb-10"
+          class="bg-gradient-to-r from-secondary to-gray-900 rounded-xl p-4 md:p-8 section-spacing"
         >
-          <div class="flex flex-col md:flex-row items-center">
-            <div class="md:w-2/3 mb-8 md:mb-0">
-              <h2 class="text-3xl font-bold mb-4">
+          <div class="welcome-content flex flex-col md:flex-row items-center">
+            <div class="welcome-text md:w-2/3 mb-6 md:mb-0">
+              <h2
+                class="welcome-title text-2xl md:text-3xl font-bold mb-3 md:mb-4 btn"
+              >
                 Welcome to your Creator Studio
               </h2>
-              <p class="text-gray-300 mb-6">
+              <p
+                class="welcome-description text-gray-300 mb-4 md:mb-6 text-sm md:text-base"
+              >
                 Create, customize, and manage your digital alters. Use our
                 advanced AI tools to bring your digital twin to life with
                 realistic expressions and natural voice.
               </p>
-              <div class="flex flex-wrap gap-4">
+              <div class="flex flex-wrap gap-3 md:gap-4">
                 <a href="/customize">
                   <button
-                    class="bg-primary text-white px-5 py-2.5 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center whitespace-nowrap"
+                    class="bg-primary text-white px-4 py-2 md:px-5 md:py-2.5 rounded-button font-medium hover:bg-opacity-90 transition-all flex items-center text-sm md:text-base"
                   >
-                    <div class="w-5 h-5 mr-2 flex items-center justify-center">
+                    <div
+                      class="w-4 h-4 md:w-5 md:h-5 mr-2 flex items-center justify-center"
+                    >
                       <i class="ri-play-line"></i>
                     </div>
                     <span>Get Started</span>
@@ -815,7 +1058,7 @@
                 </a>
               </div>
             </div>
-            <div class="md:w-1/3 flex justify-center">
+            <div class="welcome-image md:w-1/3 flex justify-center">
               <img
                 src="/placeholder.svg?height=300&width=400"
                 alt="Creator Studio Interface"
@@ -826,58 +1069,74 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="mb-10">
-          <h3 class="text-xl font-bold mb-6">Quick Actions</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="section-spacing">
+          <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6">
+            Quick Actions
+          </h3>
+          <div
+            class="quick-actions-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          >
             <div
-              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+              class="action-card bg-secondary bg-opacity-30 rounded-xl p-4 md:p-6 hover:bg-opacity-40 transition-all cursor-pointer"
             >
               <div
-                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-add-circle-line text-primary text-2xl"></i>
+                <i
+                  class="ri-add-circle-line text-primary text-xl md:text-2xl"
+                ></i>
               </div>
-              <h4 class="font-bold mb-2">Create New Alter</h4>
-              <p class="text-gray-400 text-sm">
+              <h4 class="font-bold mb-2 text-sm md:text-base">
+                Create New Alter
+              </h4>
+              <p class="text-gray-400 text-xs md:text-sm">
                 Start from scratch with our AI-powered tools
               </p>
             </div>
             <div
-              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+              class="action-card bg-secondary bg-opacity-30 rounded-xl p-4 md:p-6 hover:bg-opacity-40 transition-all cursor-pointer"
             >
               <div
-                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-upload-cloud-line text-primary text-2xl"></i>
+                <i
+                  class="ri-upload-cloud-line text-primary text-xl md:text-2xl"
+                ></i>
               </div>
-              <h4 class="font-bold mb-2">Upload Photos</h4>
-              <p class="text-gray-400 text-sm">
+              <h4 class="font-bold mb-2 text-sm md:text-base">Upload Photos</h4>
+              <p class="text-gray-400 text-xs md:text-sm">
                 Use your photos to create a personalized alter
               </p>
             </div>
             <div
-              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+              class="action-card bg-secondary bg-opacity-30 rounded-xl p-4 md:p-6 hover:bg-opacity-40 transition-all cursor-pointer"
             >
               <div
-                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-voice-recognition-line text-primary text-2xl"></i>
+                <i
+                  class="ri-voice-recognition-line text-primary text-xl md:text-2xl"
+                ></i>
               </div>
-              <h4 class="font-bold mb-2">Voice Training</h4>
-              <p class="text-gray-400 text-sm">
+              <h4 class="font-bold mb-2 text-sm md:text-base">
+                Voice Training
+              </h4>
+              <p class="text-gray-400 text-xs md:text-sm">
                 Train your alter to sound like you
               </p>
             </div>
             <div
-              class="bg-secondary bg-opacity-30 rounded-xl p-6 hover:bg-opacity-40 transition-all cursor-pointer"
+              class="action-card bg-secondary bg-opacity-30 rounded-xl p-4 md:p-6 hover:bg-opacity-40 transition-all cursor-pointer"
             >
               <div
-                class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-store-line text-primary text-2xl"></i>
+                <i class="ri-store-line text-primary text-xl md:text-2xl"></i>
               </div>
-              <h4 class="font-bold mb-2">Browse Marketplace</h4>
-              <p class="text-gray-400 text-sm">
+              <h4 class="font-bold mb-2 text-sm md:text-base">
+                Browse Marketplace
+              </h4>
+              <p class="text-gray-400 text-xs md:text-sm">
                 Explore pre-made alters from our creators
               </p>
             </div>
@@ -885,71 +1144,103 @@
         </div>
 
         <!-- Earnings & Sales Statistics -->
-        <div class="mb-10">
-          <h3 class="text-xl font-bold mb-6">Earnings & Sales Overview</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="section-spacing">
+          <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6">
+            Earnings & Sales Overview
+          </h3>
+          <div
+            class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          >
             <!-- Total Earnings Card -->
             <div
-              class="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl p-6"
+              class="stat-card bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl p-4 md:p-6"
             >
               <div
-                class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
                 <i
-                  class="ri-money-dollar-circle-line text-green-400 text-2xl"
+                  class="ri-money-dollar-circle-line text-green-400 text-xl md:text-2xl"
                 ></i>
               </div>
-              <h4 class="font-bold mb-1">Total Earnings</h4>
-              <p class="text-3xl font-bold text-green-400" id="totalEarnings">
+              <h4 class="font-bold mb-1 text-sm md:text-base">
+                Total Earnings
+              </h4>
+              <p
+                class="stat-value text-2xl md:text-3xl font-bold text-green-400"
+                id="totalEarnings"
+              >
                 $0.00
               </p>
-              <p class="text-gray-400 text-sm mt-2">Lifetime earnings</p>
+              <p class="text-gray-400 text-xs md:text-sm mt-2">
+                Lifetime earnings
+              </p>
             </div>
 
             <!-- Alters Sold Card -->
             <div
-              class="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl p-6"
+              class="stat-card bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl p-4 md:p-6"
             >
               <div
-                class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-shopping-cart-line text-blue-400 text-2xl"></i>
+                <i
+                  class="ri-shopping-cart-line text-blue-400 text-xl md:text-2xl"
+                ></i>
               </div>
-              <h4 class="font-bold mb-1">Alters Sold</h4>
-              <p class="text-3xl font-bold text-blue-400" id="altersSold">0</p>
-              <p class="text-gray-400 text-sm mt-2">Total sales</p>
+              <h4 class="font-bold mb-1 text-sm md:text-base">Alters Sold</h4>
+              <p
+                class="stat-value text-2xl md:text-3xl font-bold text-blue-400"
+                id="altersSold"
+              >
+                0
+              </p>
+              <p class="text-gray-400 text-xs md:text-sm mt-2">Total sales</p>
             </div>
 
             <!-- Active Alters Card -->
             <div
-              class="bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl p-6"
+              class="stat-card bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl p-4 md:p-6"
             >
               <div
-                class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-purple-500/20 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-user-star-line text-purple-400 text-2xl"></i>
+                <i
+                  class="ri-user-star-line text-purple-400 text-xl md:text-2xl"
+                ></i>
               </div>
-              <h4 class="font-bold mb-1">Active Alters</h4>
-              <p class="text-3xl font-bold text-purple-400" id="activeAlters">
+              <h4 class="font-bold mb-1 text-sm md:text-base">Active Alters</h4>
+              <p
+                class="stat-value text-2xl md:text-3xl font-bold text-purple-400"
+                id="activeAlters"
+              >
                 0
               </p>
-              <p class="text-gray-400 text-sm mt-2">Currently published</p>
+              <p class="text-gray-400 text-xs md:text-sm mt-2">
+                Currently published
+              </p>
             </div>
 
             <!-- Monthly Revenue Card -->
             <div
-              class="bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl p-6"
+              class="stat-card bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl p-4 md:p-6"
             >
               <div
-                class="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mb-4"
+                class="w-10 h-10 md:w-12 md:h-12 bg-orange-500/20 rounded-full flex items-center justify-center mb-3 md:mb-4"
               >
-                <i class="ri-line-chart-line text-orange-400 text-2xl"></i>
+                <i
+                  class="ri-line-chart-line text-orange-400 text-xl md:text-2xl"
+                ></i>
               </div>
-              <h4 class="font-bold mb-1">Monthly Revenue</h4>
-              <p class="text-3xl font-bold text-orange-400" id="monthlyRevenue">
+              <h4 class="font-bold mb-1 text-sm md:text-base">
+                Monthly Revenue
+              </h4>
+              <p
+                class="stat-value text-2xl md:text-3xl font-bold text-orange-400"
+                id="monthlyRevenue"
+              >
                 $0.00
               </p>
-              <p class="text-gray-400 text-sm mt-2">This month</p>
+              <p class="text-gray-400 text-xs md:text-sm mt-2">This month</p>
             </div>
           </div>
         </div>
@@ -957,14 +1248,21 @@
         <!-- Enhanced Published Alters Section -->
         <div class="studio-container">
           <div class="published-alters-section">
-            <div class="flex items-center justify-between mb-6">
-              <h2>Your Published Alters</h2>
-              <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-400" id="alters-count"
+            <div
+              class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 gap-3"
+            >
+              <h2 class="text-lg md:text-xl font-bold">
+                Your Published Alters
+              </h2>
+              <div class="flex items-center gap-3 md:gap-4 w-full sm:w-auto">
+                <span class="text-xs md:text-sm text-gray-400" id="alters-count"
                   >0 alters</span
                 >
-                <button class="btn-secondary" onclick="refreshAlters()">
-                  <i class="ri-refresh-line mr-2"></i>
+                <button
+                  class="btn-secondary text-xs md:text-sm px-3 py-2 md:px-4 md:py-2"
+                  onclick="refreshAlters()"
+                >
+                  <i class="ri-refresh-line mr-1 md:mr-2"></i>
                   Refresh
                 </button>
               </div>
@@ -1315,6 +1613,7 @@
             <p>Start creating your first alter to see it here!</p>
             <button class="btn-primary mt-4" onclick="document.querySelector('.create-alter-btn').click()">
               <i class="ri-add-line mr-1"></i>
+              Create First Alter
             </button>
           </div>
         `;
@@ -1382,13 +1681,13 @@
                   alter.id
                 }')">
                   <i class="ri-edit-line mr-1"></i>
-                  Edit
+                  <span class="hidden sm:inline">Edit</span>
                 </button>
                 <button class="btn-primary" onclick="viewAlterInMarketplace('${
                   alter.id
                 }')">
                   <i class="ri-external-link-line mr-1"></i>
-                  View
+                  <span class="hidden sm:inline">View</span>
                 </button>
               </div>
             </div>

@@ -630,7 +630,7 @@
         padding: 0.6rem;
         border: 1px solid rgba(255, 138, 43, 0.3);
         border-radius: 8px;
-        background: rgba(15, 15, 35, 0.95);
+        background: rgba(255, 255, 255, 0.05);
         color: #ffffff;
         font-family: inherit;
         outline: none;
@@ -641,8 +641,7 @@
       .form-group select:focus,
       .form-group textarea:focus {
         border-color: #ff8a2b;
-        box-shadow: 0 0 0 3px rgba(255, 138, 43, 0.2);
-        background: rgba(25, 25, 45, 0.95);
+        box-shadow: 0 0 0 3px rgba(255, 138, 43, 0.1);
       }
 
       .form-group textarea {
@@ -872,9 +871,7 @@
         box-shadow: 0 20px 40px rgba(16, 185, 129, 0.25),
           0 8px 16px rgba(16, 185, 129, 0.15),
           inset 0 1px 0 rgba(255, 255, 255, 0.3);
-      }
-
-      .toast.toast-error {
+      }      .toast.toast-error {
         background: linear-gradient(
           135deg,
           rgba(239, 68, 68, 0.95) 0%,
@@ -1269,7 +1266,7 @@
       <script type="module">
         import alterImageManager from "./alter-image-manager.js";
 
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
           console.log("chat-interface.js: DOMContentLoaded fired");
 
           const userInputField = document.getElementById("user-input-field");
@@ -1341,6 +1338,41 @@
               const settings = JSON.parse(avatarSettings);
               console.log("Loading custom avatar settings:", settings);
 
+              // Load additional data from Supabase if session ID exists
+              if (settings.sessionId) {
+                // Store session ID for voice lookup
+                sessionStorage.setItem('alterSessionId', settings.sessionId);
+                
+                try {
+                  const configModule = await import('./config.js');
+                  const config = configModule.default;
+                  const supabaseModule = await import('https://cdn.skypack.dev/@supabase/supabase-js@2');
+                  const supabase = supabaseModule.createClient(config.supabaseUrl, config.supabaseKey);
+                  
+                  const { data, error } = await supabase
+                    .from('alter_voices')
+                    .select('*')
+                    .eq('session_id', settings.sessionId)
+                    .single();
+
+                  if (!error && data) {
+                    // Update settings with Supabase data
+                    settings.voiceId = data.voice_id;
+                    settings.name = data.name;
+                    settings.personality = data.personality;
+                    settings.prompt = data.prompt;
+                    settings.knowledge = data.knowledge;
+                    console.log("Enhanced settings with Supabase data:", settings);
+                    
+                    // Set global voice variables immediately
+                    window.customVoiceId = data.voice_id;
+                    console.log("Set global voice ID from Supabase:", data.voice_id);
+                  }
+                } catch (supabaseError) {
+                  console.warn("Failed to load from Supabase, using localStorage:", supabaseError);
+                }
+              }
+
               // Clear any existing alter data
               localStorage.removeItem("selectedAlter");
               sessionStorage.removeItem("currentAlter");
@@ -1373,7 +1405,39 @@
                 JSON.stringify(window.selectedAlter)
               );
 
-              // Clear avatarSettings after successful load
+              // Set voice configuration globally and in session
+              if (window.selectedAlter.voiceId) {
+                window.customVoiceId = window.selectedAlter.voiceId;
+                window.customVoiceName = window.selectedAlter.voiceName;
+
+                // Store in sessionStorage for persistence during the session
+                sessionStorage.setItem(
+                  "activeVoiceConfig",
+                  JSON.stringify({
+                    voiceId: window.selectedAlter.voiceId,
+                    voiceName: window.selectedAlter.voiceName,
+                  })
+                );
+
+                console.log(
+                  "Voice ID preserved in session:",
+                  window.selectedAlter.voiceId
+                );
+              }
+
+              // Immediately store voice config if it exists in settings
+              if (settings.voiceId) {
+                sessionStorage.setItem(
+                  "activeVoiceConfig",
+                  JSON.stringify({
+                    voiceId: settings.voiceId,
+                    voiceName: settings.voiceName,
+                  })
+                );
+                console.log("Voice config stored immediately:", settings.voiceId);
+              }
+
+              // Clear avatarSettings after successful load (but keep voice config)
               localStorage.removeItem("avatarSettings");
             } catch (e) {
               console.error(
@@ -1409,6 +1473,16 @@
                     imageError
                   );
                   loadAlterImage(alter);
+                }
+
+                // Restore voice ID from session storage
+                if (alter.voiceId) {
+                  window.customVoiceId = alter.voiceId;
+                  window.customVoiceName = alter.voiceName;
+                  console.log(
+                    "Restored voice ID from session storage:",
+                    alter.voiceId
+                  );
                 }
               } catch (e) {
                 console.error(
@@ -1458,13 +1532,34 @@
                     name: alter.name,
                     knowledge: alter.knowledge || alter.category || "general",
                     documentContent: alter.documentContent || "",
+                    voiceId: alter.voiceId || alter.voice_id,
+                    voiceName: alter.voiceName || alter.voice_name,
                   };
 
+                  // Set global voice variables for streaming client
+                  if (window.selectedAlter.voiceId) {
+                    window.customVoiceId = window.selectedAlter.voiceId;
+                    window.customVoiceName = window.selectedAlter.voiceName;
+                    console.log(
+                      "Setting global custom voice ID from marketplace alter:",
+                      window.selectedAlter.voiceId
+                    );
+                  }
                   // Store in sessionStorage for persistence
                   sessionStorage.setItem(
                     "currentAlter",
                     JSON.stringify(window.selectedAlter)
                   );
+
+                  // Ensure voice ID is set globally after storing
+                  if (window.selectedAlter.voiceId) {
+                    window.customVoiceId = window.selectedAlter.voiceId;
+                    window.customVoiceName = window.selectedAlter.voiceName;
+                    console.log(
+                      "Voice ID preserved in session:",
+                      window.selectedAlter.voiceId
+                    );
+                  }
 
                   // Remove from localStorage after loading
                   localStorage.removeItem("selectedAlter");
@@ -1785,22 +1880,23 @@
               const settings = JSON.parse(avatarSettings);
               console.log("Loading custom alter settings:", settings);
 
-              // Create custom alter object with all properties
+              // Create custom alter object
               const customAlter = {
                 name: settings.name,
-                avatar: settings.avatar || "/placeholder.svg",
-                description:
-                  settings.description || `AI assistant named ${settings.name}`,
-                personality: settings.personality,
-                prompt: settings.prompt || settings.systemPrompt,
-                knowledge: settings.knowledge,
-                voiceId: settings.voiceId,
-                personalityTags: settings.personalityTags || [],
-                documentContent: settings.documentContent,
-                knowledgeBase: settings.knowledgeBase,
+                avatar: settings.avatar,
+                description: settings.description,
                 isCustom: true,
-                createdAt: settings.createdAt,
               };
+
+              // Store voice settings globally for video agent
+              if (customAlter.voiceId) {
+                window.customVoiceId = customAlter.voiceId;
+                window.customVoiceName = customAlter.voiceName;
+                console.log(
+                  "Setting global custom voice ID:",
+                  customAlter.voiceId
+                );
+              }
 
               // Clear any existing alter data
               localStorage.removeItem("lastPublishedAlter");
@@ -1882,6 +1978,6 @@
           }
         }
       </script>
-    </main>
+      
   </body>
 </html>

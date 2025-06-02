@@ -1,6 +1,6 @@
 import alterImageManager from "./alter-image-manager.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   console.log("chat-interface.js: DOMContentLoaded fired");
 
   const userInputField = document.getElementById("user-input-field");
@@ -68,17 +68,233 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // Check for selected alter from marketplace
+  // Check for selected alter from marketplace and avatar settings from customization
   const selectedAlter = localStorage.getItem("selectedAlter");
-  // Check for custom avatar settings from customize page
   const avatarSettings = localStorage.getItem("avatarSettings");
 
-  if (selectedAlter) {
+  if (avatarSettings) {
+    try {
+      const settings = JSON.parse(avatarSettings);
+      console.log("Loading custom avatar settings:", settings);
+
+      // Load additional data from Supabase if session ID exists
+      if (settings.sessionId) {
+        // Store session ID for voice lookup
+        sessionStorage.setItem("alterSessionId", settings.sessionId);
+
+        try {
+          const configModule = await import("./config.js");
+          const config = configModule.default;
+          const supabaseModule = await import(
+            "https://cdn.skypack.dev/@supabase/supabase-js@2"
+          );
+          const supabase = supabaseModule.createClient(
+            config.supabaseUrl,
+            config.supabaseKey
+          );
+
+          const { data, error } = await supabase
+            .from("alter_voices")
+            .select("*")
+            .eq("session_id", settings.sessionId)
+            .single();
+
+          if (!error && data) {
+            // Update settings with Supabase data including all properties
+            settings.voiceId = data.voice_id;
+            settings.voiceName = data.voice_name || "";
+            settings.name = data.name;
+            settings.personality = data.personality;
+            settings.prompt = data.prompt;
+            settings.knowledge = data.knowledge;
+            settings.documentContent = data.document_content || "";
+            settings.documentName = data.document_name || "";
+            console.log("Enhanced settings with Supabase data:", settings);
+
+            // Set global voice variables immediately
+            window.customVoiceId = data.voice_id;
+            window.customVoiceName = data.voice_name || "";
+            console.log("Set global voice ID from Supabase:", data.voice_id);
+
+            // Store complete alter properties globally for chat system
+            window.alterProperties = {
+              prompt: data.prompt,
+              personality: data.personality,
+              knowledge: data.knowledge,
+              documentContent: data.document_content || "",
+              type: "custom",
+            };
+          }
+        } catch (supabaseError) {
+          console.warn(
+            "Failed to load from Supabase, using localStorage:",
+            supabaseError
+          );
+          // Fallback to localStorage properties
+          window.alterProperties = {
+            prompt: settings.prompt || "",
+            personality: settings.personality || "",
+            knowledge: settings.knowledge || "",
+            documentContent: settings.documentContent || "",
+            type: "custom",
+            name: settings.name,
+          };
+        }
+      } else {
+        // No session ID, use localStorage properties
+        window.alterProperties = {
+          prompt: settings.prompt || "",
+          personality: settings.personality || "",
+          knowledge: settings.knowledge || "",
+          documentContent: settings.documentContent || "",
+          type: "custom",
+          name: settings.name,
+        };
+      }
+
+      // Clear any existing alter data
+      localStorage.removeItem("selectedAlter");
+      sessionStorage.removeItem("currentAlter");
+
+      // Set up the custom alter with all properties
+      window.selectedAlter = {
+        type: "custom",
+        name: settings.name,
+        prompt: window.alterProperties.prompt,
+        personality: window.alterProperties.personality,
+        knowledge: window.alterProperties.knowledge,
+        voiceId: settings.voiceId,
+        voiceName: settings.voiceName,
+        documentContent: window.alterProperties.documentContent,
+        // Only set image if avatarUrl exists
+        image: settings.avatarUrl || null,
+      };
+
+      // Update chat header
+      const chatHeader = document.querySelector(".chat-header h2");
+      if (chatHeader && settings.name) {
+        chatHeader.textContent = `Chat with ${settings.name}`;
+      }
+
+      // Load the alter image (will handle null/undefined gracefully)
+      loadAlterImage(window.selectedAlter);
+
+      // Store in sessionStorage for persistence
+      sessionStorage.setItem(
+        "currentAlter",
+        JSON.stringify(window.selectedAlter)
+      );
+
+      // Set voice configuration globally and in session
+      if (window.selectedAlter.voiceId) {
+        window.customVoiceId = window.selectedAlter.voiceId;
+        window.customVoiceName = window.selectedAlter.voiceName;
+
+        // Store in sessionStorage for persistence during the session
+        sessionStorage.setItem(
+          "activeVoiceConfig",
+          JSON.stringify({
+            voiceId: window.selectedAlter.voiceId,
+            voiceName: window.selectedAlter.voiceName,
+          })
+        );
+
+        console.log(
+          "Voice ID preserved in session:",
+          window.selectedAlter.voiceId
+        );
+      }
+
+      // Clear avatarSettings after successful load
+      localStorage.removeItem("avatarSettings");
+    } catch (e) {
+      console.error("Failed to parse avatarSettings from localStorage:", e);
+    }
+  } else if (selectedAlter) {
     try {
       const alter = JSON.parse(selectedAlter);
 
-      // Use the image manager to handle the alter image
-      alterImageManager.handleAlterImage(alter);
+      // For published alters, load properties from database
+      if (alter.type === "published" && alter.id) {
+        try {
+          const configModule = await import("./config.js");
+          const config = configModule.default;
+          const supabaseModule = await import(
+            "https://cdn.skypack.dev/@supabase/supabase-js@2"
+          );
+          const supabase = supabaseModule.createClient(
+            config.supabaseUrl,
+            config.supabaseKey
+          );
+
+          const { data, error } = await supabase
+            .from("published_alters")
+            .select("*")
+            .eq("id", alter.id)
+            .single();
+
+          if (!error && data) {
+            // Update alter with database properties
+            alter.prompt = data.prompt;
+            alter.personality = data.personality;
+            alter.knowledge = data.knowledge;
+            alter.voice_id = data.voice_id;
+            alter.voice_name = data.voice_name;
+            alter.document_content = data.document_content || "";
+            console.log(
+              "Loaded published alter properties from database:",
+              data
+            );
+
+            // Store alter properties globally for chat system
+            window.alterProperties = {
+              prompt: data.prompt,
+              personality: data.personality,
+              knowledge: data.knowledge,
+              documentContent: data.document_content || "",
+              type: "published",
+            };
+
+            // Set voice variables for published alters
+            if (data.voice_id) {
+              window.customVoiceId = data.voice_id;
+              window.customVoiceName = data.voice_name || "";
+              console.log("Set voice ID for published alter:", data.voice_id);
+            }
+          }
+        } catch (supabaseError) {
+          console.warn(
+            "Failed to load published alter properties:",
+            supabaseError
+          );
+          // Fallback to existing alter properties
+          window.alterProperties = {
+            prompt: alter.prompt || alter.system_prompt || "",
+            personality:
+              alter.personality || alter.personality_description || "",
+            knowledge: alter.knowledge || alter.category || "general",
+            documentContent: alter.documentContent || "",
+            type: alter.type || "premade",
+          };
+        }
+      } else {
+        // For non-published alters (premade), use existing properties
+        window.alterProperties = {
+          prompt: alter.prompt || alter.system_prompt || "",
+          personality: alter.personality || alter.personality_description || "",
+          knowledge: alter.knowledge || alter.category || "general",
+          documentContent: alter.documentContent || "",
+          type: alter.type || "premade",
+        };
+      }
+
+      // Use the image manager to handle the alter image with error handling
+      try {
+        alterImageManager.handleAlterImage(alter);
+      } catch (imageError) {
+        console.warn("Image manager failed, using fallback:", imageError);
+        loadAlterImage(alter);
+      }
 
       // Set chat header name if available
       const chatHeader = document.querySelector(".chat-header h2");
@@ -86,55 +302,58 @@ document.addEventListener("DOMContentLoaded", () => {
         chatHeader.textContent = `Chat with ${alter.name}`;
       }
 
-      // Store alter data for later use
-      window.selectedAlter = alter;
+      // Store alter data for later use with updated properties
+      window.selectedAlter = {
+        ...alter,
+        type: alter.type || "premade",
+        prompt: window.alterProperties.prompt,
+        personality: window.alterProperties.personality,
+        name: alter.name,
+        knowledge: window.alterProperties.knowledge,
+        documentContent: window.alterProperties.documentContent,
+        voiceId: alter.voiceId || alter.voice_id,
+        voiceName: alter.voiceName || alter.voice_name,
+      };
+
+      // Set global voice variables for streaming client
+      if (window.selectedAlter.voiceId) {
+        window.customVoiceId = window.selectedAlter.voiceId;
+        window.customVoiceName = window.customVoiceName;
+        console.log(
+          "Setting global custom voice ID from marketplace alter:",
+          window.selectedAlter.voiceId
+        );
+      }
+
+      // Debug log to verify properties are set
+      console.log("Final alter properties for chat:", {
+        prompt: window.alterProperties.prompt,
+        personality: window.alterProperties.personality,
+        knowledge: window.alterProperties.knowledge,
+        documentContent: window.alterProperties.documentContent,
+        type: window.alterProperties.type,
+      });
+
+      // Store in sessionStorage for persistence
+      sessionStorage.setItem(
+        "currentAlter",
+        JSON.stringify(window.selectedAlter)
+      );
+
+      // Ensure voice ID is set globally after storing
+      if (window.selectedAlter.voiceId) {
+        window.customVoiceId = window.selectedAlter.voiceId;
+        window.customVoiceName = window.selectedAlter.voiceName;
+        console.log(
+          "Voice ID preserved in session:",
+          window.selectedAlter.voiceId
+        );
+      }
 
       // Remove from localStorage after loading
       localStorage.removeItem("selectedAlter");
     } catch (e) {
       console.error("Failed to parse selectedAlter from localStorage:", e);
-    }
-  } else if (avatarSettings) {
-    try {
-      const settings = JSON.parse(avatarSettings);
-      console.log("Loading custom avatar settings:", settings);
-
-      // Create alter object from custom settings
-      const customAlter = {
-        name: settings.name,
-        personality: settings.personality,
-        prompt: settings.prompt,
-        knowledge: settings.knowledge,
-        voiceId: settings.voiceId,
-        voiceName: settings.voiceName,
-        documentName: settings.documentName,
-        documentUrl: settings.documentUrl,
-        documentContent: settings.documentContent,
-        type: "custom",
-      };
-
-      console.log("Custom alter voice ID:", customAlter.voiceId);
-
-      // Set chat header name
-      const chatHeader = document.querySelector(".chat-header h2");
-      if (chatHeader && customAlter.name) {
-        chatHeader.textContent = `Chat with ${customAlter.name}`;
-      }
-
-      // Store alter data for later use
-      window.selectedAlter = customAlter;
-
-      // Handle avatar image for custom alter
-      const avatarImage = document.getElementById("avatar-image");
-      if (avatarImage) {
-        avatarImage.src = "/placeholder.svg";
-        avatarImage.style.display = "block";
-      }
-
-      // Remove from localStorage after loading
-      localStorage.removeItem("avatarSettings");
-    } catch (e) {
-      console.error("Failed to parse avatarSettings from localStorage:", e);
     }
   }
 

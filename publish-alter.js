@@ -54,8 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // Get avatar settings from localStorage
-      const avatarSettings = JSON.parse(localStorage.getItem("avatarSettings") || "{}" );
-      const currentAlter = JSON.parse(sessionStorage.getItem("currentAlter") || "{}" );
+      const avatarSettings = JSON.parse(
+        localStorage.getItem("avatarSettings") || "{}"
+      );
+      const currentAlter = JSON.parse(
+        sessionStorage.getItem("currentAlter") || "{}"
+      );
 
       if (!avatarSettings && !currentAlter.name) {
         throw new Error(
@@ -69,26 +73,123 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("No avatar image found. Please upload an image first.");
       }
 
-      // Prepare alter data - prioritize current alter settings over avatarSettings
+      // Get properties from alter_voices table if available
+      let enhancedProperties = {};
+      try {
+        const alterSessionId = sessionStorage.getItem("alterSessionId");
+        if (alterSessionId) {
+          const configModule = await import("./config.js");
+          const config = configModule.default;
+          const supabaseModule = await import(
+            "https://cdn.skypack.dev/@supabase/supabase-js@2"
+          );
+          const supabase = supabaseModule.createClient(
+            config.supabaseUrl,
+            config.supabaseKey
+          );
+
+          const { data, error } = await supabase
+            .from("alter_voices")
+            .select("*")
+            .eq("session_id", alterSessionId)
+            .single();
+
+          if (!error && data) {
+            enhancedProperties = {
+              name: data.name,
+              personality: data.personality,
+              prompt: data.prompt,
+              knowledge: data.knowledge,
+              voiceId: data.voice_id,
+              voiceName: data.voice_name || "",
+              documentContent: data.document_content || "",
+              documentName: data.document_name || "",
+            };
+            console.log(
+              "Enhanced properties from alter_voices:",
+              enhancedProperties
+            );
+          } else {
+            console.warn(
+              "No data found in alter_voices for session:",
+              alterSessionId
+            );
+          }
+        } else {
+          console.warn("No alterSessionId found in sessionStorage");
+        }
+      } catch (error) {
+        console.error(
+          "Error loading enhanced properties from alter_voices:",
+          error
+        );
+      }
+
+      // Prepare alter data - prioritize enhanced properties, then current alter, then avatarSettings
       const alterData = {
-        name: currentAlter?.name || avatarSettings?.name || "Untitled Alter",
+        name:
+          enhancedProperties?.name ||
+          currentAlter?.name ||
+          avatarSettings?.name ||
+          "Untitled Alter",
         description: description,
         category: category,
         avatar_url: avatarImage.src,
-        personality: currentAlter?.personality || avatarSettings?.personality || "Friendly and helpful",
-        prompt: currentAlter?.prompt || avatarSettings?.prompt || "You are a helpful AI assistant.",
-        knowledge: currentAlter?.knowledge || avatarSettings?.knowledge || category.toLowerCase(),
-        voice_id: currentAlter?.voiceId || avatarSettings?.voiceId || "",
+        personality:
+          enhancedProperties?.personality ||
+          currentAlter?.personality ||
+          avatarSettings?.personality ||
+          "Friendly and helpful",
+        prompt:
+          enhancedProperties?.prompt ||
+          currentAlter?.prompt ||
+          avatarSettings?.prompt ||
+          "You are a helpful AI assistant.",
+        knowledge:
+          enhancedProperties?.knowledge ||
+          currentAlter?.knowledge ||
+          avatarSettings?.knowledge ||
+          category.toLowerCase(),
+        voice_id:
+          enhancedProperties?.voiceId ||
+          currentAlter?.voiceId ||
+          avatarSettings?.voiceId ||
+          window.customVoiceId ||
+          "",
+        voice_name:
+          enhancedProperties?.voiceName ||
+          currentAlter?.voiceName ||
+          avatarSettings?.voiceName ||
+          window.customVoiceName ||
+          "",
         is_public: true,
         type: currentAlter?.type || "custom",
-        documentContent: currentAlter?.documentContent || avatarSettings?.documentContent || ""
+        document_content:
+          enhancedProperties?.documentContent ||
+          currentAlter?.documentContent ||
+          avatarSettings?.documentContent ||
+          "",
       };
 
       // Validate required fields
-      if (!alterData.name || !alterData.description || !alterData.personality || 
-          !alterData.prompt || !alterData.knowledge || !alterData.category) {
-        throw new Error("Missing required fields. Please ensure all fields are filled out.");
+      if (
+        !alterData.name ||
+        !alterData.description ||
+        !alterData.personality ||
+        !alterData.prompt ||
+        !alterData.knowledge ||
+        !alterData.category
+      ) {
+        throw new Error(
+          "Missing required fields. Please ensure all fields are filled out."
+        );
       }
+
+      // Log voice settings for debugging
+      console.log("Voice settings:", {
+        voiceId: alterData.voice_id,
+        voiceName: alterData.voice_name,
+      });
 
       console.log("publish-alter.js: Publishing alter:", alterData);
 
@@ -111,11 +212,16 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("publish-alter.js: Alter published successfully:", result);
 
       // Store the published alter data in sessionStorage
-      sessionStorage.setItem("currentAlter", JSON.stringify({
-        ...alterData,
-        id: result.alter.id,
-        type: "published"
-      }));
+      sessionStorage.setItem(
+        "currentAlter",
+        JSON.stringify({
+          ...alterData,
+          id: result.alter.id,
+          type: "published",
+          voiceId: alterData.voice_id,
+          voiceName: alterData.voice_name,
+        })
+      );
 
       // Remove avatarSettings after successful publishing
       localStorage.removeItem("avatarSettings");

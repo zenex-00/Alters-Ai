@@ -1289,7 +1289,7 @@
                 let initializedAlter = { ...alter };
 
                 if (alter.type === "premade") {
-                  // Use hardcoded premade alter properties
+                  // Use hardcoded premade alter properties with their specific voices
                   const premadeAlters = {
                     1: {
                       name: "Doctor Emma",
@@ -1306,6 +1306,8 @@
                       price: 9.99,
                       voiceId: "21m00Tcm4TlvDq8ikWAM", // Rachel voice
                       voiceName: "Rachel",
+                      voice_id: "21m00Tcm4TlvDq8ikWAM",
+                      voice_name: "Rachel",
                       type: "premade",
                     },
                     2: {
@@ -1323,6 +1325,8 @@
                       price: 9.99,
                       voiceId: "29vD33N1CtxCmqQRPOHJ", // Drew voice
                       voiceName: "Drew",
+                      voice_id: "29vD33N1CtxCmqQRPOHJ",
+                      voice_name: "Drew",
                       type: "premade",
                     },
                     3: {
@@ -1340,6 +1344,8 @@
                       price: 9.99,
                       voiceId: "EXAVITQu4vr4xnSDxMaL", // Bella voice
                       voiceName: "Bella",
+                      voice_id: "EXAVITQu4vr4xnSDxMaL",
+                      voice_name: "Bella",
                       type: "premade",
                     },
                   };
@@ -1356,8 +1362,7 @@
                     };
                   }
                 } else if (alter.type === "published") {
-                  // For published alters, the data should already be complete from the marketplace
-                  // But ensure we have all required fields
+                  // For published alters, use the voice data from the database
                   initializedAlter = {
                     ...alter,
                     personality:
@@ -1371,10 +1376,27 @@
                     knowledge:
                       alter.knowledge || "General knowledge and assistance",
                     type: "published",
+                    // Ensure voice data is properly mapped
+                    voiceId: alter.voiceId || alter.voice_id,
+                    voiceName: alter.voiceName || alter.voice_name,
+                    voice_id: alter.voice_id || alter.voiceId,
+                    voice_name: alter.voice_name || alter.voiceName,
                   };
                 }
 
                 window.selectedAlter = initializedAlter;
+
+                // Set global voice ID for the streaming client
+                if (initializedAlter.voiceId || initializedAlter.voice_id) {
+                  window.customVoiceId =
+                    initializedAlter.voiceId || initializedAlter.voice_id;
+                  window.customVoiceName =
+                    initializedAlter.voiceName || initializedAlter.voice_name;
+                  console.log(
+                    "Set global voice ID for alter:",
+                    window.customVoiceId
+                  );
+                }
 
                 // Update chat header with alter name
                 if (chatHeader && initializedAlter.name) {
@@ -1397,7 +1419,8 @@
                 localStorage.removeItem("alterSelectedAlter");
 
                 console.log(
-                  "Successfully initialized alter:",
+                  "Successfully initialized alter with voice:",
+                  initializedAlter.voiceId || initializedAlter.voice_id,
                   initializedAlter
                 );
               } catch (error) {
@@ -1414,6 +1437,17 @@
                 try {
                   const alter = JSON.parse(currentAlter);
                   window.selectedAlter = alter;
+
+                  // Set global voice ID if available
+                  if (alter.voiceId || alter.voice_id) {
+                    window.customVoiceId = alter.voiceId || alter.voice_id;
+                    window.customVoiceName =
+                      alter.voiceName || alter.voice_name;
+                    console.log(
+                      "Restored voice ID from session:",
+                      window.customVoiceId
+                    );
+                  }
 
                   // Update chat header
                   if (chatHeader && alter.name) {

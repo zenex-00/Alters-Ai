@@ -20,10 +20,14 @@ class VideoAgent {
     const defaultAvatarUrl =
       "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
 
-    // Load custom avatar URL from localStorage or use default
+    // Load custom avatar URL and voice settings from localStorage or use default
     const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
     this.customAvatarUrl = settings.avatarUrl || defaultAvatarUrl;
     console.log("Loaded customAvatarUrl:", this.customAvatarUrl);
+
+    // Initialize voice settings from multiple sources
+    this.initializeVoiceSettings();
+    console.log("VideoAgent initialized with voice ID:", window.customVoiceId);
 
     // Set initial display state
     if (this.avatarImage) {
@@ -70,6 +74,130 @@ class VideoAgent {
         "Unable to initialize the application. Please refresh and try again.",
         "error"
       );
+    }
+  }
+
+  initializeVoiceSettings() {
+    let voiceId = null;
+    let voiceName = null;
+
+    // 1. Check avatarSettings first (highest priority - fresh from customize page)
+    const avatarSettings = localStorage.getItem("avatarSettings");
+    if (avatarSettings) {
+      try {
+        const settings = JSON.parse(avatarSettings);
+        if (settings.voiceId) {
+          voiceId = settings.voiceId;
+          voiceName = settings.voiceName || settings.voice_name;
+          console.log(
+            "Voice initialized from avatarSettings:",
+            voiceId,
+            voiceName
+          );
+        }
+      } catch (e) {
+        console.warn("Failed to parse avatarSettings:", e);
+      }
+    }
+
+    // 2. Check window.selectedAlter (set by chat.html)
+    if (!voiceId && window.selectedAlter?.voiceId) {
+      voiceId = window.selectedAlter.voiceId;
+      voiceName =
+        window.selectedAlter.voiceName || window.selectedAlter.voice_name;
+      console.log("Voice initialized from selectedAlter:", voiceId, voiceName);
+    }
+
+    // 3. Check current alter in session
+    if (!voiceId) {
+      const currentAlter = sessionStorage.getItem("currentAlter");
+      if (currentAlter) {
+        try {
+          const alter = JSON.parse(currentAlter);
+          if (alter.voiceId) {
+            voiceId = alter.voiceId;
+            voiceName = alter.voiceName || alter.voice_name;
+            console.log(
+              "Voice initialized from currentAlter:",
+              voiceId,
+              voiceName
+            );
+          }
+        } catch (e) {
+          console.warn("Failed to parse currentAlter:", e);
+        }
+      }
+    }
+
+    // 4. Check active voice config as fallback
+    if (!voiceId) {
+      const activeVoiceConfig = sessionStorage.getItem("activeVoiceConfig");
+      if (activeVoiceConfig) {
+        try {
+          const config = JSON.parse(activeVoiceConfig);
+          if (config.voiceId) {
+            voiceId = config.voiceId;
+            voiceName = config.voiceName || config.voice_name;
+            console.log(
+              "Voice initialized from activeVoiceConfig:",
+              voiceId,
+              voiceName
+            );
+          }
+        } catch (e) {
+          console.warn("Failed to parse activeVoiceConfig:", e);
+        }
+      }
+    }
+
+    // 5. Check localStorage for saved voice (like in your working files)
+    if (!voiceId) {
+      const savedVoice = localStorage.getItem("selectedVoice");
+      if (savedVoice) {
+        try {
+          const voice = JSON.parse(savedVoice);
+          if (voice.voiceId) {
+            voiceId = voice.voiceId;
+            voiceName = voice.voiceName || voice.voice_name;
+            console.log(
+              "Voice initialized from saved voice:",
+              voiceId,
+              voiceName
+            );
+          }
+        } catch (e) {
+          console.warn("Failed to parse saved voice:", e);
+        }
+      }
+    }
+
+    // Set and persist voice configuration
+    if (voiceId) {
+      window.customVoiceId = voiceId;
+      window.customVoiceName = voiceName;
+      console.log("Final voice configuration set:", voiceId, voiceName);
+
+      // Store in sessionStorage for persistence
+      sessionStorage.setItem(
+        "activeVoiceConfig",
+        JSON.stringify({
+          voiceId: voiceId,
+          voiceName: voiceName,
+        })
+      );
+
+      // Also store in localStorage for persistence across sessions
+      localStorage.setItem(
+        "selectedVoice",
+        JSON.stringify({
+          voiceId: voiceId,
+          voiceName: voiceName,
+        })
+      );
+    } else {
+      console.log("No custom voice found, using default");
+      window.customVoiceId = "21m00Tcm4TlvDq8ikWAM"; // Default female voice
+      window.customVoiceName = "Rachel";
     }
   }
 
@@ -310,13 +438,41 @@ class VideoAgent {
         throw new Error("Invalid audio URL: Must be an HTTPS URL");
       }
 
-      // Get the current alter's image URL
+      // Get the current alter's image URL - completely avoid readdy.ai URLs
       const selectedAlter = window.selectedAlter;
-      const avatarUrl =
-        selectedAlter?.image ||
-        selectedAlter?.avatar_url ||
-        this.customAvatarUrl ||
-        "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+      const avatarImageElement = document.getElementById("avatar-image");
+      let avatarUrl;
+
+      // Check if DOM has a Supabase URL
+      if (
+        avatarImageElement &&
+        avatarImageElement.src &&
+        avatarImageElement.src !== window.location.href &&
+        !avatarImageElement.src.includes("placeholder.svg") &&
+        avatarImageElement.src.includes("supabase")
+      ) {
+        avatarUrl = avatarImageElement.src;
+      } else if (selectedAlter) {
+        // Filter out readdy.ai URLs completely
+        const candidateUrls = [
+          selectedAlter.avatar_url,
+          selectedAlter.image,
+          this.customAvatarUrl,
+        ].filter((url) => url && !url.includes("readdy.ai"));
+
+        // Prioritize Supabase URLs
+        avatarUrl =
+          candidateUrls.find((url) => url.includes("supabase")) ||
+          candidateUrls[0];
+      }
+
+      // Final fallback - never use readdy.ai
+      if (!avatarUrl || avatarUrl.includes("readdy.ai")) {
+        avatarUrl =
+          this.customAvatarUrl && !this.customAvatarUrl.includes("readdy.ai")
+            ? this.customAvatarUrl
+            : "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+      }
 
       // Log the audio URL and avatar URL for debugging
       console.log("Audio URL:", audioUrl);
@@ -420,93 +576,283 @@ class VideoAgent {
     }
   }
 
-  async generateElevenLabsAudio(text) {
-    try {
-      const settings = JSON.parse(
-        localStorage.getItem("avatarSettings") || "{}"
-      );
-      const voiceId = settings.voiceId || "21m00Tcm4TlvDq8ikWAM";
-      console.log("Generating audio with voice ID:", voiceId, "text:", text);
+  async getVoiceConfig() {
+    // Determine which page we're on to use appropriate voice logic
+    const currentPath = window.location.pathname;
+    const isAlterChat = currentPath.includes("chat-alter");
 
-      const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
-        {
-          method: "POST",
-          headers: {
-            "xi-api-key": this.API_CONFIG.elevenlabs_key,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text: text,
-            model_id: "eleven_monolingual_v1",
-            voice_settings: {
-              stability: 0.3,
-              similarity_boost: 0.3,
-              style: 0.5,
-              use_speaker_boost: true,
-            },
-          }),
-          signal: new AbortController().signal,
+    if (isAlterChat) {
+      // For chat-alter.html: Use voice from alter data (published_alters or hardcoded premade)
+      console.log("Getting voice config for chat-alter page");
+
+      // Priority 1: Get voice from selected alter data
+      if (
+        window.selectedAlter &&
+        (window.selectedAlter.voiceId || window.selectedAlter.voice_id)
+      ) {
+        const voiceId =
+          window.selectedAlter.voiceId || window.selectedAlter.voice_id;
+        console.log("Using voice from selectedAlter:", voiceId);
+        return voiceId;
+      }
+
+      // Priority 2: Check session storage for alter data
+      const currentAlter = sessionStorage.getItem("alterCurrentAlter");
+      if (currentAlter) {
+        try {
+          const alter = JSON.parse(currentAlter);
+          if (alter.voiceId || alter.voice_id) {
+            const voiceId = alter.voiceId || alter.voice_id;
+            console.log("Using voice from alterCurrentAlter:", voiceId);
+            return voiceId;
+          }
+        } catch (e) {
+          console.warn("Failed to parse alterCurrentAlter:", e);
         }
-      );
+      }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error(
-          "Voice synthesis error:",
-          JSON.stringify(errorData, null, 2)
+      // Priority 3: Check regular currentAlter in session
+      const sessionAlter = sessionStorage.getItem("currentAlter");
+      if (sessionAlter) {
+        try {
+          const alter = JSON.parse(sessionAlter);
+          if (alter.voiceId || alter.voice_id) {
+            const voiceId = alter.voiceId || alter.voice_id;
+            console.log("Using voice from currentAlter:", voiceId);
+            return voiceId;
+          }
+        } catch (e) {
+          console.warn("Failed to parse currentAlter:", e);
+        }
+      }
+
+      // Default voice for alters if no voice specified
+      console.log("Using default voice for alter");
+      return "21m00Tcm4TlvDq8ikWAM"; // Default female voice
+    } else {
+      // For chat.html: Use voice from alter_voices table (custom alters)
+      console.log("Getting voice config for chat page (custom alters)");
+
+      // Priority 1: Check Supabase for saved voice first
+      try {
+        const config = (await import("./config.js")).default;
+        const { createClient: createSupabaseClient } = await import(
+          "https://cdn.skypack.dev/@supabase/supabase-js@2"
         );
-        throw new Error("Voice synthesis failed");
+        const supabase = createSupabaseClient(
+          config.supabaseUrl,
+          config.supabaseKey
+        );
+
+        // Try different ways to get session ID
+        let alterSessionId = sessionStorage.getItem("alterSessionId");
+
+        if (!alterSessionId) {
+          // Check avatar settings for session ID
+          const avatarSettings = localStorage.getItem("avatarSettings");
+          if (avatarSettings) {
+            try {
+              const settings = JSON.parse(avatarSettings);
+              alterSessionId = settings.sessionId;
+            } catch (e) {
+              console.warn("Failed to parse avatarSettings for sessionId:", e);
+            }
+          }
+        }
+
+        if (!alterSessionId) {
+          // Get the most recent entry for this user (fallback)
+          const { data, error } = await supabase
+            .from("alter_voices")
+            .select("voice_id, session_id")
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (!error && data && data.length > 0) {
+            console.log(
+              "Using most recent voice from Supabase:",
+              data[0].voice_id
+            );
+            window.customVoiceId = data[0].voice_id; // Cache for future use
+            sessionStorage.setItem("alterSessionId", data[0].session_id); // Store session ID
+            return data[0].voice_id;
+          }
+        } else {
+          // Use specific session ID
+          const { data, error } = await supabase
+            .from("alter_voices")
+            .select("voice_id")
+            .eq("session_id", alterSessionId)
+            .single();
+
+          if (!error && data?.voice_id) {
+            console.log(
+              "Using voice from Supabase by session ID:",
+              data.voice_id
+            );
+            window.customVoiceId = data.voice_id; // Cache for future use
+            return data.voice_id;
+          }
+        }
+      } catch (supabaseError) {
+        console.warn("Failed to fetch voice from Supabase:", supabaseError);
       }
 
-      const audioBlob = await response.blob();
-      console.log("Audio blob size:", audioBlob.size, "type:", audioBlob.type);
-
-      const audio = new Audio(URL.createObjectURL(audioBlob));
-      await new Promise((resolve) => {
-        audio.onloadedmetadata = resolve;
-        audio.onerror = () => resolve();
-      });
-      const duration = audio.duration || 0;
-      console.log("Audio duration:", duration, "seconds");
-      if (duration < 1 || duration > 90) {
-        throw new Error("Audio duration must be between 1 and 90 seconds");
+      // Priority 2: Global custom voice ID (set by chat interface)
+      if (window.customVoiceId) {
+        console.log("Using global custom voice ID:", window.customVoiceId);
+        return window.customVoiceId;
       }
 
-      const formData = new FormData();
-      const audioFile = new File([audioBlob], `audio-${Date.now()}.mp3`, {
-        type: "audio/mpeg",
-      });
-      formData.append("audio", audioFile);
-
-      console.log("Uploading audio to storage");
-      const uploadResponse = await fetch("/upload-audio", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error("Audio upload failed:", errorText);
-        throw new Error("Audio upload failed");
+      // Priority 3: Active voice config from session
+      const activeVoiceConfig = sessionStorage.getItem("activeVoiceConfig");
+      if (activeVoiceConfig) {
+        try {
+          const config = JSON.parse(activeVoiceConfig);
+          if (config.voiceId) {
+            console.log("Using voice from activeVoiceConfig:", config.voiceId);
+            return config.voiceId;
+          }
+        } catch (e) {
+          console.warn("Failed to parse activeVoiceConfig:", e);
+        }
       }
 
-      const { url } = await uploadResponse.json();
-      console.log("Audio uploaded successfully:", url);
-
-      if (!url.startsWith("https://")) {
-        throw new Error("Invalid audio URL: Must be an HTTPS URL");
+      // Priority 4: Avatar settings from localStorage
+      const avatarSettings = localStorage.getItem("avatarSettings");
+      if (avatarSettings) {
+        try {
+          const settings = JSON.parse(avatarSettings);
+          if (settings.voiceId) {
+            console.log("Using voice from avatarSettings:", settings.voiceId);
+            return settings.voiceId;
+          }
+        } catch (e) {
+          console.warn("Failed to parse avatarSettings:", e);
+        }
       }
 
-      return url;
-    } catch (error) {
-      console.error("Error generating audio:", error);
-      this.showToast(
-        "Unable to generate voice response. Please try again",
-        "error"
-      );
-      throw error;
+      // Priority 5: Saved voice from localStorage
+      const savedVoice = localStorage.getItem("selectedVoice");
+      if (savedVoice) {
+        try {
+          const voice = JSON.parse(savedVoice);
+          if (voice.voiceId) {
+            console.log("Using voice from saved voice:", voice.voiceId);
+            return voice.voiceId;
+          }
+        } catch (e) {
+          console.warn("Failed to parse saved voice:", e);
+        }
+      }
+
+      // Default voice if nothing else is available
+      console.log("Using default voice for custom alter");
+      return "21m00Tcm4TlvDq8ikWAM"; // Default female voice
     }
+  }
+
+  async generateElevenLabsAudio(text) {
+    const maxRetries = 2; // Reduced from 3 for faster failure
+    let attempt = 1;
+
+    while (attempt <= maxRetries) {
+      try {
+        let voiceId = await this.getVoiceConfig();
+        console.log(
+          "streaming-client-api.js: generateElevenLabsAudio: Using voice ID:",
+          voiceId
+        );
+
+        const response = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+          {
+            method: "POST",
+            headers: {
+              "xi-api-key": this.API_CONFIG.elevenlabs_key,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: text,
+              model_id: "eleven_monolingual_v1",
+              voice_settings: {
+                stability: 0.3,
+                similarity_boost: 0.3,
+                style: 0.5,
+                use_speaker_boost: true,
+              },
+            }),
+            signal: new AbortController().signal,
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error(
+            "Voice synthesis error:",
+            JSON.stringify(errorData, null, 2)
+          );
+          throw new Error("Voice synthesis failed");
+        }
+
+        const audioBlob = await response.blob();
+        console.log(
+          "Audio blob size:",
+          audioBlob.size,
+          "type:",
+          audioBlob.type
+        );
+
+        const audio = new Audio(URL.createObjectURL(audioBlob));
+        await new Promise((resolve) => {
+          audio.onloadedmetadata = resolve;
+          audio.onerror = () => resolve();
+        });
+        const duration = audio.duration || 0;
+        console.log("Audio duration:", duration, "seconds");
+        if (duration < 1 || duration > 90) {
+          throw new Error("Audio duration must be between 1 and 90 seconds");
+        }
+
+        const formData = new FormData();
+        const audioFile = new File([audioBlob], `audio-${Date.now()}.mp3`, {
+          type: "audio/mpeg",
+        });
+        formData.append("audio", audioFile);
+
+        console.log("Uploading audio to storage");
+        const uploadResponse = await fetch("/upload-audio", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error("Audio upload failed:", errorText);
+          throw new Error("Audio upload failed");
+        }
+
+        const { url } = await uploadResponse.json();
+        console.log("Audio uploaded successfully:", url);
+
+        if (!url.startsWith("https://")) {
+          throw new Error("Invalid audio URL: Must be an HTTPS URL");
+        }
+
+        return url;
+      } catch (error) {
+        console.error("Error generating audio:", error);
+        this.showToast(
+          "Unable to generate voice response. Please try again",
+          "error"
+        );
+        throw error;
+      } finally {
+        attempt++;
+      }
+    }
+
+    throw new Error("Failed to generate audio after multiple retries");
   }
 
   async handleDestroy() {
@@ -527,33 +873,55 @@ class VideoAgent {
   }
 
   async createStream() {
-    // Get the current alter's image URL with proper fallback chain
+    // Wait a moment for alter image manager to finish updating
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Get the current alter's image URL with proper fallback chain - COMPLETELY AVOID readdy.ai
     const selectedAlter = window.selectedAlter;
     let avatarUrl;
 
-    if (selectedAlter) {
-      // For premade or customized alters
-      if (
-        selectedAlter.type === "premade" ||
-        selectedAlter.type === "customized"
-      ) {
-        avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
+    // First, check if the avatar image element has a Supabase URL (updated by alter manager)
+    const avatarImageElement = document.getElementById("avatar-image");
+    if (
+      avatarImageElement &&
+      avatarImageElement.src &&
+      avatarImageElement.src !== window.location.href &&
+      !avatarImageElement.src.includes("placeholder.svg") &&
+      avatarImageElement.src.includes("supabase")
+    ) {
+      avatarUrl = avatarImageElement.src;
+      console.log("Using Supabase avatar image from DOM:", avatarUrl);
+    }
+    // If no Supabase URL in DOM, get from alter data but NEVER use readdy.ai
+    else if (selectedAlter) {
+      // For all alter types, prioritize Supabase URLs and avoid readdy.ai completely
+      const candidateUrls = [
+        selectedAlter.avatar_url,
+        selectedAlter.image,
+        this.customAvatarUrl,
+      ].filter((url) => url && !url.includes("readdy.ai"));
+
+      // Find the first Supabase URL
+      avatarUrl = candidateUrls.find((url) => url.includes("supabase"));
+
+      // If no Supabase URL, use any non-readdy.ai URL
+      if (!avatarUrl) {
+        avatarUrl = candidateUrls[0];
       }
-      // For new custom alters
-      else if (selectedAlter.type === "custom") {
-        avatarUrl = this.customAvatarUrl;
-      }
-      // Fallback for any other case
-      else {
-        avatarUrl =
-          selectedAlter.image ||
-          selectedAlter.avatar_url ||
-          this.customAvatarUrl;
-      }
+
+      console.log("Using filtered image URL (no readdy.ai):", avatarUrl);
     } else {
-      // If no selected alter, use custom avatar or default
+      // If no selected alter, use custom avatar or default (never readdy.ai)
       avatarUrl =
-        this.customAvatarUrl ||
+        this.customAvatarUrl && !this.customAvatarUrl.includes("readdy.ai")
+          ? this.customAvatarUrl
+          : "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
+    }
+
+    // Final safety check - if we still have a readdy.ai URL, use default instead
+    if (!avatarUrl || avatarUrl.includes("readdy.ai")) {
+      console.warn("Avoiding readdy.ai URL, using default avatar");
+      avatarUrl =
         "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
     }
 
@@ -869,6 +1237,34 @@ class VideoAgent {
     label.className = `${type}-${state}`;
   }
 
+  // Method to refresh stream with updated alter image
+  async refreshAlterStream(alterData) {
+    if (alterData) {
+      // Update the global selectedAlter with fresh data
+      window.selectedAlter = alterData;
+
+      // Force refresh the avatar image
+      const avatarUrl = alterData.avatar_url || alterData.image;
+      if (avatarUrl && this.avatarImage) {
+        this.avatarImage.src = avatarUrl;
+        console.log("Refreshed avatar image:", avatarUrl);
+      }
+
+      // Recreate the stream to use the updated image
+      try {
+        await this.handleDestroy();
+        await this.handleConnectWithRetry();
+        console.log("Stream refreshed with updated alter image");
+      } catch (error) {
+        console.error("Failed to refresh stream:", error);
+        this.showToast(
+          "Failed to update avatar. Please refresh the page.",
+          "error"
+        );
+      }
+    }
+  }
+
   showToast(message, type = "error") {
     // Create toast container if it doesn't exist
     let container = document.querySelector(".toast-container");
@@ -896,17 +1292,17 @@ class VideoAgent {
     toast.id = toastId;
 
     toast.innerHTML = `
-    <div class="toast-icon-wrapper">
-      <i class="fas ${icons[type] || icons.error} toast-icon"></i>
-    </div>
-    <div class="toast-content">
-      <div class="toast-message">${message}</div>
-    </div>
-    <button class="toast-close" onclick="this.parentElement.remove()">
-      <i class="fas fa-times"></i>
-    </button>
-    <div class="toast-progress"></div>
-  `;
+      <div class="toast-icon-wrapper">
+        <i class="fas ${icons[type] || icons.error} toast-icon"></i>
+      </div>
+      <div class="toast-content">
+        <div class="toast-message">${message}</div>
+      </div>
+      <button class="toast-close" onclick="this.parentElement.remove()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="toast-progress"></div>
+    `;
 
     container.appendChild(toast);
 
@@ -934,6 +1330,142 @@ class VideoAgent {
     }, 4000);
 
     console[type === "error" ? "error" : "log"](message);
+  }
+
+  async buildChatPrompt(message) {
+    let systemPrompt = "You are a helpful AI assistant.";
+    let alterName = "AI Assistant";
+    let alterDescription = "";
+    let personality = "";
+    let knowledge = "";
+    let documentContent = "";
+
+    // Check for alter properties from database or localStorage
+    if (window.alterProperties) {
+      console.log("Using alter properties for chat:", window.alterProperties);
+
+      // Use the alter's system prompt if available
+      if (window.alterProperties.prompt) {
+        systemPrompt = window.alterProperties.prompt;
+      }
+
+      personality = window.alterProperties.personality || "";
+      knowledge = window.alterProperties.knowledge || "";
+      documentContent = window.alterProperties.documentContent || "";
+    } else if (window.selectedAlter) {
+      console.log(
+        "Fallback to selectedAlter properties for chat:",
+        window.selectedAlter
+      );
+
+      // Get alter details
+      alterName = window.selectedAlter.name || "AI Assistant";
+      alterDescription = window.selectedAlter.description || "";
+
+      // Fallback to selectedAlter properties
+      if (window.selectedAlter.prompt || window.selectedAlter.system_prompt) {
+        systemPrompt =
+          window.selectedAlter.prompt || window.selectedAlter.system_prompt;
+      }
+
+      personality =
+        window.selectedAlter.personality ||
+        window.selectedAlter.personality_description ||
+        "";
+      knowledge = window.selectedAlter.knowledge || "";
+      documentContent = window.selectedAlter.documentContent || "";
+    } else {
+      console.warn(
+        "No alter properties or selectedAlter found for chat system"
+      );
+    }
+
+    // Get alter name from the selected alter
+    if (window.selectedAlter && window.selectedAlter.name) {
+      alterName = window.selectedAlter.name;
+    }
+
+    // Build comprehensive character prompt with strong identity enforcement
+    let characterPrompt = "";
+
+    // Start with role definition based on knowledge area and name
+    if (
+      knowledge === "medical" ||
+      systemPrompt.toLowerCase().includes("doctor") ||
+      alterName.toLowerCase().includes("doctor") ||
+      alterName.toLowerCase().includes("dr")
+    ) {
+      characterPrompt = `You are ${alterName}, a professional medical doctor and healthcare consultant.`;
+    } else if (knowledge === "legal") {
+      characterPrompt = `You are ${alterName}, a qualified legal professional and attorney.`;
+    } else if (knowledge === "finance") {
+      characterPrompt = `You are ${alterName}, a financial advisor and investment consultant.`;
+    } else if (knowledge === "technology") {
+      characterPrompt = `You are ${alterName}, a technology expert and programming specialist.`;
+    } else if (knowledge === "education") {
+      characterPrompt = `You are ${alterName}, an experienced educator and academic professional.`;
+    } else if (knowledge === "creative") {
+      characterPrompt = `You are ${alterName}, a creative professional specializing in writing and content creation.`;
+    } else {
+      // Use the system prompt or create identity from name
+      if (systemPrompt && !systemPrompt.includes("helpful AI assistant")) {
+        characterPrompt = systemPrompt;
+      } else {
+        characterPrompt = `You are ${alterName}, a knowledgeable professional in your field.`;
+      }
+    }
+
+    // Add description if available
+    if (alterDescription) {
+      characterPrompt += ` ${alterDescription}`;
+    }
+
+    // Add personality with strong behavioral instructions
+    if (personality) {
+      characterPrompt += `\n\nYour personality and approach: ${personality}`;
+      characterPrompt += `\nYou MUST always embody this personality in every response. Never break character.`;
+    }
+
+    // Add professional expertise context
+    if (knowledge) {
+      characterPrompt += `\n\nYour area of expertise and specialization: ${knowledge}`;
+      if (knowledge === "medical") {
+        characterPrompt += `\nAs a doctor, when someone asks about your name and job, introduce yourself as Dr. ${alterName} and explain your medical expertise and role as a healthcare professional.`;
+      } else if (knowledge === "legal") {
+        characterPrompt += `\nAs a legal professional, when asked about your identity, introduce yourself as ${alterName} and describe your legal expertise and role as an attorney.`;
+      } else {
+        characterPrompt += `\nWhen asked about your identity and role, clearly explain your profession and expertise in ${knowledge}.`;
+      }
+    }
+
+    // Add document content if available
+    if (documentContent) {
+      characterPrompt += `\n\nAdditional specialized knowledge: ${documentContent}`;
+    }
+
+    // Add strong behavioral and identity instructions
+    characterPrompt += `\n\n=== CRITICAL IDENTITY INSTRUCTIONS ===
+1. You are ${alterName} - NEVER refer to yourself as "AI assistant" or any generic term
+2. When asked "what is your name" or "who are you", respond with: "I am ${alterName}" followed by your professional role and expertise
+3. Always stay completely in character according to your defined role and personality
+4. Your responses must reflect your professional background and expertise
+5. NEVER break character or mention that you are an AI
+6. Embody your personality traits in every interaction
+7. Use your specialized knowledge to provide professional, expert-level responses
+8. Maintain consistency with your established identity throughout the entire conversation`;
+
+    // Add knowledge-specific identity reinforcement
+    if (knowledge === "medical") {
+      characterPrompt += `\n9. Always identify as a medical doctor when discussing your profession
+10. Provide medical insights and healthcare guidance as a qualified physician`;
+    } else if (knowledge === "legal") {
+      characterPrompt += `\n9. Always identify as a legal professional when discussing your profession
+10. Provide legal insights and guidance as a qualified attorney`;
+    }
+
+    console.log("Built enhanced character prompt:", characterPrompt);
+
+    return `${characterPrompt}\n\nUser: ${message}`;
   }
 }
 
