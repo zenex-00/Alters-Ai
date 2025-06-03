@@ -54,8 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // Get avatar settings from localStorage
-      const avatarSettings = JSON.parse(localStorage.getItem("avatarSettings") || "{}" );
-      const currentAlter = JSON.parse(sessionStorage.getItem("currentAlter") || "{}" );
+      const avatarSettings = JSON.parse(
+        localStorage.getItem("avatarSettings") || "{}"
+      );
+      const currentAlter = JSON.parse(
+        sessionStorage.getItem("currentAlter") || "{}"
+      );
 
       if (!avatarSettings && !currentAlter.name) {
         throw new Error(
@@ -75,19 +79,39 @@ document.addEventListener("DOMContentLoaded", () => {
         description: description,
         category: category,
         avatar_url: avatarImage.src,
-        personality: currentAlter?.personality || avatarSettings?.personality || "Friendly and helpful",
-        prompt: currentAlter?.prompt || avatarSettings?.prompt || "You are a helpful AI assistant.",
-        knowledge: currentAlter?.knowledge || avatarSettings?.knowledge || category.toLowerCase(),
+        personality:
+          currentAlter?.personality ||
+          avatarSettings?.personality ||
+          "Friendly and helpful",
+        prompt:
+          currentAlter?.prompt ||
+          avatarSettings?.prompt ||
+          "You are a helpful AI assistant.",
+        knowledge:
+          currentAlter?.knowledge ||
+          avatarSettings?.knowledge ||
+          category.toLowerCase(),
         voice_id: currentAlter?.voiceId || avatarSettings?.voiceId || "",
         is_public: true,
         type: currentAlter?.type || "custom",
-        documentContent: currentAlter?.documentContent || avatarSettings?.documentContent || ""
+        documentContent:
+          currentAlter?.documentContent ||
+          avatarSettings?.documentContent ||
+          "",
       };
 
       // Validate required fields
-      if (!alterData.name || !alterData.description || !alterData.personality || 
-          !alterData.prompt || !alterData.knowledge || !alterData.category) {
-        throw new Error("Missing required fields. Please ensure all fields are filled out.");
+      if (
+        !alterData.name ||
+        !alterData.description ||
+        !alterData.personality ||
+        !alterData.prompt ||
+        !alterData.knowledge ||
+        !alterData.category
+      ) {
+        throw new Error(
+          "Missing required fields. Please ensure all fields are filled out."
+        );
       }
 
       console.log("publish-alter.js: Publishing alter:", alterData);
@@ -111,11 +135,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("publish-alter.js: Alter published successfully:", result);
 
       // Store the published alter data in sessionStorage
-      sessionStorage.setItem("currentAlter", JSON.stringify({
-        ...alterData,
-        id: result.alter.id,
-        type: "published"
-      }));
+      sessionStorage.setItem(
+        "currentAlter",
+        JSON.stringify({
+          ...alterData,
+          id: result.alter.id,
+          type: "published",
+        })
+      );
 
       // Remove avatarSettings after successful publishing
       localStorage.removeItem("avatarSettings");

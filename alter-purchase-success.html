@@ -160,6 +160,12 @@
               }
               
               if (alter) {
+                // Ensure voice data is properly formatted
+                if (alter.voiceId || alter.voice_id) {
+                  alter.voiceId = alter.voiceId || alter.voice_id;
+                  alter.voiceName = alter.voiceName || alter.voice_name;
+                }
+                
                 // Store the alter data in localStorage for the chat page
                 localStorage.setItem('selectedAlter', JSON.stringify(alter));
                 // Redirect to chat page

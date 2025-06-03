@@ -2,10 +2,10 @@ export async function fetchOpenAIResponse(apiKey, userMessage) {
   try {
     // First check for selected alter data
     const selectedAlter = window.selectedAlter;
-    
+
     // Get settings from localStorage as fallback
     const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
-    
+
     // Use alter-specific data if available, otherwise fall back to settings
     const {
       name = settings.name || "Assistant",
@@ -42,7 +42,10 @@ export async function fetchOpenAIResponse(apiKey, userMessage) {
     if (documentContent && knowledge === "document") {
       messages.splice(1, 0, {
         role: "system",
-        content: `Consider this context when relevant: ${documentContent.slice(0, 2000)}`,
+        content: `Consider this context when relevant: ${documentContent.slice(
+          0,
+          2000
+        )}`,
       });
     }
 
