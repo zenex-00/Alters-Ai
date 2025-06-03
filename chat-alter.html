@@ -1274,6 +1274,35 @@
           let isRecording = false;
           let isSending = false;
 
+          // Function to ensure voice ID is properly stored
+          function ensureVoiceIdForAlter(alter) {
+            // If alter doesn't have voiceId (either format), try to get it from localStorage
+            if (!alter.voiceId && !alter.voice_id) {
+              const avatarSettings = JSON.parse(
+                localStorage.getItem("avatarSettings") || "{}"
+              );
+              if (avatarSettings.voiceId || avatarSettings.voice_id) {
+                alter.voiceId =
+                  avatarSettings.voiceId || avatarSettings.voice_id;
+                alter.voice_id =
+                  avatarSettings.voiceId || avatarSettings.voice_id;
+                alter.voiceName = avatarSettings.voiceName;
+                console.log(
+                  "Added missing voice ID to alter from avatarSettings:",
+                  alter.voiceId
+                );
+              }
+            }
+            // Ensure both formats are available for compatibility
+            if (alter.voice_id && !alter.voiceId) {
+              alter.voiceId = alter.voice_id;
+            }
+            if (alter.voiceId && !alter.voice_id) {
+              alter.voice_id = alter.voiceId;
+            }
+            return alter;
+          }
+
           // Function to initialize alter data
           function initializeAlter() {
             // Get alter data from localStorage (marketplace uses 'selectedAlter')
@@ -1374,6 +1403,9 @@
                   };
                 }
 
+                // Ensure voice ID is available for all alter types
+                initializedAlter = ensureVoiceIdForAlter(initializedAlter);
+
                 window.selectedAlter = initializedAlter;
 
                 // Update chat header with alter name
@@ -1413,7 +1445,9 @@
               if (currentAlter) {
                 try {
                   const alter = JSON.parse(currentAlter);
-                  window.selectedAlter = alter;
+                  // Ensure voice ID is available
+                  const enhancedAlter = ensureVoiceIdForAlter(alter);
+                  window.selectedAlter = enhancedAlter;
 
                   // Update chat header
                   if (chatHeader && alter.name) {

@@ -422,11 +422,52 @@ class VideoAgent {
 
   async generateElevenLabsAudio(text) {
     try {
-      const settings = JSON.parse(
-        localStorage.getItem("avatarSettings") || "{}"
+      // First try to get voice ID from the current alter
+      let voiceId = null;
+
+      // Check window.selectedAlter first
+      if (
+        window.selectedAlter &&
+        (window.selectedAlter.voiceId || window.selectedAlter.voice_id)
+      ) {
+        voiceId = window.selectedAlter.voiceId || window.selectedAlter.voice_id;
+        console.log("Voice ID from selectedAlter:", voiceId);
+      }
+      // Check sessionStorage for current alter
+      else {
+        const sessionAlter = JSON.parse(
+          sessionStorage.getItem("alterCurrentAlter") || "{}"
+        );
+        if (sessionAlter.voiceId || sessionAlter.voice_id) {
+          voiceId = sessionAlter.voiceId || sessionAlter.voice_id;
+          console.log(
+            "Voice ID from sessionStorage alterCurrentAlter:",
+            voiceId
+          );
+        }
+        // Check localStorage avatarSettings as fallback
+        else {
+          const settings = JSON.parse(
+            localStorage.getItem("avatarSettings") || "{}"
+          );
+          if (settings.voiceId || settings.voice_id) {
+            voiceId = settings.voiceId || settings.voice_id;
+            console.log("Voice ID from localStorage avatarSettings:", voiceId);
+          }
+        }
+      }
+
+      console.log("Retrieved voice ID:", voiceId || "undefined");
+
+      // Use default voice if no voice ID found
+      voiceId = voiceId || "21m00Tcm4TlvDq8ikWAM";
+
+      console.log(
+        "Final voice ID for audio generation:",
+        voiceId,
+        "text:",
+        text
       );
-      const voiceId = settings.voiceId || "21m00Tcm4TlvDq8ikWAM";
-      console.log("Generating audio with voice ID:", voiceId, "text:", text);
 
       const response = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
@@ -537,7 +578,7 @@ class VideoAgent {
         selectedAlter.type === "premade" ||
         selectedAlter.type === "customized"
       ) {
-        avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
+        avatarUrl = selectedAlter.avatar_url;
       }
       // For new custom alters
       else if (selectedAlter.type === "custom") {
@@ -545,10 +586,7 @@ class VideoAgent {
       }
       // Fallback for any other case
       else {
-        avatarUrl =
-          selectedAlter.image ||
-          selectedAlter.avatar_url ||
-          this.customAvatarUrl;
+        avatarUrl = selectedAlter.avatar_url || this.customAvatarUrl;
       }
     } else {
       // If no selected alter, use custom avatar or default

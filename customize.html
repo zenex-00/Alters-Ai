@@ -1348,7 +1348,7 @@
         async function previewVoice() {
           const voiceId = voiceSelect.value;
           if (!voiceId) {
-            showToast("Please select a voice to preview");
+            showToast("Please select a voice first");
             return;
           }
 
@@ -1416,6 +1416,24 @@
 
         // Load voices on page load
         await loadVoices();
+
+        // Handle voice selection change - save voice ID immediately
+        voiceSelect.addEventListener("change", () => {
+          const voiceId = voiceSelect.value;
+          if (voiceId) {
+            const settings = JSON.parse(
+              localStorage.getItem("avatarSettings") || "{}"
+            );
+            settings.voiceId = voiceId;
+            settings.voiceName =
+              voiceSelect.options[voiceSelect.selectedIndex].text;
+            localStorage.setItem("avatarSettings", JSON.stringify(settings));
+            console.log(
+              "Voice selection changed - saved voiceId:",
+              settings.voiceId
+            );
+          }
+        });
 
         // Handle preview voice button click
         previewVoiceButton.addEventListener("click", previewVoice);

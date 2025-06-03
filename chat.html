@@ -1353,6 +1353,7 @@
                 personality: settings.personality,
                 knowledge: settings.knowledge,
                 voiceId: settings.voiceId,
+                voiceName: settings.voiceName,
                 documentContent: settings.documentContent || "",
                 // Only set image if avatarUrl exists
                 image: settings.avatarUrl || null,
@@ -1457,6 +1458,8 @@
                       alter.personality || alter.personality_description,
                     name: alter.name,
                     knowledge: alter.knowledge || alter.category || "general",
+                    voiceId: alter.voiceId,
+                    voiceName: alter.voiceName,
                     documentContent: alter.documentContent || "",
                   };
 
