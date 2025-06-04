@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     {
       id: "2",
-      name: "Business Man",
+      name: "Alex",
       description: "Corporate Executive Assistant",
       price: 9.99,
       rating: 4.8,
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     {
       id: "3",
-      name: "Gym Guide",
+      name: "Brian",
       description: "Personal Fitness Trainer",
       price: 9.99,
       rating: 4.7,
@@ -103,8 +103,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       featured: false,
       type: "premade",
       link: "/marketplace/gym-guide-alter.html",
-      voiceId: "EXAVITQu4vr4xnSDxMaL",
-      voiceName: "Bella",
+      voiceId: "nPczCjzI2devNBz1zQrb",
+      voiceName: "Brian",
       personality:
         "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
       prompt:

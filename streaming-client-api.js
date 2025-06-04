@@ -11,6 +11,7 @@ class VideoAgent {
     this.customAvatarUrl = null;
     this.messageProcessing = new Set();
     this.isPlayingPromise = false;
+    this.currentConversationId = null;
 
     this.idleVideo = document.getElementById("idle-video");
     this.talkVideo = document.getElementById("talk-video");
@@ -40,6 +41,75 @@ class VideoAgent {
     this.init();
   }
 
+  async initializeConversation() {
+    try {
+      const selectedAlter = window.selectedAlter;
+      if (!selectedAlter) {
+        console.log("No alter selected, skipping conversation initialization");
+        return;
+      }
+
+      const alterId = selectedAlter.id || selectedAlter.alter_id || "default";
+      const alterType = selectedAlter.type || "custom";
+
+      // Get or create conversation
+      const convResponse = await fetch("/api/chat/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alterId, alterType }),
+      });
+
+      if (!convResponse.ok) {
+        console.error("Failed to create conversation");
+        return;
+      }
+
+      const convData = await convResponse.json();
+      this.currentConversationId = convData.conversationId;
+
+      // Load conversation history
+      await this.loadConversationHistory();
+    } catch (error) {
+      console.error("Error initializing conversation:", error);
+    }
+  }
+
+  async loadConversationHistory() {
+    try {
+      if (!this.currentConversationId) {
+        return;
+      }
+
+      const historyResponse = await fetch(
+        `/api/chat/history/${this.currentConversationId}`
+      );
+      if (!historyResponse.ok) {
+        console.error("Failed to load conversation history");
+        return;
+      }
+
+      const historyData = await historyResponse.json();
+      const messages = historyData.messages || [];
+
+      // Clear existing chat history
+      const chatHistory = document.getElementById("chat-history");
+      if (chatHistory) {
+        chatHistory.innerHTML = "";
+      }
+
+      // Add messages to chat history
+      messages.forEach((message) => {
+        this.addMessage(message.content, message.role === "user");
+      });
+
+      console.log(
+        `Loaded ${messages.length} messages from conversation history`
+      );
+    } catch (error) {
+      console.error("Error loading conversation history:", error);
+    }
+  }
+
   async init() {
     try {
       // Fetch API configuration from server
@@ -62,6 +132,9 @@ class VideoAgent {
 
       // Automatically start the server with retry
       await this.handleConnectWithRetry();
+
+      // Initialize conversation and load history
+      await this.initializeConversation();
 
       console.log("Initialized successfully");
     } catch (error) {
@@ -297,12 +370,54 @@ class VideoAgent {
       }
       inputContainer.classList.add("loading");
 
-      // Get AI response
-      const { fetchOpenAIResponse } = await import("./openai.js");
-      aiResponse = await fetchOpenAIResponse(
-        this.API_CONFIG.openai_key,
-        userMessage
-      );
+      // Get or create conversation
+      const selectedAlter = window.selectedAlter;
+      if (!selectedAlter) {
+        throw new Error("No alter selected");
+      }
+
+      const alterId = selectedAlter.id || selectedAlter.alter_id || "default";
+      const alterType = selectedAlter.type || "custom";
+
+      // Get conversation ID
+      let conversationId = this.currentConversationId;
+      if (!conversationId) {
+        const convResponse = await fetch("/api/chat/conversation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ alterId, alterType }),
+        });
+
+        if (!convResponse.ok) {
+          throw new Error("Failed to create conversation");
+        }
+
+        const convData = await convResponse.json();
+        conversationId = convData.conversationId;
+        this.currentConversationId = conversationId;
+      }
+
+      // Send message to API with history and enhanced context
+      const messageResponse = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          message: userMessage,
+          alterContext: {
+            ...selectedAlter,
+            useHistory: true,
+            maintainMemory: true,
+          },
+        }),
+      });
+
+      if (!messageResponse.ok) {
+        throw new Error("Failed to process message");
+      }
+
+      const messageData = await messageResponse.json();
+      aiResponse = messageData.response;
 
       // Generate audio
       const audioUrl = await this.generateElevenLabsAudio(aiResponse);
@@ -311,7 +426,6 @@ class VideoAgent {
       }
 
       // Get the current alter's image URL
-      const selectedAlter = window.selectedAlter;
       const avatarUrl =
         selectedAlter?.image ||
         selectedAlter?.avatar_url ||

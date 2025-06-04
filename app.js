@@ -1489,6 +1489,229 @@ app.get("/alter-purchase-success", async (req, res) => {
 
 // Note: chat-alter routes are now defined above in the main routes section
 
+// Get or create conversation for a user and alter
+app.post("/api/chat/conversation", async (req, res) => {
+  try {
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { alterId, alterType } = req.body;
+
+    // Get user's Supabase ID
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userError || !userData || userData.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+    const userId = userData[0].id;
+
+    // Check if conversation already exists
+    const { data: existingConv, error: convError } = await supabaseAdmin
+      .from("chat_conversations")
+      .select("id, title")
+      .eq("user_id", userId)
+      .eq("alter_id", alterId)
+      .eq("alter_type", alterType)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (convError) {
+      console.error("Error checking conversation:", convError);
+      return res.status(500).json({ error: "Failed to check conversation" });
+    }
+
+    let conversationId;
+    if (existingConv && existingConv.length > 0) {
+      conversationId = existingConv[0].id;
+    } else {
+      // Create new conversation
+      const { data: newConv, error: createError } = await supabaseAdmin
+        .from("chat_conversations")
+        .insert({
+          user_id: userId,
+          alter_id: alterId,
+          alter_type: alterType,
+          title: `Chat with ${alterId}`,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating conversation:", createError);
+        return res.status(500).json({ error: "Failed to create conversation" });
+      }
+      conversationId = newConv.id;
+    }
+
+    res.json({ conversationId });
+  } catch (error) {
+    console.error("Conversation error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get conversation history
+app.get("/api/chat/history/:conversationId", async (req, res) => {
+  try {
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { conversationId } = req.params;
+
+    // Get user's Supabase ID
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userError || !userData || userData.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+    const userId = userData[0].id;
+
+    // Verify conversation belongs to user
+    const { data: conversation, error: convError } = await supabaseAdmin
+      .from("chat_conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .single();
+
+    if (convError || !conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Get messages
+    const { data: messages, error: messagesError } = await supabaseAdmin
+      .from("chat_messages")
+      .select("role, content, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
+
+    if (messagesError) {
+      console.error("Error fetching messages:", messagesError);
+      return res.status(500).json({ error: "Failed to fetch messages" });
+    }
+
+    res.json({ messages: messages || [] });
+  } catch (error) {
+    console.error("History error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Process chat message with history
+app.post("/api/chat/message", async (req, res) => {
+  try {
+    const firebaseUid = req.session.userId;
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { conversationId, message, alterContext } = req.body;
+
+    // Get user's Supabase ID
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userError || !userData || userData.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+    const userId = userData[0].id;
+
+    // Verify conversation belongs to user
+    const { data: conversation, error: convError } = await supabaseAdmin
+      .from("chat_conversations")
+      .select("*")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .single();
+
+    if (convError || !conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Get recent message history (last 20 messages for better context)
+    const { data: recentMessages, error: historyError } = await supabaseAdmin
+      .from("chat_messages")
+      .select("role, content, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (historyError) {
+      console.error("Error fetching history:", historyError);
+      return res.status(500).json({ error: "Failed to fetch history" });
+    }
+
+    // Reverse to get chronological order and format for better context
+    const messageHistory = (recentMessages || []).reverse().map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+
+    // Save user message
+    const { error: saveUserError } = await supabaseAdmin
+      .from("chat_messages")
+      .insert({
+        conversation_id: conversationId,
+        role: "user",
+        content: message,
+      });
+
+    if (saveUserError) {
+      console.error("Error saving user message:", saveUserError);
+      return res.status(500).json({ error: "Failed to save message" });
+    }
+
+    // Generate AI response using OpenAI with history
+    const { fetchOpenAIResponseWithHistory } = await import("./openai.js");
+    const response = await fetchOpenAIResponseWithHistory(
+      process.env.OPEN_AI_API_KEY,
+      message,
+      messageHistory,
+      alterContext
+    );
+
+    // Save AI response
+    const { error: saveAIError } = await supabaseAdmin
+      .from("chat_messages")
+      .insert({
+        conversation_id: conversationId,
+        role: "assistant",
+        content: response,
+      });
+
+    if (saveAIError) {
+      console.error("Error saving AI message:", saveAIError);
+      return res.status(500).json({ error: "Failed to save AI response" });
+    }
+
+    // Update conversation timestamp
+    await supabaseAdmin
+      .from("chat_conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", conversationId);
+
+    res.json({ response });
+  } catch (error) {
+    console.error("Chat processing error:", error);
+    res.status(500).json({ error: "Failed to process chat message" });
+  }
+});
+
 app.post("/chat", async (req, res) => {
   try {
     const { message, history, alterContext } = req.body;
