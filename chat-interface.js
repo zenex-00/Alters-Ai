@@ -78,7 +78,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const alter = JSON.parse(selectedAlter);
 
       // Use the image manager to handle the alter image
-      alterImageManager.handleAlterImage(alter);
+      const avatarUrl = alterImageManager.handleAlterImage(alter);
+
+      // Ensure the alter has a valid image URL for video agent
+      if (!alter.image && avatarUrl) {
+        alter.image = avatarUrl;
+      } else if (!alter.image) {
+        alter.image = "/placeholder.svg";
+      }
 
       // Set chat header name if available
       const chatHeader = document.querySelector(".chat-header h2");

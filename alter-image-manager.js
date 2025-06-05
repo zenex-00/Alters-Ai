@@ -269,6 +269,16 @@ class AlterImageManager {
     });
   }
 
+  isValidImageUrl(url) {
+    if (!url || url === "undefined" || url === "null") return false;
+    try {
+      new URL(url);
+      return url.startsWith("http") || url.startsWith("/");
+    } catch {
+      return false;
+    }
+  }
+
   setImage(element, url) {
     if (!url) {
       console.warn("No image URL provided");
@@ -379,8 +389,17 @@ class AlterImageManager {
     }
   }
 
-  // Method to handle both premade and published alters
-  async handleAlterImage(alter) {
+  handleAlterImage(alter) {
+    console.log("Handling alter image for:", alter);
+
+    // Check if we have a persisted image first
+    const persistedImage = this.getPersistedImage(alter.id || alter.name);
+    if (persistedImage && this.isValidImageUrl(persistedImage)) {
+      console.log("Using persistent image for alter:", persistedImage);
+      this.setAvatarImage(persistedImage);
+      return persistedImage;
+    }
+
     // Ensure we have a type
     if (!alter.type) {
       alter.type = "custom"; // Default to custom if not specified
@@ -434,6 +453,18 @@ class AlterImageManager {
 
     // Set the alter data
     this.setAlterData(alter);
+  }
+
+  setAvatarImage(imageUrl) {
+    console.log("Setting image:", imageUrl);
+    const avatarImage = document.getElementById("avatar-image");
+    if (avatarImage && imageUrl && this.isValidImageUrl(imageUrl)) {
+      avatarImage.src = imageUrl;
+      avatarImage.style.display = "block";
+    } else if (avatarImage) {
+      avatarImage.src = "/placeholder.svg";
+      avatarImage.style.display = "block";
+    }
   }
 }
 
