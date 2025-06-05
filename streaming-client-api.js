@@ -19,7 +19,7 @@ class VideoAgent {
 
     // Set default avatar URL
     const defaultAvatarUrl =
-      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+      "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
 
     // Load custom avatar URL from localStorage or use default
     const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
@@ -430,7 +430,7 @@ class VideoAgent {
         selectedAlter?.image ||
         selectedAlter?.avatar_url ||
         this.customAvatarUrl ||
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+        "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
 
       // Log the audio URL and avatar URL for debugging
       console.log("Audio URL:", audioUrl);
@@ -706,7 +706,7 @@ class VideoAgent {
       // If no selected alter, use custom avatar or default
       avatarUrl =
         this.customAvatarUrl ||
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+        "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
     }
 
     console.log(
@@ -972,7 +972,7 @@ class VideoAgent {
         // If no selected alter, use custom avatar or default
         avatarUrl =
           this.customAvatarUrl ||
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+          "https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg";
       }
 
       if (avatarUrl) {
