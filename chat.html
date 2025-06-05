@@ -754,6 +754,212 @@
         }
       }
 
+      /* Success Notification Styles */
+      .success-notification {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(10px);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      .success-notification.show {
+        display: flex;
+      }
+
+      .success-content {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        border: 2px solid rgba(255, 138, 43, 0.3);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5),
+          0 0 100px rgba(255, 138, 43, 0.2);
+        position: relative;
+        overflow: hidden;
+        animation: slideInScale 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+
+      .success-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          45deg,
+          rgba(255, 138, 43, 0.1) 0%,
+          transparent 50%,
+          rgba(255, 138, 43, 0.1) 100%
+        );
+        animation: shimmer 2s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      .success-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        animation: bounceIn 0.8s ease-out 0.3s both;
+      }
+
+      .success-icon i {
+        font-size: 2.5rem;
+        color: white;
+        animation: checkmark 0.6s ease-out 0.8s both;
+      }
+
+      .success-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ff8a2b, #ffffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: fadeInUp 0.6s ease-out 0.4s both;
+      }
+
+      .success-message {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 2rem;
+        line-height: 1.6;
+        animation: fadeInUp 0.6s ease-out 0.5s both;
+      }
+
+      .success-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        animation: fadeInUp 0.6s ease-out 0.6s both;
+      }
+
+      .marketplace-button {
+        background: linear-gradient(135deg, #ff8a2b, #ff6b35);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 8px 25px rgba(255, 138, 43, 0.4);
+        text-decoration: none;
+        min-width: 180px;
+        justify-content: center;
+      }
+
+      .marketplace-button:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(255, 138, 43, 0.6);
+        background: linear-gradient(135deg, #ff6b35, #ff8a2b);
+      }
+
+      .close-success-button {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 120px;
+      }
+
+      .close-success-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: translateY(-2px);
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideInScale {
+        0% {
+          transform: translateY(-50px) scale(0.8);
+          opacity: 0;
+        }
+        100% {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes checkmark {
+        0% {
+          transform: scale(0) rotate(45deg);
+        }
+        100% {
+          transform: scale(1) rotate(0deg);
+        }
+      }
+
+      @keyframes fadeInUp {
+        0% {
+          transform: translateY(30px);
+          opacity: 0;
+        }
+        100% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
       /* Responsive Design */
       @media (max-width: 768px) {
         .nav-container {
@@ -803,10 +1009,30 @@
         .chat-section {
           height: 400px;
         }
+
+        .success-content {
+          padding: 2rem 1.5rem;
+          margin: 1rem;
+        }
+
+        .success-title {
+          font-size: 1.5rem;
+        }
+
+        .success-actions {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .marketplace-button,
+        .close-success-button {
+          width: 100%;
+          max-width: 250px;
+        }
       }
 
       /* Success/Error Messages */
-      .success-message {
+      .success-message-old {
         background: rgba(34, 197, 94, 0.1);
         border: 1px solid rgba(34, 197, 94, 0.3);
         color: #22c55e;
@@ -1086,11 +1312,26 @@
         .toast:hover {
           transform: none;
         }
+
+        .success-notification,
+        .success-content,
+        .success-icon,
+        .success-title,
+        .success-message,
+        .success-actions {
+          animation: none;
+        }
       }
 
       /* Focus styles for accessibility */
       .toast-close:focus {
         outline: 2px solid rgba(255, 255, 255, 0.5);
+        outline-offset: 2px;
+      }
+
+      .marketplace-button:focus,
+      .close-success-button:focus {
+        outline: 2px solid rgba(255, 138, 43, 0.5);
         outline-offset: 2px;
       }
     </style>
@@ -1133,7 +1374,7 @@
               <div id="video-container">
                 <video
                   id="idle-video"
-                  src="https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg"
+                  src="https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg"
                   autoplay
                   muted
                   loop
@@ -1148,7 +1389,7 @@
                 ></video>
                 <img
                   id="avatar-image"
-                  src="https://raw.githubusercontent.com/jjmlovesgit/D-id_Streaming_Chatgpt/main/oracle_pic.jpg"
+                  src="https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg"
                   alt="Custom Avatar"
                   style="
                     display: block;
@@ -1260,6 +1501,32 @@
           <div class="modal-actions">
             <button id="confirm-publish">Publish to Marketplace</button>
             <button id="cancel-publish">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Notification -->
+      <div id="success-notification" class="success-notification">
+        <div class="success-content">
+          <div class="success-icon">
+            <i class="fas fa-check"></i>
+          </div>
+          <h2 class="success-title">Alter Published Successfully!</h2>
+          <p class="success-message">
+            Your AI alter has been published to the marketplace and is now
+            available for others to discover and interact with.
+          </p>
+          <div class="success-actions">
+            <a href="/marketplace" class="marketplace-button">
+              <i class="fas fa-store"></i>
+              Go to Marketplace
+            </a>
+            <button
+              class="close-success-button"
+              onclick="hideSuccessNotification()"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -1773,14 +2040,219 @@
         // Make showToast available globally
         window.showToast = showToast;
       </script>
-      <script type="module" src="./publish-alter.js"></script>
-      <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/v4-shims.min.js"
-        integrity="sha512-Ny27nj/CA4kOUa/2b2bhjr8YiJ+OfttH2314Wg8drWh4z9JqGO1PVEqPvo/fM+PjN5UEY4gFxo+ADkhXoGiaSg=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"
-      ></script>
       <script>
+        // Success notification functions
+        function showSuccessNotification() {
+          const notification = document.getElementById("success-notification");
+          notification.classList.add("show");
+
+          // Add event listener to close on background click
+          notification.addEventListener("click", (e) => {
+            if (e.target === notification) {
+              hideSuccessNotification();
+            }
+          });
+        }
+
+        function hideSuccessNotification() {
+          const notification = document.getElementById("success-notification");
+          notification.classList.remove("show");
+        }
+
+        // Make functions globally available
+        window.showSuccessNotification = showSuccessNotification;
+        window.hideSuccessNotification = hideSuccessNotification;
+
+        // Publish alter functionality
+        document.addEventListener("DOMContentLoaded", () => {
+          console.log("publish-alter.js: Script loaded");
+
+          // Select elements
+          const publishButton = document.getElementById("publish-button");
+          const publishModal = document.getElementById("publish-modal");
+          const closeModal = publishModal.querySelector(".close-modal");
+          const cancelPublish = document.getElementById("cancel-publish");
+          const confirmPublish = document.getElementById("confirm-publish");
+          const categorySelect = document.getElementById("alter-category");
+          const descriptionInput = document.getElementById("alter-description");
+
+          // Verify critical elements exist
+          if (!publishButton) {
+            console.error("publish-alter.js: #publish-button not found in DOM");
+            return;
+          }
+          if (!publishModal) {
+            console.error("publish-alter.js: #publish-modal not found in DOM");
+            return;
+          }
+
+          // Show modal
+          publishButton.addEventListener("click", () => {
+            console.log("publish-alter.js: Publish button clicked");
+            publishModal.style.display = "block";
+          });
+
+          // Hide modal
+          const hideModal = () => {
+            console.log("publish-alter.js: Hiding modal");
+            publishModal.style.display = "none";
+            resetForm();
+          };
+
+          closeModal.addEventListener("click", hideModal);
+          cancelPublish.addEventListener("click", hideModal);
+
+          // Reset form
+          function resetForm() {
+            categorySelect.value = "Professional";
+            descriptionInput.value = "";
+          }
+
+          // Handle publish
+          confirmPublish.addEventListener("click", async () => {
+            const category = categorySelect.value;
+            const description = descriptionInput.value.trim();
+
+            if (!description) {
+              showError("Please provide a description for your alter.");
+              return;
+            }
+
+            try {
+              // Get avatar settings from localStorage
+              const avatarSettings = JSON.parse(
+                localStorage.getItem("avatarSettings") || "{}"
+              );
+              const currentAlter = JSON.parse(
+                sessionStorage.getItem("currentAlter") || "{}"
+              );
+
+              if (!avatarSettings && !currentAlter.name) {
+                throw new Error(
+                  "No alter settings found. Please customize your alter first."
+                );
+              }
+
+              // Get avatar image from the video container
+              const avatarImage = document.getElementById("avatar-image");
+              if (!avatarImage || !avatarImage.src) {
+                throw new Error(
+                  "No avatar image found. Please upload an image first."
+                );
+              }
+
+              // Prepare alter data - prioritize current alter settings over avatarSettings
+              const alterData = {
+                name:
+                  currentAlter?.name ||
+                  avatarSettings?.name ||
+                  "Untitled Alter",
+                description: description,
+                category: category,
+                avatar_url: avatarImage.src,
+                personality:
+                  currentAlter?.personality ||
+                  avatarSettings?.personality ||
+                  "Friendly and helpful",
+                prompt:
+                  currentAlter?.prompt ||
+                  avatarSettings?.prompt ||
+                  "You are a helpful AI assistant.",
+                knowledge:
+                  currentAlter?.knowledge ||
+                  avatarSettings?.knowledge ||
+                  category.toLowerCase(),
+                voice_id:
+                  currentAlter?.voiceId || avatarSettings?.voiceId || "",
+                is_public: true,
+                type: currentAlter?.type || "custom",
+                documentContent:
+                  currentAlter?.documentContent ||
+                  avatarSettings?.documentContent ||
+                  "",
+              };
+
+              // Validate required fields
+              if (
+                !alterData.name ||
+                !alterData.description ||
+                !alterData.personality ||
+                !alterData.prompt ||
+                !alterData.knowledge ||
+                !alterData.category
+              ) {
+                throw new Error(
+                  "Missing required fields. Please ensure all fields are filled out."
+                );
+              }
+
+              console.log("publish-alter.js: Publishing alter:", alterData);
+
+              const response = await fetch("/api/publish-alter", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(alterData),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                  errorData.error ||
+                    `Failed to publish alter: ${response.statusText}`
+                );
+              }
+
+              const result = await response.json();
+              console.log(
+                "publish-alter.js: Alter published successfully:",
+                result
+              );
+
+              // Store the published alter data in sessionStorage
+              sessionStorage.setItem(
+                "currentAlter",
+                JSON.stringify({
+                  ...alterData,
+                  id: result.alter.id,
+                  type: "published",
+                })
+              );
+
+              // Remove avatarSettings after successful publishing
+              localStorage.removeItem("avatarSettings");
+
+              // Hide the publish modal first
+              hideModal();
+
+              // Show the new success notification
+              showSuccessNotification();
+            } catch (error) {
+              console.error("publish-alter.js: Error publishing alter:", error);
+              showError(error.message);
+            }
+          });
+
+          // Show error message
+          function showError(message) {
+            const errorDiv = document.createElement("div");
+            errorDiv.className = "error-message";
+            errorDiv.style.color = "red";
+            errorDiv.style.marginTop = "10px";
+            errorDiv.textContent = message;
+            publishModal.querySelector(".modal-content").appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+          }
+
+          // Close modal when clicking outside
+          window.addEventListener("click", (event) => {
+            if (event.target === publishModal) {
+              hideModal();
+            }
+          });
+        });
+
         document.addEventListener("DOMContentLoaded", () => {
           // Check for custom alter settings in localStorage
           const avatarSettings = localStorage.getItem("avatarSettings");
@@ -1886,6 +2358,12 @@
           }
         }
       </script>
+      <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/v4-shims.min.js"
+        integrity="sha512-Ny27nj/CA4kOUa/2b2bhjr8YiJ+OfttH2314Wg8drWh4z9JqGO1PVEqPvo/fM+PjN5UEY4gFxo+ADkhXoGiaSg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+      ></script>
     </main>
   </body>
 </html>

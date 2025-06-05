@@ -1165,13 +1165,18 @@
 
             <div id="chat-history">
               <!-- Messages will be added here dynamically -->
-              <div class="message assistant-message">
+              <div class="message assistant-message" id="initial-message">
                 <div class="message-content">
                   Hello! I'm your AI alter. Feel free to ask me anything or
                   start a conversation.
                 </div>
                 <div class="timestamp">12:30</div>
               </div>
+              <div
+                class="message assistant-message"
+                id="placeholder-message"
+                style="opacity: 0.6"
+              ></div>
             </div>
 
             <div id="input-container">

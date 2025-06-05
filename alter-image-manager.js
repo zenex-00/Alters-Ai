@@ -160,11 +160,17 @@ class AlterImageManager {
     }
 
     // If all sources fail, use placeholder
-    this.setImage(avatarImage, "/placeholder.svg");
+    this.setImage(
+      avatarImage,
+      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg"
+    );
   }
 
   getImageSources() {
-    if (!this.alterData) return ["/placeholder.svg"];
+    if (!this.alterData)
+      return [
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
+      ];
 
     // For published alters
     if (this.alterData.type === "published") {
@@ -172,12 +178,18 @@ class AlterImageManager {
         this.getAlterImageKey(this.alterData.id, "published")
       );
       if (persistentImage) {
-        return [persistentImage, "/placeholder.svg"];
+        return [
+          persistentImage,
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
+        ];
       }
 
       const supabaseUrl = this.alterData.avatar_url || this.alterData.image;
       if (supabaseUrl && supabaseUrl.includes("supabase")) {
-        return [supabaseUrl, "/placeholder.svg"];
+        return [
+          supabaseUrl,
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
+        ];
       }
     }
 
@@ -187,7 +199,10 @@ class AlterImageManager {
         this.getAlterImageKey(this.alterData.id, "premade")
       );
       if (persistentImage) {
-        return [persistentImage, "/placeholder.svg"];
+        return [
+          persistentImage,
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
+        ];
       }
     }
 
@@ -197,7 +212,10 @@ class AlterImageManager {
         this.getAlterImageKey(this.alterData.id, "custom")
       );
       if (persistentImage) {
-        return [persistentImage, "/placeholder.svg"];
+        return [
+          persistentImage,
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
+        ];
       }
     }
 
@@ -208,7 +226,7 @@ class AlterImageManager {
       this.alterData.avatarUrl,
       this.alterData.profile_image,
       this.alterData.profileImage,
-      "/placeholder.svg",
+      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
     ].filter(Boolean);
   }
 
@@ -218,6 +236,8 @@ class AlterImageManager {
     // Skip verification for Supabase URLs and persistent images
     if (
       url.includes("supabase") ||
+      url ===
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg" ||
       (this.alterData &&
         this.alterData.id &&
         url ===
@@ -252,7 +272,8 @@ class AlterImageManager {
   setImage(element, url) {
     if (!url) {
       console.warn("No image URL provided");
-      url = "/placeholder.svg";
+      url =
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
     }
 
     // Store the URL before setting it
@@ -267,7 +288,11 @@ class AlterImageManager {
 
     // For published alters, store the image URL persistently for this specific alter
     if (this.alterData && this.alterData.id) {
-      if (imageUrl.includes("supabase") || imageUrl !== "/placeholder.svg") {
+      if (
+        imageUrl.includes("supabase") ||
+        imageUrl !==
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg"
+      ) {
         localStorage.setItem(
           this.getAlterImageKey(this.alterData.id, this.alterData.type),
           imageUrl
