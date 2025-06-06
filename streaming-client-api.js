@@ -1,1746 +1,1098 @@
-require("dotenv").config();
-const express = require("express");
-const http = require("http");
-const fs = require("fs");
-const fsPromises = require("fs").promises;
-const path = require("path");
-const multer = require("multer");
-const pdfParse = require("pdf-parse");
-const { createClient } = require("@supabase/supabase-js");
-const session = require("express-session");
-const Stripe = require("stripe");
-const admin = require("firebase-admin");
-const getRawBody = require("raw-body");
-const { isCreator, hasPurchasedAlter } = require("./middleware");
-const crypto = require("crypto");
+class VideoAgent {
+  constructor() {
+    this.peerConnection = null;
+    this.streamId = null;
+    this.sessionId = null;
+    this.statsIntervalId = null;
+    this.API_CONFIG = null;
+    this.DID_API_URL = "https://api.d-id.com";
+    this.lastBytesReceived = 0;
+    this.videoIsPlaying = false;
+    this.customAvatarUrl = null;
+    this.messageProcessing = new Set();
+    this.isPlayingPromise = false;
+    this.currentConversationId = null;
 
-// Initialize Firebase Admin with service account
-const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT);
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+    this.idleVideo = document.getElementById("idle-video");
+    this.talkVideo = document.getElementById("talk-video");
+    this.avatarImage = document.getElementById("avatar-image");
 
-// Initialize Supabase clients
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+    // Set default avatar URL
+    const defaultAvatarUrl =
+      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+    // Load custom avatar URL from localStorage or use default
+    const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
+    this.customAvatarUrl = settings.avatarUrl || defaultAvatarUrl;
+    console.log("Loaded customAvatarUrl:", this.customAvatarUrl);
 
-// Create a Supabase session store
-class SupabaseSessionStore extends session.Store {
-  constructor(supabase) {
-    super();
-    this.supabase = supabase;
-  }
-
-  async get(sid, callback) {
-    try {
-      const { data, error } = await this.supabase
-        .from("sessions")
-        .select("sess")
-        .eq("sid", sid)
-        .maybeSingle(); // Use maybeSingle instead of single to handle no rows case
-
-      if (error) {
-        console.error("Session get error:", error);
-        return callback(error);
-      }
-
-      if (!data) {
-        return callback(null, null);
-      }
-
-      try {
-        const session = JSON.parse(data.sess);
-        callback(null, session);
-      } catch (parseError) {
-        console.error("Session parse error:", parseError);
-        callback(parseError);
-      }
-    } catch (err) {
-      console.error("Session get error:", err);
-      callback(err);
+    // Set initial display state
+    if (this.avatarImage) {
+      this.avatarImage.src = this.customAvatarUrl;
+      this.avatarImage.style.display = "block";
     }
-  }
-
-  async set(sid, sess, callback) {
-    try {
-      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      const { error } = await this.supabase.from("sessions").upsert(
-        {
-          sid,
-          sess: JSON.stringify(sess),
-          expires,
-          created_at: new Date(),
-        },
-        {
-          onConflict: "sid",
-        }
-      );
-
-      if (error) {
-        console.error("Session set error:", error);
-        return callback(error);
-      }
-      callback();
-    } catch (err) {
-      console.error("Session set error:", err);
-      callback(err);
+    if (this.idleVideo) {
+      this.idleVideo.style.display = "none";
     }
-  }
-
-  async destroy(sid, callback) {
-    try {
-      const { error } = await this.supabase
-        .from("sessions")
-        .delete()
-        .eq("sid", sid);
-
-      if (error) {
-        console.error("Session destroy error:", error);
-        return callback(error);
-      }
-      callback();
-    } catch (err) {
-      console.error("Session destroy error:", err);
-      callback(err);
-    }
-  }
-}
-
-const port = process.env.PORT || 3000; // Use Render.com PORT or default to 3000
-const app = express();
-
-// Initialize session store with Supabase
-const sessionStore = new SupabaseSessionStore(supabaseAdmin);
-
-// Middleware to track session state
-app.use(
-  session({
-    store: sessionStore,
-    secret: process.env.SESSION_SECRET || "alter-session-secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      httpOnly: true,
-    },
-    proxy: process.env.NODE_ENV === "production", // Trust the reverse proxy
-  })
-);
-
-// Initialize Stripe with secret key from environment variables
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-app.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    console.log("Webhook triggered - Received event");
-
-    const sig = req.headers["stripe-signature"];
-    console.log("Stripe signature:", sig);
-
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-      console.log("Webhook event constructed successfully:", event.type);
-    } catch (err) {
-      console.error("Webhook Error:", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+    if (this.talkVideo) {
+      this.talkVideo.style.display = "none";
     }
 
-    // Handle the event
-    if (event.type === "checkout.session.completed") {
-      console.log("Processing checkout.session.completed event");
-      const session = event.data.object;
-      console.log("Session data:", {
-        clientReferenceId: session.client_reference_id,
-        customerId: session.customer,
-        paymentStatus: session.payment_status,
-        metadata: session.metadata,
-        amount: session.amount_total,
+    this.init();
+  }
+
+  async initializeConversation() {
+    try {
+      const selectedAlter = window.selectedAlter;
+      if (!selectedAlter) {
+        console.log("No alter selected, skipping conversation initialization");
+        return;
+      }
+
+      const alterId = selectedAlter.id || selectedAlter.alter_id || "default";
+      const alterType = selectedAlter.type || "custom";
+
+      // Get or create conversation
+      const convResponse = await fetch("/api/chat/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alterId, alterType }),
       });
 
-      try {
-        // Get the Firebase UID from the client_reference_id
-        const firebaseUid = session.client_reference_id;
-        console.log("Firebase UID from session:", firebaseUid);
-
-        if (!firebaseUid) {
-          console.error("No Firebase UID found in session");
-          return res.status(400).json({ error: "No Firebase UID found" });
-        }
-
-        // Check if this is a Creator Studio package purchase (amount is $50.00 = 5000 cents)
-        if (session.amount_total === 5000) {
-          console.log("Processing Creator Studio package purchase");
-
-          // First, get the user's Supabase ID
-          const { data: userData, error: userError } = await supabaseAdmin
-            .from("users")
-            .select("id")
-            .eq("firebase_uid", firebaseUid)
-            .limit(1);
-
-          if (userError) {
-            console.error("Supabase user query error:", userError);
-            return res.status(500).json({ error: "Failed to find user" });
-          }
-
-          if (!userData || userData.length === 0) {
-            console.error("No user found in Supabase");
-            return res.status(404).json({ error: "User not found" });
-          }
-
-          const userId = userData[0].id;
-          console.log("Found Supabase user ID:", userId);
-
-          // Create or update creator record
-          const { error: creatorError } = await supabaseAdmin
-            .from("creatorsuser")
-            .upsert(
-              [
-                {
-                  user_id: userId,
-                  is_creator: true,
-                  created_at: new Date().toISOString(),
-                },
-              ],
-              {
-                onConflict: "user_id",
-              }
-            );
-
-          if (creatorError) {
-            console.error("Error creating creator record:", creatorError);
-            return res
-              .status(500)
-              .json({ error: "Failed to create creator record" });
-          }
-
-          console.log("Creator record successfully created/updated");
-          return res.json({ received: true });
-        }
-
-        // Get the alter ID from metadata (for alter purchases)
-        const alterId = session.metadata?.alter_id;
-        if (!alterId) {
-          console.error(
-            "No alter ID found in session metadata and not a creator package"
-          );
-          return res.status(400).json({ error: "No alter ID found" });
-        }
-
-        // First, get the user's Supabase ID
-        console.log(
-          "Querying Supabase for user with Firebase UID:",
-          firebaseUid
-        );
-        const { data: userData, error: userError } = await supabaseAdmin
-          .from("users")
-          .select("id")
-          .eq("firebase_uid", firebaseUid)
-          .limit(1);
-
-        if (userError) {
-          console.error("Supabase user query error:", userError);
-          return res.status(500).json({ error: "Failed to find user" });
-        }
-
-        console.log("Supabase user query result:", userData);
-
-        if (!userData || userData.length === 0) {
-          console.error("No user found in Supabase");
-          return res.status(404).json({ error: "User not found" });
-        }
-
-        const userId = userData[0].id;
-        console.log("Found Supabase user ID:", userId);
-
-        // Get the admin user ID
-        const adminId = await ensureAdminUser();
-        console.log("Using admin ID:", adminId);
-
-        // Check if alterId is numeric (premade alter) or UUID (published alter)
-        const isNumericId = /^\d+$/.test(alterId);
-        console.log(
-          "Alter ID type:",
-          isNumericId ? "numeric (premade)" : "UUID (published)"
-        );
-
-        let creatorId = adminId; // Default to admin for premade alters
-
-        if (!isNumericId) {
-          // Only query published_alters for UUIDs
-          const { data: alterData, error: alterError } = await supabaseAdmin
-            .from("published_alters")
-            .select("user_id")
-            .eq("id", alterId)
-            .limit(1);
-
-          if (alterError) {
-            console.error("Error fetching alter:", alterError);
-            return res.status(500).json({ error: "Failed to fetch alter" });
-          }
-
-          if (alterData && alterData.length > 0) {
-            creatorId = alterData[0].user_id;
-          }
-        }
-
-        // Get the creatorsuser.id for the creator
-        const { data: creatorData, error: creatorError } = await supabaseAdmin
-          .from("creatorsuser")
-          .select("id")
-          .eq("user_id", creatorId)
-          .limit(1);
-
-        if (creatorError) {
-          console.error("Error fetching creator:", creatorError);
-          return res.status(500).json({ error: "Failed to fetch creator" });
-        }
-
-        if (!creatorData || creatorData.length === 0) {
-          console.error("No creator found for user ID:", creatorId);
-          return res.status(500).json({ error: "Creator not found" });
-        }
-
-        const creatorUserId = creatorData[0].id;
-        console.log("Using creator ID:", creatorUserId);
-
-        // Store the purchase in the database
-        const { error: purchaseError } = await supabaseAdmin
-          .from("purchases")
-          .insert([
-            {
-              user_id: userId,
-              creator_id: creatorUserId,
-              alter_identifier: alterId,
-              type: isNumericId ? "premade_alter" : "published_alter",
-              purchase_date: new Date().toISOString(),
-              payment_id: session.payment_intent,
-              amount: session.amount_total / 100,
-              created_at: new Date().toISOString(),
-            },
-          ]);
-
-        if (purchaseError) {
-          console.error("Error storing purchase:", purchaseError);
-          return res.status(500).json({ error: "Failed to store purchase" });
-        }
-
-        console.log("Purchase successfully recorded in database");
-        return res.json({ received: true });
-      } catch (error) {
-        console.error("Webhook processing error:", error);
-        return res.status(500).json({ error: "Internal server error" });
-      }
-    }
-
-    // For any other event type, just acknowledge receipt
-    return res.json({ received: true });
-  }
-);
-
-app.use(express.json());
-
-// Function to ensure admin user exists
-async function ensureAdminUser() {
-  try {
-    // Check if admin user exists in users table
-    const { data: adminData, error: adminError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("email", "admin@alters.ai")
-      .limit(1);
-
-    if (adminError) {
-      console.error("Error checking admin user:", adminError);
-      throw adminError;
-    }
-
-    let adminId;
-
-    if (!adminData || adminData.length === 0) {
-      // Create admin user if it doesn't exist
-      const { data: newAdmin, error: createError } = await supabaseAdmin
-        .from("users")
-        .insert([
-          {
-            email: "admin@alters.ai",
-            display_name: "Admin",
-            firebase_uid: "admin",
-            is_admin: true,
-          },
-        ])
-        .select()
-        .single();
-
-      if (createError) {
-        console.error("Error creating admin user:", createError);
-        throw createError;
+      if (!convResponse.ok) {
+        console.error("Failed to create conversation");
+        return;
       }
 
-      console.log("Admin user created:", newAdmin);
-      adminId = newAdmin.id;
-    } else {
-      adminId = adminData[0].id;
+      const convData = await convResponse.json();
+      this.currentConversationId = convData.conversationId;
+
+      // Load conversation history
+      await this.loadConversationHistory();
+    } catch (error) {
+      console.error("Error initializing conversation:", error);
     }
+  }
 
-    // Check if admin exists in creatorsuser table
-    const { data: creatorData, error: creatorError } = await supabaseAdmin
-      .from("creatorsuser")
-      .select("user_id")
-      .eq("user_id", adminId)
-      .limit(1);
-
-    if (creatorError) {
-      console.error("Error checking admin creator status:", creatorError);
-      throw creatorError;
-    }
-
-    if (!creatorData || creatorData.length === 0) {
-      // Create admin in creatorsuser table
-      const { error: createCreatorError } = await supabaseAdmin
-        .from("creatorsuser")
-        .insert([
-          {
-            user_id: adminId,
-            is_creator: true,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-
-      if (createCreatorError) {
-        console.error("Error creating admin creator:", createCreatorError);
-        throw createCreatorError;
+  async loadConversationHistory() {
+    try {
+      if (!this.currentConversationId) {
+        return;
       }
 
-      console.log("Admin creator created");
-    }
+      const historyResponse = await fetch(
+        `/api/chat/history/${this.currentConversationId}`
+      );
+      if (!historyResponse.ok) {
+        console.error("Failed to load conversation history");
+        return;
+      }
 
-    return adminId;
-  } catch (error) {
-    console.error("Error in ensureAdminUser:", error);
-    throw error;
-  }
-}
+      const historyData = await historyResponse.json();
+      const messages = historyData.messages || [];
 
-// Call ensureAdminUser when server starts
-ensureAdminUser().catch(console.error);
+      // Clear existing chat history
+      const chatHistory = document.getElementById("chat-history");
+      if (chatHistory) {
+        chatHistory.innerHTML = "";
+      }
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
+      // Add messages to chat history
+      messages.forEach((message) => {
+        this.addMessage(message.content, message.role === "user");
+      });
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir); // Use the same uploads directory path
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext =
-      file.mimetype === "audio/mpeg"
-        ? ".mp3"
-        : file.mimetype === "application/pdf"
-        ? ".pdf"
-        : file.mimetype === "text/plain"
-        ? ".txt"
-        : path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  },
-});
-
-// Multer for image uploads
-const imageUpload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only images are allowed."), false);
-    }
-  },
-});
-
-// Multer for audio uploads
-const audioUpload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === "audio/mpeg" || file.mimetype === "audio/mp3") {
-      cb(null, true);
-    } else {
-      cb(new Error("Only audio files are allowed."), false);
-    }
-  },
-}).single("audio");
-
-// Multer for document uploads
-const documentUpload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf" || file.mimetype === "text/plain") {
-      cb(null, true);
-    } else {
-      cb(new Error("Only PDF and TXT files are allowed."), false);
-    }
-  },
-}).single("document");
-
-// Middleware to protect premium routes (not used for creator-studio, customize, or chat)
-function guardRoute(req, res, next) {
-  console.log("Guard Route Check:", {
-    isCreator: req.session.isCreator,
-    allowedAccess: req.session.allowedAccess,
-    userId: req.session.userId,
-    sessionID: req.sessionID,
-    cookies: req.cookies,
-  });
-
-  if (req.session.isCreator || req.session.allowedAccess) {
-    next();
-  } else {
-    res.redirect("/login");
-  }
-}
-
-// Middleware to check if user is authenticated
-const isAuthenticated = (req, res, next) => {
-  if (req.session.userId) {
-    next();
-  } else {
-    res.redirect("/login");
-  }
-};
-
-// Routes
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-app.get("/chat-alter", isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, "chat-alter.html"));
-});
-
-app.get("/chat-alter/:alterId", isAuthenticated, (req, res) => {
-  // Pass the alterId to the frontend via a script tag or query parameter
-  res.sendFile(path.join(__dirname, "chat-alter.html"));
-});
-
-app.get("/pricing", (req, res) => {
-  res.sendFile(path.join(__dirname, "Pricing.html"));
-});
-
-app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "About.html"));
-});
-
-app.get("/marketplace", isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, "Marketplace.html"));
-});
-
-app.get("/creator-page", (req, res) => {
-  res.sendFile(path.join(__dirname, "Creator-Page.html"));
-});
-
-app.get("/creator-studio", isAuthenticated, isCreator, (req, res) => {
-  res.sendFile(path.join(__dirname, "Creator-Studio.html"));
-});
-
-app.get("/customize", isAuthenticated, isCreator, (req, res) => {
-  res.sendFile(path.join(__dirname, "customize.html"));
-});
-
-app.get("/chat", isAuthenticated, isCreator, (req, res) => {
-  res.sendFile(path.join(__dirname, "chat.html"));
-});
-
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "Login-Page.html"));
-});
-
-// Handle "Create Your Own Alter" button click
-app.post("/start-customize", (req, res) => {
-  req.session.allowedAccess = true;
-  res.redirect("/customize");
-});
-
-// Stripe checkout session creation
-app.post("/create-checkout-session", async (req, res) => {
-  try {
-    // Dynamically determine baseUrl based on environment
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const host =
-      process.env.NODE_ENV === "production"
-        ? req.headers.host
-        : `localhost:${port}`;
-    const baseUrl = `${protocol}://${host}`;
-
-    const sessionConfig = {
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Creator Studio Package",
-            },
-            unit_amount: 5000, // $50.00 in cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/creator-page`,
-    };
-
-    // Only include client_reference_id if userId is a non-empty string
-    if (req.session.userId && req.session.userId.trim() !== "") {
-      sessionConfig.client_reference_id = req.session.userId;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-
-    res.json({ id: session.id });
-  } catch (error) {
-    console.error("Stripe checkout error:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Create Stripe checkout session for alter purchase
-app.post("/create-alter-checkout-session", async (req, res) => {
-  try {
-    const { alterId, alterName, price } = req.body;
-
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const host =
-      process.env.NODE_ENV === "production"
-        ? req.headers.host
-        : `localhost:${port}`;
-    const baseUrl = `${protocol}://${host}`;
-
-    const sessionConfig = {
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Alter: ${alterName}`,
-              description: "AI Digital Twin purchase",
-            },
-            unit_amount: Math.round(price * 100), // Convert price to cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${baseUrl}/alter-purchase-success?session_id={CHECKOUT_SESSION_ID}&alter_id=${alterId}`,
-      cancel_url: `${baseUrl}/marketplace`,
-      metadata: {
-        alter_id: alterId, // Add alter ID to metadata
-      },
-    };
-
-    // Include client_reference_id if user is logged in
-    if (req.session.userId && req.session.userId.trim() !== "") {
-      sessionConfig.client_reference_id = req.session.userId;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-    res.json({ id: session.id });
-  } catch (error) {
-    console.error("Stripe checkout error:", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Handle successful payment
-app.get("/payment-success", async (req, res) => {
-  const sessionId = req.query.session_id;
-  try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.payment_status === "paid") {
-      req.session.isCreator = true;
       console.log(
-        "Payment successful, setting isCreator:",
-        req.session.isCreator
+        `Loaded ${messages.length} messages from conversation history`
       );
-      // Explicitly save session before redirect
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.redirect("/creator-page");
-        }
-        console.log("Session saved, redirecting to /creator-studio");
-        res.redirect("/creator-studio"); // Redirects to Creator-Studio.html
-      });
-    } else {
-      console.log("Payment not paid, redirecting to /creator-page");
-      res.redirect("/creator-page");
+    } catch (error) {
+      console.error("Error loading conversation history:", error);
     }
-  } catch (error) {
-    console.error("Payment verification error:", error.message);
-    res.redirect("/creator-page");
-  }
-});
-
-// Test route to confirm server is running
-app.get("/test", (req, res) => {
-  console.log("Test route accessed");
-  res.json({ message: "Server is running correctly" });
-});
-
-// Handle image upload
-app.post("/upload", imageUpload.single("avatar"), async (req, res) => {
-  console.log("Image upload route accessed, file:", req.file);
-  if (!req.file) {
-    console.error("No file uploaded");
-    return res.status(400).json({ error: "No image uploaded." });
   }
 
-  let filePath;
-  try {
-    filePath = req.file.path; // Upload to Supabase Storage with page-specific path
-    // Get the referrer URL to determine which page the upload came from
-    const referrer = req.get("Referer") || "";
-    let folder = "general";
-
-    if (referrer.includes("chat.html")) {
-      folder = "chat";
-    } else if (referrer.includes("business-alter.html")) {
-      folder = "business";
-    } else if (referrer.includes("doctor-alter.html")) {
-      folder = "doctor";
-    } else if (referrer.includes("GymGuide-alter.html")) {
-      folder = "gym";
-    }
-
-    const supabaseFilePath = `avatars/${folder}/${req.file.filename}`;
-    const fileBuffer = await fsPromises.readFile(filePath);
-
-    let uploadError;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const { data, error } = await supabase.storage
-        .from("images")
-        .upload(supabaseFilePath, fileBuffer, {
-          contentType: req.file.mimetype,
-          upsert: true,
-          cacheControl: "3600",
-        });
-      if (!error) break;
-      uploadError = error;
-      console.warn(`Supabase upload attempt ${attempt} failed:`, error);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-    if (uploadError) {
-      console.error("Supabase image upload error:", uploadError);
-      throw uploadError;
-    }
-
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("images").getPublicUrl(supabaseFilePath);
-
-    // Clean up local file
-    await fsPromises.unlink(filePath);
-
-    console.log("Image uploaded to Supabase:", publicUrl);
-    res.json({ url: publicUrl });
-  } catch (error) {
-    console.error("Image upload error:", error);
-    if (filePath) {
-      try {
-        await fsPromises.unlink(filePath);
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
+  async init() {
+    try {
+      // Fetch API configuration from server
+      const response = await fetch("/api-config");
+      if (!response.ok) {
+        throw new Error("Failed to fetch API configuration");
       }
+      this.API_CONFIG = await response.json();
+
+      if (!this.API_CONFIG?.key)
+        throw new Error("Missing video streaming configuration");
+      if (!this.API_CONFIG?.openai_key)
+        throw new Error("Missing AI chat configuration");
+      if (!this.API_CONFIG?.elevenlabs_key)
+        throw new Error("Missing voice synthesis configuration");
+      if (this.API_CONFIG.url) this.DID_API_URL = this.API_CONFIG.url;
+
+      this.talkVideo.setAttribute("playsinline", "");
+      this.setupEventListeners();
+
+      // Automatically start the server with retry
+      await this.handleConnectWithRetry();
+
+      // Initialize conversation and load history
+      await this.initializeConversation();
+
+      console.log("Initialized successfully");
+    } catch (error) {
+      console.error("streaming-client-api.js: init error:", error);
+      this.showToast(
+        "Unable to initialize the application. Please refresh and try again.",
+        "error"
+      );
     }
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Handle audio upload
-app.post("/upload-audio", audioUpload, async (req, res) => {
-  console.log("Audio upload route accessed, file:", req.file);
-  if (!req.file) {
-    console.error("No file uploaded");
-    return res.status(400).json({ error: "No audio file uploaded." });
-  }
-
-  let filePath;
-  try {
-    filePath = req.file.path;
-    // Upload to Supabase Storage
-    const supabaseFilePath = `files/public/${req.file.filename}`;
-    const fileBuffer = await fsPromises.readFile(filePath);
-
-    let uploadError;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const { data, error } = await supabase.storage
-        .from("images")
-        .upload(supabaseFilePath, fileBuffer, {
-          contentType: req.file.mimetype,
-          upsert: true,
-          cacheControl: "3600",
-        });
-      if (!error) break;
-      uploadError = error;
-      console.warn(`Supabase upload attempt ${attempt} failed:`, error);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-    if (uploadError) {
-      console.error("Supabase audio upload error:", uploadError);
-      throw uploadError;
-    }
-
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("images").getPublicUrl(supabaseFilePath);
-
-    // Clean up local file
-    await fsPromises.unlink(filePath);
-
-    console.log("Audio uploaded to Supabase:", publicUrl);
-    res.json({ url: publicUrl });
-  } catch (error) {
-    console.error("Audio upload error:", error);
-    if (filePath) {
-      try {
-        await fsPromises.unlink(filePath);
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
-    }
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Handle document upload
-app.post("/upload-document", documentUpload, async (req, res) => {
-  console.log("Document upload route accessed, file:", req.file);
-  if (!req.file) {
-    console.error("No file uploaded");
-    return res.status(400).json({ error: "No document uploaded." });
   }
 
-  let filePath;
-  try {
-    filePath = path.join(__dirname, "Uploads", req.file.filename);
-    // Parse document content
-    let documentContent = "";
-    if (req.file.mimetype === "application/pdf") {
-      const dataBuffer = await fsPromises.readFile(filePath);
-      const pdfData = await pdfParse(dataBuffer);
-      documentContent = pdfData.text;
-    } else if (req.file.mimetype === "text/plain") {
-      documentContent = await fsPromises.readFile(filePath, "utf-8");
-    }
-
-    if (!documentContent) {
-      throw new Error("Failed to extract content from the file.");
-    }
-
-    // Upload to Supabase Storage
-    const supabaseFilePath = `documents/public/${req.file.filename}`;
-    const fileBuffer = await fsPromises.readFile(filePath);
-
-    let uploadError;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const { data, error } = await supabase.storage
-        .from("images")
-        .upload(supabaseFilePath, fileBuffer, {
-          contentType: req.file.mimetype,
-          upsert: true,
-          cacheControl: "3600",
-        });
-      if (!error) break;
-      uploadError = error;
-      console.warn(`Supabase upload attempt ${attempt} failed:`, error);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-    if (uploadError) {
-      console.error("Supabase document upload error:", uploadError);
-      throw uploadError;
-    }
-
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("images").getPublicUrl(supabaseFilePath);
-
-    // Clean up local file
-    await fsPromises.unlink(filePath);
-
-    console.log("Document uploaded to Supabase:", publicUrl);
-    res.json({
-      documentName: req.file.originalname,
-      documentUrl: publicUrl,
-      documentContent,
-    });
-  } catch (error) {
-    console.error("Document upload error:", error);
-    if (filePath) {
-      try {
-        await fsPromises.unlink(filePath);
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
-    }
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to process document." });
+  setupEventListeners() {
+    // No button event listeners needed
   }
-});
 
-// Handle Google Auth
-app.post("/auth/google", async (req, res) => {
-  try {
-    const { idToken } = req.body;
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-
-    // Set session
-    req.session.userId = decodedToken.uid;
-    req.session.email = decodedToken.email;
-    req.session.allowedAccess = true;
-
-    console.log("Google Auth Success:", {
-      userId: decodedToken.uid,
-      email: decodedToken.email,
-      sessionID: req.sessionID,
-    });
-
-    // Upsert user in Supabase users table
-    const { uid, email, name, picture } = decodedToken;
-    const { data, error } = await supabaseAdmin.from("users").upsert(
-      [
-        {
-          firebase_uid: uid,
-          email: email,
-          display_name: name || null,
-          photo_url: picture || null,
-        },
-      ],
-      { onConflict: "firebase_uid" }
+  addMessage(text, isUser = false) {
+    console.log(
+      `streaming-client-api.js: addMessage: Adding ${
+        isUser ? "user" : "AI"
+      } message: ${text}`
     );
-
-    if (error) {
-      console.error("Supabase user upsert error:", error);
-      return res.status(500).json({ error: "Failed to upsert user" });
-    }
-
-    // Explicitly save session before sending response
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.status(500).json({ error: "Failed to save session" });
-      }
-      res.json({ success: true });
-    });
-  } catch (error) {
-    console.error("Auth error:", error);
-    res.status(401).json({
-      success: false,
-      error: "Authentication failed",
-    });
-  }
-});
-
-// Handle Sign Out
-app.post("/auth/signout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Session destruction error:", err);
-      return res.status(500).json({ error: "Failed to sign out" });
-    }
-    res.json({ success: true });
-  });
-});
-
-//```tool_code
-// This commit fixes an issue where the creator status wasn't being properly saved after a Stripe checkout, and updates the webhook handler to correctly process creator package purchases.
-// API configuration endpoint
-app.get("/api-config", (req, res) => {
-  res.json({
-    key: process.env.DID_API_KEY,
-    openai_key: process.env.OPEN_AI_API_KEY,
-    elevenlabs_key: process.env.ELEVENLABS_API_KEY,
-    url: "https://api.d-id.com",
-  });
-});
-
-// API route to publish an alter to the marketplace
-app.post("/api/publish-alter", isCreator, async (req, res) => {
-  try {
-    // Get Firebase UID from session
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Look up the Supabase UUID from your users table
-    const { data: userRows, error: userLookupError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userLookupError || !userRows || userRows.length === 0) {
-      return res.status(401).json({ error: "User not found in users table" });
-    }
-    const userId = userRows[0].id; // This is the UUID
-
-    const {
-      name,
-      description,
-      personality,
-      prompt,
-      knowledge,
-      voice_id,
-      avatar_url,
-      category,
-      is_public,
-    } = req.body;
-
-    // Validate required fields
-    if (
-      !name ||
-      !description ||
-      !personality ||
-      !prompt ||
-      !knowledge ||
-      !category
-    ) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    // Insert into Supabase
-    const { data, error } = await supabaseAdmin
-      .from("published_alters")
-      .insert([
-        {
-          user_id: userId,
-          name,
-          description,
-          personality,
-          prompt,
-          knowledge,
-          voice_id,
-          avatar_url,
-          category,
-          is_public: is_public !== undefined ? is_public : true,
-        },
-      ])
-      .select();
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json({ success: true, alter: data[0] });
-  } catch (err) {
-    console.error("Publish alter error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// API route to get user's published alters (for Creator Studio)
-app.get("/api/user-alters", isCreator, async (req, res) => {
-  try {
-    // Get Firebase UID from session
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Look up the Supabase UUID from users table
-    const { data: userRows, error: userLookupError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userLookupError || !userRows || userRows.length === 0) {
-      return res.status(401).json({ error: "User not found in users table" });
-    }
-    const userId = userRows[0].id;
-
-    // Fetch user's published alters
-    const { data, error } = await supabaseAdmin
-      .from("published_alters")
-      .select(`*, users: user_id (display_name, photo_url)`)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Supabase fetch error:", error);
-      return res.status(500).json({ error: "Failed to fetch user's alters" });
-    }
-
-    res.json(data);
-  } catch (err) {
-    console.error("Fetch user alters error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// API route to get all published alters for the marketplace
-app.get("/api/published-alters", async (req, res) => {
-  try {
-    // Fetch all public alters, join with users for creator info
-    const { data, error } = await supabaseAdmin
-      .from("published_alters")
-      .select(`*, users: user_id (display_name, photo_url)`)
-      .eq("is_public", true)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Supabase fetch error:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to fetch published alters" });
-    }
-
-    // Map to include creator_name and creator_avatar for card UI
-    const alters = data.map((alter) => ({
-      ...alter,
-      creator_name: alter.users?.display_name || "Unknown",
-      creator_avatar: alter.users?.photo_url || "/placeholder.svg",
-    }));
-
-    res.json(alters);
-  } catch (err) {
-    console.error("Fetch published alters error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// API route to delete a published alter
-app.delete("/api/published-alters/:alterId", async (req, res) => {
-  try {
-    // Get Firebase UID from session
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Look up the Supabase UUID from users table
-    const { data: userRows, error: userLookupError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userLookupError || !userRows || userRows.length === 0) {
-      return res.status(401).json({ error: "User not found in users table" });
-    }
-    const userId = userRows[0].id;
-
-    // First, verify that the alter belongs to the user
-    const { data: alterData, error: alterError } = await supabaseAdmin
-      .from("published_alters")
-      .select("user_id")
-      .eq("id", req.params.alterId)
-      .limit(1);
-
-    if (alterError) {
-      console.error("Error fetching alter:", alterError);
-      return res.status(404).json({ error: "Alter not found" });
-    }
-
-    if (!alterData || alterData.length === 0) {
-      return res.status(404).json({ error: "Alter not found" });
-    }
-
-    if (alterData[0].user_id !== userId) {
-      return res
-        .status(403)
-        .json({ error: "You don't have permission to delete this alter" });
-    }
-
-    // Delete the alter
-    const { error: deleteError } = await supabaseAdmin
-      .from("published_alters")
-      .delete()
-      .eq("id", req.params.alterId)
-      .eq("user_id", userId); // Extra safety check
-
-    if (deleteError) {
-      console.error("Error deleting alter:", deleteError);
-      return res.status(500).json({ error: "Failed to delete alter" });
-    }
-
-    res.json({ success: true, message: "Alter deleted successfully" });
-  } catch (err) {
-    console.error("Delete alter error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Auth status endpoint
-app.get("/api/auth/status", (req, res) => {
-  console.log("Auth Status Check:", {
-    isCreator: req.session.isCreator,
-    allowedAccess: req.session.allowedAccess,
-    userId: req.session.userId,
-    sessionID: req.sessionID,
-  });
-
-  res.json({
-    authenticated: !!req.session.userId,
-    isCreator: !!req.session.isCreator,
-    allowedAccess: !!req.session.allowedAccess,
-  });
-});
-
-// Route to check creator status
-app.get("/api/check-creator-status", async (req, res) => {
-  try {
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      console.log("No Firebase UID in session");
-      return res.json({ isCreator: false });
-    }
-
-    // First get the user's Supabase ID
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userError) {
-      console.error("Error finding user:", userError);
-      return res.json({ isCreator: false });
-    }
-
-    if (!userData) {
-      console.log("User not found in users table");
-      return res.json({ isCreator: false });
-    }
-
-    console.log("Found user in Supabase:", userData);
-
-    // Then check creator status
-    const { data: creatorRows, error: creatorError } = await supabaseAdmin
-      .from("creatorsuser")
-      .select("is_creator")
-      .eq("user_id", userData.id)
-      .limit(1); // Only take one
-
-    if (creatorError) {
-      console.error("Error checking creator status:", creatorError);
-      return res.json({ isCreator: false });
-    }
-
-    const isCreator =
-      creatorRows && creatorRows.length > 0 ? creatorRows[0].is_creator : false;
-    res.json({ isCreator });
-  } catch (error) {
-    console.error("Error in check-creator-status:", error);
-    res.json({ isCreator: false });
-  }
-});
-
-// Check if an alter has been purchased
-app.get("/api/check-purchase/:alterId", async (req, res) => {
-  try {
-    // Get Firebase UID from session
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      console.log("No Firebase UID in session for purchase check");
-      return res.json({ purchased: false });
-    }
-
-    const alterId = req.params.alterId;
-    console.log("Checking purchase for alter ID:", alterId);
-
-    // Get the user's Supabase ID
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userError || !userData || userData.length === 0) {
-      console.log("User not found in Supabase");
-      return res.json({ purchased: false });
-    }
-
-    const userId = userData[0].id;
-
-    // For premade alters (numeric IDs), check if user has purchased it
-    const isNumericId = /^\d+$/.test(alterId);
-
-    if (isNumericId) {
-      console.log("Premade alter detected, checking purchase status");
-
-      // First verify it's a valid premade alter
-      const premadeAlterIds = ["1", "2", "3"]; // Add all valid premade alter IDs
-
-      if (!premadeAlterIds.includes(alterId)) {
-        console.log("Invalid premade alter ID");
-        return res.json({ purchased: false });
-      }
-
-      // Check if the user has purchased this premade alter
-      const { data: purchaseData, error: purchaseError } = await supabaseAdmin
-        .from("purchases")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("alter_identifier", alterId)
-        .eq("type", "premade_alter")
-        .limit(1);
-
-      if (purchaseError) {
-        console.error("Error checking premade alter purchase:", purchaseError);
-        return res.json({ purchased: false });
-      }
-
-      const purchased = purchaseData && purchaseData.length > 0;
-      console.log("Premade alter purchase check result:", purchased);
-      return res.json({ purchased });
-    }
-
-    // For published alters (UUIDs), check actual purchase
-    console.log("Published alter detected, checking purchase records");
-
-    // Check if the alter has been purchased using the purchases table
-    const { data: purchaseData, error: purchaseError } = await supabaseAdmin
-      .from("purchases")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("alter_identifier", alterId)
-      .limit(1);
-
-    if (purchaseError) {
-      console.error("Error checking purchase:", purchaseError);
-      return res.json({ purchased: false });
-    }
-
-    const purchased = purchaseData && purchaseData.length > 0;
-    console.log("Purchase check result:", purchased);
-
-    res.json({ purchased });
-  } catch (error) {
-    console.error("Error in check-purchase:", error);
-    res.json({ purchased: false });
-  }
-});
-
-// API route to get creator's earnings stats (7% commission for published alters)
-app.get("/api/creator/earnings-stats", async (req, res) => {
-  try {
-    // Get Firebase UID from session
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Look up the Supabase UUID from users table
-    const { data: userRows, error: userLookupError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userLookupError || !userRows || userRows.length === 0) {
-      return res.status(401).json({ error: "User not found in users table" });
-    }
-    const userId = userRows[0].id;
-
-    // Get the creator's row in creatorsuser
-    const { data: creatorRows, error: creatorError } = await supabaseAdmin
-      .from("creatorsuser")
-      .select("id")
-      .eq("user_id", userId)
-      .limit(1);
-
-    if (creatorError || !creatorRows || creatorRows.length === 0) {
-      return res.status(401).json({ error: "Creator not found" });
-    }
-    const creatorUserId = creatorRows[0].id;
-
-    // Get all purchases for this creator (published alters only)
-    const { data: purchases, error: purchasesError } = await supabaseAdmin
-      .from("purchases")
-      .select("amount, type, purchase_date")
-      .eq("creator_id", creatorUserId)
-      .eq("type", "published_alter");
-
-    if (purchasesError) {
-      return res.status(500).json({ error: "Failed to fetch purchases" });
-    }
-
-    // Calculate stats
-    let totalEarnings = 0;
-    let totalSales = 0;
-    let monthlyRevenue = 0;
+    const chatHistory = document.getElementById("chat-history");
+    const messageDiv = document.createElement("div");
+    messageDiv.className = isUser
+      ? "message user-message"
+      : "message assistant-message";
+
+    const messageContent = document.createElement("div");
+    messageContent.className = "message-content";
+    messageContent.textContent = text;
+
+    const timestamp = document.createElement("div");
+    timestamp.className = "timestamp";
     const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
+    timestamp.textContent = `${now.getHours()}:${now
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
 
-    // Calculate total amount first
-    let totalAmount = 0;
-    purchases.forEach((purchase) => {
-      totalAmount += purchase.amount;
-      totalSales += 1;
-      const purchaseDate = new Date(purchase.purchase_date);
-      if (
-        purchaseDate.getMonth() === thisMonth &&
-        purchaseDate.getFullYear() === thisYear
-      ) {
-        monthlyRevenue += purchase.amount * 0.7; // 70% of purchase amount
+    messageDiv.appendChild(messageContent);
+    messageDiv.appendChild(timestamp);
+
+    chatHistory.appendChild(messageDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+  }
+
+  async setCustomAvatar(url) {
+    try {
+      // Verify image accessibility
+      const urlCheck = await fetch(url, { method: "HEAD" });
+      if (!urlCheck.ok) {
+        throw new Error(`Image URL inaccessible: ${url}`);
       }
-    });
 
-    // Calculate 70% of total amount
-    totalEarnings = totalAmount * 0.7;
-
-    // Count active alters
-    const { data: alters, error: altersError } = await supabaseAdmin
-      .from("published_alters")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("is_public", true);
-    const activeAlters = alters && alters.length ? alters.length : 0;
-
-    res.json({
-      totalEarnings,
-      totalSales,
-      activeAlters,
-      monthlyRevenue,
-    });
-  } catch (err) {
-    console.error("Earnings stats error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Serve static files
-app.use("/Uploads", express.static(uploadsDir));
-app.use(express.static(__dirname));
-app.use("/css", express.static(path.join(__dirname, "")));
-app.use("/js", express.static(path.join(__dirname, "")));
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err.message);
-  res.status(400).json({ error: err.message });
-});
-
-const server = http.createServer(app);
-
-// Graceful shutdown to prevent memory leaks
-const gracefulShutdown = () => {
-  console.log("Shutting down server...");
-  server.close(() => {
-    console.log("Server closed.");
-    process.exit(0);
-  });
-};
-
-// Handle process termination
-process.on("SIGTERM", gracefulShutdown);
-process.on("SIGINT", gracefulShutdown);
-
-server.listen(port, () => {
-  console.log(`Server started on port ${port}`);
-});
-
-// Handle successful alter purchase
-app.get("/alter-purchase-success", async (req, res) => {
-  const { session_id, alter_id } = req.query;
-
-  try {
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.payment_status === "paid") {
-      // Serve the success page
-      res.sendFile(path.join(__dirname, "alter-purchase-success.html"));
-    } else {
-      res.redirect("/marketplace");
-    }
-  } catch (error) {
-    console.error("Error handling successful purchase:", error);
-    res.redirect("/marketplace");
-  }
-});
-
-// Note: chat-alter routes are now defined above in the main routes section
-
-// Get or create conversation for a user and alter
-app.post("/api/chat/conversation", async (req, res) => {
-  try {
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const { alterId, alterType } = req.body;
-
-    // Get user's Supabase ID
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userError || !userData || userData.length === 0) {
-      return res.status(401).json({ error: "User not found" });
-    }
-    const userId = userData[0].id;
-
-    // Check if conversation already exists
-    const { data: existingConv, error: convError } = await supabaseAdmin
-      .from("chat_conversations")
-      .select("id, title")
-      .eq("user_id", userId)
-      .eq("alter_id", alterId)
-      .eq("alter_type", alterType)
-      .order("updated_at", { ascending: false })
-      .limit(1);
-
-    if (convError) {
-      console.error("Error checking conversation:", convError);
-      return res.status(500).json({ error: "Failed to check conversation" });
-    }
-
-    let conversationId;
-    if (existingConv && existingConv.length > 0) {
-      conversationId = existingConv[0].id;
-    } else {
-      // Create new conversation
-      const { data: newConv, error: createError } = await supabaseAdmin
-        .from("chat_conversations")
-        .insert({
-          user_id: userId,
-          alter_id: alterId,
-          alter_type: alterType,
-          title: `Chat with ${alterId}`,
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error("Error creating conversation:", createError);
-        return res.status(500).json({ error: "Failed to create conversation" });
+      // Fetch image
+      const imgResponse = await fetch(url);
+      if (!imgResponse.ok) {
+        throw new Error("Failed to fetch image");
       }
-      conversationId = newConv.id;
-    }
+      const imgBlob = await imgResponse.blob();
 
-    res.json({ conversationId });
-  } catch (error) {
-    console.error("Conversation error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+      // Validate format
+      const validFormats = ["image/jpeg", "image/png", "image/jpg"];
+      if (!validFormats.includes(imgBlob.type)) {
+        throw new Error("Invalid image format");
+      }
 
-// Get conversation history
-app.get("/api/chat/history/:conversationId", async (req, res) => {
-  try {
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
+      // Validate size
+      const maxSizeMB = 25 * 1024 * 1024;
+      if (imgBlob.size > maxSizeMB) {
+        throw new Error("Image exceeds size requirements");
+      }
 
-    const { conversationId } = req.params;
-
-    // Get user's Supabase ID
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userError || !userData || userData.length === 0) {
-      return res.status(401).json({ error: "User not found" });
-    }
-    const userId = userData[0].id;
-
-    // Verify conversation belongs to user
-    const { data: conversation, error: convError } = await supabaseAdmin
-      .from("chat_conversations")
-      .select("id")
-      .eq("id", conversationId)
-      .eq("user_id", userId)
-      .single();
-
-    if (convError || !conversation) {
-      return res.status(404).json({ error: "Conversation not found" });
-    }
-
-    // Get messages
-    const { data: messages, error: messagesError } = await supabaseAdmin
-      .from("chat_messages")
-      .select("role, content, created_at")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
-
-    if (messagesError) {
-      console.error("Error fetching messages:", messagesError);
-      return res.status(500).json({ error: "Failed to fetch messages" });
-    }
-
-    res.json({ messages: messages || [] });
-  } catch (error) {
-    console.error("History error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Process chat message with history
-app.post("/api/chat/message", async (req, res) => {
-  try {
-    const firebaseUid = req.session.userId;
-    if (!firebaseUid) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const { conversationId, message, alterContext } = req.body;
-
-    // Get user's Supabase ID
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", firebaseUid)
-      .limit(1);
-
-    if (userError || !userData || userData.length === 0) {
-      return res.status(401).json({ error: "User not found" });
-    }
-    const userId = userData[0].id;
-
-    // Verify conversation belongs to user
-    const { data: conversation, error: convError } = await supabaseAdmin
-      .from("chat_conversations")
-      .select("*")
-      .eq("id", conversationId)
-      .eq("user_id", userId)
-      .single();
-
-    if (convError || !conversation) {
-      return res.status(404).json({ error: "Conversation not found" });
-    }
-
-    // Get recent message history (last 20 messages for better context)
-    const { data: recentMessages, error: historyError } = await supabaseAdmin
-      .from("chat_messages")
-      .select("role, content, created_at")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    if (historyError) {
-      console.error("Error fetching history:", historyError);
-      return res.status(500).json({ error: "Failed to fetch history" });
-    }
-
-    // Reverse to get chronological order and format for better context
-    const messageHistory = (recentMessages || []).reverse().map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    // Save user message
-    const { error: saveUserError } = await supabaseAdmin
-      .from("chat_messages")
-      .insert({
-        conversation_id: conversationId,
-        role: "user",
-        content: message,
+      // Log dimensions for debugging (non-blocking)
+      const img = new Image();
+      const imgLoadPromise = new Promise((resolve, reject) => {
+        img.onload = () => {
+          console.log(
+            `streaming-client-api.js: Image dimensions: ${img.width}x${img.height}`
+          );
+          resolve();
+        };
+        img.onerror = () => {
+          console.warn(
+            "streaming-client-api.js: Failed to load image for dimension logging"
+          );
+          resolve(); // Proceed anyway
+        };
+        img.src = URL.createObjectURL(imgBlob);
       });
 
-    if (saveUserError) {
-      console.error("Error saving user message:", saveUserError);
-      return res.status(500).json({ error: "Failed to save message" });
+      await imgLoadPromise;
+      URL.revokeObjectURL(img.src);
+
+      // Update customAvatarUrl and localStorage
+      this.customAvatarUrl = url;
+      const settings = JSON.parse(
+        localStorage.getItem("avatarSettings") || "{}"
+      );
+      settings.avatarUrl = url;
+      localStorage.setItem("avatarSettings", JSON.stringify(settings));
+      console.log("Updated customAvatarUrl:", this.customAvatarUrl);
+
+      // Set avatar in UI
+      this.avatarImage.src = url;
+      this.avatarImage.style.display = "block";
+      this.idleVideo.style.display = "none";
+      this.talkVideo.style.display = "none";
+
+      // Recreate stream with new avatar
+      await this.handleConnectWithRetry();
+
+      this.showToast("Avatar updated successfully!", "success");
+    } catch (error) {
+      console.error(
+        "streaming-client-api.js: Error setting custom avatar:",
+        error.message
+      );
+      this.avatarImage.src = "";
+      this.avatarImage.style.display = "none";
+      this.idleVideo.style.display = "block";
+
+      if (error.message.includes("Invalid image format")) {
+        this.showToast("Please use a JPEG or PNG image format", "warning");
+      } else if (error.message.includes("Failed to load image")) {
+        this.showToast(
+          "Unable to load the image. Please try a different one",
+          "error"
+        );
+      } else if (error.message.includes("Image URL inaccessible")) {
+        this.showToast("Image upload failed. Please try again", "error");
+      } else if (error.message.includes("size requirements")) {
+        this.showToast(
+          "Image is too large. Please use an image under 25MB",
+          "warning"
+        );
+      } else {
+        this.showToast("Unable to set avatar. Please try again", "error");
+      }
+      throw error;
+    }
+  }
+
+  async handleConnectWithRetry(maxRetries = 3, retryDelay = 2000) {
+    const enterButton = document.getElementById("enter-button");
+    enterButton.classList.add("loading");
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (this.peerConnection?.connectionState === "connected") return;
+
+        this.cleanup();
+
+        const response = await this.createStream();
+        if (!response.ok) {
+          throw new Error("Failed to create stream");
+        }
+        const { id, offer, ice_servers, session_id } = await response.json();
+        this.streamId = id;
+        this.sessionId = session_id;
+
+        const answer = await this.createPeerConnection(offer, ice_servers);
+        await this.sendSDPAnswer(answer);
+
+        enterButton.classList.remove("loading");
+        this.updateUI(true);
+        document.getElementById("user-input-field").focus();
+        this.showToast("Connected successfully!", "success");
+        return;
+      } catch (error) {
+        console.error(
+          `streaming-client-api.js: Connection error (attempt ${attempt}):`,
+          error
+        );
+        if (attempt === maxRetries) {
+          if (error.message.includes("rejected")) {
+            this.showToast(
+              "Avatar image not supported. Please try a different image",
+              "warning"
+            );
+          } else {
+            this.showToast(
+              "Unable to connect. Please check your internet and try again",
+              "error"
+            );
+          }
+          enterButton.classList.remove("loading");
+          this.cleanup();
+          throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+
+  async handleTalk(userMessage = null) {
+    const messageId = `${userMessage}-${Date.now()}`;
+    if (this.messageProcessing.has(messageId)) {
+      console.log(
+        `streaming-client-api.js: Duplicate message detected: "${userMessage}", skipping.`
+      );
+      return;
+    }
+    this.messageProcessing.add(messageId);
+
+    let aiResponse = "";
+    const startTime = performance.now();
+    try {
+      if (!userMessage) {
+        userMessage = document.getElementById("user-input-field").value.trim();
+      }
+
+      if (!userMessage) {
+        console.log(
+          "streaming-client-api.js: handleTalk: No user message provided"
+        );
+        this.showToast("Please enter a message to send", "info");
+        return;
+      }
+
+      console.log(
+        "streaming-client-api.js: handleTalk: Processing user message:",
+        userMessage
+      );
+      this.addMessage(userMessage, true);
+
+      const inputContainer = document.getElementById("input-container");
+      if (!inputContainer) {
+        console.error(
+          "streaming-client-api.js: handleTalk: input-container element not found"
+        );
+        throw new Error("Input container element not found");
+      }
+      inputContainer.classList.add("loading");
+
+      // Get or create conversation
+      const selectedAlter = window.selectedAlter;
+      if (!selectedAlter) {
+        throw new Error("No alter selected");
+      }
+
+      const alterId = selectedAlter.id || selectedAlter.alter_id || "default";
+      const alterType = selectedAlter.type || "custom";
+
+      // Get conversation ID
+      let conversationId = this.currentConversationId;
+      if (!conversationId) {
+        const convResponse = await fetch("/api/chat/conversation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ alterId, alterType }),
+        });
+
+        if (!convResponse.ok) {
+          throw new Error("Failed to create conversation");
+        }
+
+        const convData = await convResponse.json();
+        conversationId = convData.conversationId;
+        this.currentConversationId = conversationId;
+      }
+
+      // Send message to API with history and enhanced context
+      const messageResponse = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          message: userMessage,
+          alterContext: {
+            ...selectedAlter,
+            useHistory: true,
+            maintainMemory: true,
+          },
+        }),
+      });
+
+      if (!messageResponse.ok) {
+        throw new Error("Failed to process message");
+      }
+
+      const messageData = await messageResponse.json();
+      aiResponse = messageData.response;
+
+      // Generate audio
+      const audioUrl = await this.generateElevenLabsAudio(aiResponse);
+      if (!audioUrl.startsWith("https://")) {
+        throw new Error("Invalid audio URL: Must be an HTTPS URL");
+      }
+
+      // Get the current alter's image URL
+      const avatarUrl =
+        selectedAlter?.image ||
+        selectedAlter?.avatar_url ||
+        this.customAvatarUrl ||
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+
+      // Log the audio URL and avatar URL for debugging
+      console.log("Audio URL:", audioUrl);
+      console.log("Avatar URL:", avatarUrl);
+
+      // Verify audio URL accessibility
+      const urlCheck = await fetch(audioUrl, { method: "HEAD" });
+      if (!urlCheck.ok) {
+        console.error("Audio URL inaccessible:", audioUrl);
+        throw new Error("Audio URL is not publicly accessible");
+      }
+
+      // Send to video streaming service with retry logic
+      let talkResponse;
+      let errorData;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          talkResponse = await fetch(
+            `${this.DID_API_URL}/talks/streams/${this.streamId}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                script: {
+                  type: "audio",
+                  audio_url: audioUrl,
+                },
+                config: { fluent: true, stitch: true, client_fps: 30 },
+                driver_url: "bank://lively/",
+                session_id: this.sessionId,
+                source_url: avatarUrl,
+              }),
+            }
+          );
+
+          if (talkResponse.ok) break;
+
+          errorData = await talkResponse.json().catch(() => ({}));
+          console.warn(
+            `Video streaming attempt ${attempt} failed:`,
+            JSON.stringify(errorData, null, 2)
+          );
+          if (talkResponse.status === 400 && attempt < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+          throw new Error(errorData.message || "Video streaming error");
+        } catch (error) {
+          if (attempt === 3) throw error;
+        }
+      }
+
+      if (!talkResponse.ok) {
+        console.error(
+          "Video streaming error details:",
+          JSON.stringify(errorData, null, 2)
+        );
+        if (talkResponse.status === 400) {
+          throw new Error("Unable to process request. Please try again");
+        } else if (talkResponse.status === 402) {
+          throw new Error("Service temporarily unavailable");
+        } else if (talkResponse.status === 404) {
+          throw new Error("Connection lost. Please refresh and try again");
+        } else {
+          throw new Error("Video streaming error");
+        }
+      }
+
+      // Wait for video stream
+      for (let i = 0; i < 10; i++) {
+        if (this.videoIsPlaying) break;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      inputContainer.classList.remove("loading");
+      this.addMessage(aiResponse, false);
+      document.getElementById("user-input-field").value = "";
+    } catch (error) {
+      console.error("streaming-client-api.js: handleTalk: Error:", error);
+      this.showToast(
+        "Unable to process your message. Please try again",
+        "error"
+      );
+      throw error;
+    } finally {
+      this.messageProcessing.delete(messageId);
+      const inputContainer = document.getElementById("input-container");
+      if (inputContainer) {
+        inputContainer.classList.remove("loading");
+      }
+      console.log(
+        `streaming-client-api.js: handleTalk: Total time: ${
+          performance.now() - startTime
+        }ms`
+      );
+    }
+  }
+
+  async generateElevenLabsAudio(text) {
+    try {
+      // First try to get voice ID from the current alter
+      let voiceId = null;
+
+      // Check window.selectedAlter first
+      if (
+        window.selectedAlter &&
+        (window.selectedAlter.voiceId || window.selectedAlter.voice_id)
+      ) {
+        voiceId = window.selectedAlter.voiceId || window.selectedAlter.voice_id;
+        console.log("Voice ID from selectedAlter:", voiceId);
+      }
+      // Check sessionStorage for current alter
+      else {
+        const sessionAlter = JSON.parse(
+          sessionStorage.getItem("alterCurrentAlter") || "{}"
+        );
+        if (sessionAlter.voiceId || sessionAlter.voice_id) {
+          voiceId = sessionAlter.voiceId || sessionAlter.voice_id;
+          console.log(
+            "Voice ID from sessionStorage alterCurrentAlter:",
+            voiceId
+          );
+        }
+        // Check localStorage avatarSettings as fallback
+        else {
+          const settings = JSON.parse(
+            localStorage.getItem("avatarSettings") || "{}"
+          );
+          if (settings.voiceId || settings.voice_id) {
+            voiceId = settings.voiceId || settings.voice_id;
+            console.log("Voice ID from localStorage avatarSettings:", voiceId);
+          }
+        }
+      }
+
+      console.log("Retrieved voice ID:", voiceId || "undefined");
+
+      // Use default voice if no voice ID found
+      voiceId = voiceId || "21m00Tcm4TlvDq8ikWAM";
+
+      console.log(
+        "Final voice ID for audio generation:",
+        voiceId,
+        "text:",
+        text
+      );
+
+      const response = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": this.API_CONFIG.elevenlabs_key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: text,
+            model_id: "eleven_monolingual_v1",
+            voice_settings: {
+              stability: 0.3,
+              similarity_boost: 0.3,
+              style: 0.5,
+              use_speaker_boost: true,
+            },
+          }),
+          signal: new AbortController().signal,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(
+          "Voice synthesis error:",
+          JSON.stringify(errorData, null, 2)
+        );
+        throw new Error("Voice synthesis failed");
+      }
+
+      const audioBlob = await response.blob();
+      console.log("Audio blob size:", audioBlob.size, "type:", audioBlob.type);
+
+      const audio = new Audio(URL.createObjectURL(audioBlob));
+      await new Promise((resolve) => {
+        audio.onloadedmetadata = resolve;
+        audio.onerror = () => resolve();
+      });
+      const duration = audio.duration || 0;
+      console.log("Audio duration:", duration, "seconds");
+      if (duration < 1 || duration > 90) {
+        throw new Error("Audio duration must be between 1 and 90 seconds");
+      }
+
+      const formData = new FormData();
+      const audioFile = new File([audioBlob], `audio-${Date.now()}.mp3`, {
+        type: "audio/mpeg",
+      });
+      formData.append("audio", audioFile);
+
+      console.log("Uploading audio to storage");
+      const uploadResponse = await fetch("/upload-audio", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error("Audio upload failed:", errorText);
+        throw new Error("Audio upload failed");
+      }
+
+      const { url } = await uploadResponse.json();
+      console.log("Audio uploaded successfully:", url);
+
+      if (!url.startsWith("https://")) {
+        throw new Error("Invalid audio URL: Must be an HTTPS URL");
+      }
+
+      return url;
+    } catch (error) {
+      console.error("Error generating audio:", error);
+      this.showToast(
+        "Unable to generate voice response. Please try again",
+        "error"
+      );
+      throw error;
+    }
+  }
+
+  async handleDestroy() {
+    try {
+      if (this.streamId) {
+        await this.deleteStream();
+      }
+    } catch (error) {
+      console.error("streaming-client-api.js: Destroy error:", error);
+      this.showToast(
+        "Unable to disconnect properly. Please refresh the page",
+        "warning"
+      );
+    } finally {
+      this.cleanup();
+      this.updateUI(false);
+    }
+  }
+
+  async createStream() {
+    // Get the current alter's image URL with proper fallback chain
+    const selectedAlter = window.selectedAlter;
+    let avatarUrl;
+
+    if (selectedAlter) {
+      // For premade or customized alters
+      if (
+        selectedAlter.type === "premade" ||
+        selectedAlter.type === "customized"
+      ) {
+        avatarUrl = selectedAlter.avatar_url;
+      }
+      // For new custom alters
+      else if (selectedAlter.type === "custom") {
+        avatarUrl = this.customAvatarUrl;
+      }
+      // Fallback for any other case
+      else {
+        avatarUrl = selectedAlter.avatar_url || this.customAvatarUrl;
+      }
+    } else {
+      // If no selected alter, use custom avatar or default
+      avatarUrl =
+        this.customAvatarUrl ||
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
     }
 
-    // Generate AI response using OpenAI with history
-    const { fetchOpenAIResponseWithHistory } = await import("./openai.js");
-    const response = await fetchOpenAIResponseWithHistory(
-      process.env.OPEN_AI_API_KEY,
-      message,
-      messageHistory,
-      alterContext
+    console.log(
+      "streaming-client-api.js: Creating stream with avatar URL:",
+      avatarUrl
     );
 
-    // Save AI response
-    const { error: saveAIError } = await supabaseAdmin
-      .from("chat_messages")
-      .insert({
-        conversation_id: conversationId,
-        role: "assistant",
-        content: response,
-      });
-
-    if (saveAIError) {
-      console.error("Error saving AI message:", saveAIError);
-      return res.status(500).json({ error: "Failed to save AI response" });
+    // Set the avatar image in the UI
+    if (this.avatarImage) {
+      this.avatarImage.src = avatarUrl;
+      this.avatarImage.style.display = "block";
+      this.idleVideo.style.display = "none";
+      this.talkVideo.style.display = "none";
     }
 
-    // Update conversation timestamp
-    await supabaseAdmin
-      .from("chat_conversations")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", conversationId);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(`${this.DID_API_URL}/talks/streams`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_url: avatarUrl,
+        driver_url: "bank://lively/",
+        config: {
+          stitch: true,
+          client_fps: 30,
+          streaming_mode: "web",
+          reduced_latency: true,
+          video_quality: "medium",
+          optimize_network_bandwidth: true,
+          auto_match: true,
+          stream_warmup: true,
+        },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-    res.json({ response });
-  } catch (error) {
-    console.error("Chat processing error:", error);
-    res.status(500).json({ error: "Failed to process chat message" });
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { message: "Failed to parse error response" };
+      }
+      console.error(
+        "streaming-client-api.js: Stream creation error:",
+        JSON.stringify(errorData, null, 2)
+      );
+      if (response.status === 400 || response.status === 422) {
+        throw new Error("Avatar image not supported");
+      }
+      throw new Error("Failed to create video stream");
+    }
+
+    return response;
   }
-});
 
-app.post("/chat", async (req, res) => {
-  try {
-    const { message, history, alterContext } = req.body;
+  async createPeerConnection(offer, iceServers) {
+    const RTCPeerConnection = (
+      window.RTCPeerConnection ||
+      window.webkitRTCPeerConnection ||
+      window.mozRTCPeerConnection
+    ).bind(window);
 
-    // You would typically use the message and history to interact with a language model
-    // and the alterContext to customize the response based on the selected alter.
-    // For example, you might adjust the prompt based on the alter's personality.
+    this.peerConnection = new RTCPeerConnection({
+      iceServers,
+      iceTransportPolicy: "relay",
+      bundlePolicy: "max-bundle",
+      rtcpMuxPolicy: "require",
+      iceCandidatePoolSize: 1,
+    });
 
-    // This is placeholder logic. Replace this with your actual chat processing logic.
-    const response = `Echo: ${message}`; // Placeholder response
+    this.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        fetch(`${this.DID_API_URL}/talks/streams/${this.streamId}/ice`, {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            candidate: event.candidate.candidate,
+            sdpMid: event.candidate.sdpMid,
+            sdpMLineIndex: event.candidate.sdpMLineIndex,
+            session_id: this.sessionId,
+          }),
+          signal: controller.signal,
+        })
+          .catch((error) => {
+            console.error(
+              "streaming-client-api.js: ICE candidate error:",
+              error
+            );
+            this.showToast("Connection issue detected. Please try again");
+          })
+          .finally(() => clearTimeout(timeoutId));
+      }
+    };
 
-    res.json({ response });
-  } catch (error) {
-    console.error("Chat processing error:", error);
-    res.status(500).json({ error: "Failed to process chat message" });
+    this.peerConnection.ontrack = (event) => {
+      if (event.track.kind === "video") {
+        this.statsIntervalId = setInterval(async () => {
+          const stats = await this.peerConnection.getStats(event.track);
+          stats.forEach((report) => {
+            if (report.type === "inbound-rtp" && report.kind === "video") {
+              const isPlaying = report.bytesReceived > this.lastBytesReceived;
+              if (isPlaying !== this.videoIsPlaying) {
+                this.videoIsPlaying = isPlaying;
+                this.updateStatus(
+                  "streaming",
+                  isPlaying ? "streaming" : "idle"
+                );
+
+                if (isPlaying) {
+                  console.log(
+                    "streaming-client-api.js: Video stream started playing"
+                  );
+                  this.talkVideo.style.display = "block";
+                  this.avatarImage.style.display = "none";
+                  this.idleVideo.style.display = "none";
+                  this.talkVideo.srcObject = event.streams[0];
+                  this.isPlayingPromise = true;
+                  this.talkVideo
+                    .play()
+                    .then(() => {
+                      this.isPlayingPromise = false;
+                    })
+                    .catch((error) => {
+                      console.error(
+                        "streaming-client-api.js: Video play error:",
+                        error
+                      );
+                      this.isPlayingPromise = false;
+                      this.showToast("Video playback issue. Please try again");
+                    });
+                } else {
+                  console.log("streaming-client-api.js: Video stream stopped");
+                  // Only transition back to avatar if we're not in the middle of playing
+                  if (!this.isPlayingPromise) {
+                    this.talkVideo.pause();
+                    this.talkVideo.srcObject = null;
+                    this.talkVideo.style.display = "none";
+
+                    // Get the current alter's image URL
+                    const selectedAlter = window.selectedAlter;
+                    const avatarUrl =
+                      selectedAlter?.image ||
+                      selectedAlter?.avatar_url ||
+                      this.customAvatarUrl;
+
+                    if (avatarUrl) {
+                      this.avatarImage.src = avatarUrl;
+                      this.avatarImage.style.display = "block";
+                      this.idleVideo.style.display = "none";
+                    } else {
+                      this.avatarImage.style.display = "none";
+                      this.idleVideo.style.display = "block";
+                    }
+                  }
+                }
+              }
+              this.lastBytesReceived = report.bytesReceived;
+            }
+          });
+        }, 500);
+      }
+    };
+
+    this.peerConnection.addEventListener("connectionstatechange", () => {
+      if (this.peerConnection.connectionState === "connected") {
+        console.log("Connected to video stream successfully");
+      }
+    });
+
+    await this.peerConnection.setRemoteDescription(offer);
+    const answer = await this.peerConnection.createAnswer();
+    await this.peerConnection.setLocalDescription(answer);
+    return answer;
   }
-});
 
-app.post("/generate-audio", async (req, res) => {
-  try {
-    const { text, voiceId } = req.body;
-
-    // Use the voiceId to select the appropriate voice for text-to-speech generation.
-    // This is placeholder logic. Replace this with your actual audio generation logic.
-    const audioUrl = `https://example.com/audio/${voiceId}/${text}`; // Placeholder audio URL
-
-    res.json({ audioUrl });
-  } catch (error) {
-    console.error("Audio generation error:", error);
-    res.status(500).json({ error: "Failed to generate audio" });
+  async sendSDPAnswer(answer) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(
+      `${this.DID_API_URL}/talks/streams/${this.streamId}/sdp`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          answer: answer,
+          session_id: this.sessionId,
+        }),
+        signal: controller.signal,
+      }
+    );
+    clearTimeout(timeoutId);
+    return response;
   }
+
+  async deleteStream() {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(
+      `${this.DID_API_URL}/talks/streams/${this.streamId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ session_id: this.sessionId }),
+        signal: controller.signal,
+      }
+    );
+    clearTimeout(timeoutId);
+    return response;
+  }
+
+  cleanup() {
+    if (this.peerConnection) {
+      this.peerConnection.close();
+      this.peerConnection = null;
+    }
+
+    if (!this.isPlayingPromise) {
+      this.talkVideo.pause();
+      this.talkVideo.srcObject = null;
+      this.talkVideo.style.display = "none";
+
+      // Get the current alter's image URL with proper fallback chain
+      const selectedAlter = window.selectedAlter;
+      let avatarUrl;
+
+      if (selectedAlter) {
+        // For premade or customized alters
+        if (
+          selectedAlter.type === "premade" ||
+          selectedAlter.type === "customized"
+        ) {
+          avatarUrl = selectedAlter.image || selectedAlter.avatar_url;
+        }
+        // For new custom alters
+        else if (selectedAlter.type === "custom") {
+          avatarUrl = this.customAvatarUrl;
+        }
+        // Fallback for any other case
+        else {
+          avatarUrl =
+            selectedAlter.image ||
+            selectedAlter.avatar_url ||
+            this.customAvatarUrl;
+        }
+      } else {
+        // If no selected alter, use custom avatar or default
+        avatarUrl =
+          this.customAvatarUrl ||
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+      }
+
+      if (avatarUrl) {
+        this.avatarImage.src = avatarUrl;
+        this.avatarImage.style.display = "block";
+        this.idleVideo.style.display = "none";
+      } else {
+        this.avatarImage.style.display = "none";
+        this.idleVideo.style.display = "block";
+      }
+
+      const video = document.getElementById("talk-video");
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach((track) => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    if (this.statsIntervalId) {
+      clearInterval(this.statsIntervalId);
+      this.statsIntervalId = null;
+    }
+    ["peer", "ice", "iceGathering", "signaling", "streaming"].forEach(
+      (type) => {
+        this.updateStatus(
+          type,
+          type === "signaling" ? "stable" : "disconnected"
+        );
+      }
+    );
+  }
+
+  updateUI(connected) {
+    const enterButton = document.getElementById("enter-button");
+    if (connected) {
+      enterButton.classList.add("connected");
+    } else {
+      enterButton.classList.remove("connected", "loading");
+    }
+  }
+
+  updateStatus(type, state) {
+    const label = document.getElementById(`${type}-status-label`);
+    if (!label) return;
+    label.innerText = state;
+    label.className = `${type}-${state}`;
+  }
+
+  showToast(message, type = "error") {
+    // Create toast container if it doesn't exist
+    let container = document.querySelector(".toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "toast-container";
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+
+    // Add icon based on type
+    const icons = {
+      success: "fa-check-circle",
+      error: "fa-exclamation-circle",
+      warning: "fa-exclamation-triangle",
+      info: "fa-info-circle",
+    };
+
+    // Create unique ID for this toast
+    const toastId = `toast-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+    toast.id = toastId;
+
+    toast.innerHTML = `
+    <div class="toast-icon-wrapper">
+      <i class="fas ${icons[type] || icons.error} toast-icon"></i>
+    </div>
+    <div class="toast-content">
+      <div class="toast-message">${message}</div>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="toast-progress"></div>
+  `;
+
+    container.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => {
+      toast.classList.add("show");
+    }, 100);
+
+    // Start progress bar animation
+    const progressBar = toast.querySelector(".toast-progress");
+    setTimeout(() => {
+      progressBar.style.transform = "scaleX(0)";
+    }, 200);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      if (document.getElementById(toastId)) {
+        toast.classList.remove("show");
+        setTimeout(() => {
+          if (toast.parentElement) {
+            toast.remove();
+          }
+        }, 400);
+      }
+    }, 4000);
+
+    console[type === "error" ? "error" : "log"](message);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("streaming-client-api.js: Initializing VideoAgent");
+  window.videoAgent = new VideoAgent();
+  console.log(
+    "streaming-client-api.js: VideoAgent assigned to window.videoAgent"
+  );
 });
