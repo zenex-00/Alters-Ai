@@ -425,20 +425,48 @@ class VideoAgent {
         throw new Error("Invalid audio URL: Must be an HTTPS URL");
       }
 
-      // Get the current alter's image URL
-      const avatarUrl =
+      // Get the current alter's image URL with proper fallback
+      const defaultAvatarUrl =
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+      let avatarUrl =
         selectedAlter?.image ||
         selectedAlter?.avatar_url ||
+        selectedAlter?.avatarUrl ||
+        selectedAlter?.profile_image ||
+        selectedAlter?.profileImage ||
         this.customAvatarUrl ||
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+        defaultAvatarUrl;
+
+      // Ensure we have a valid URL and it's publicly accessible
+      if (!avatarUrl || avatarUrl === "undefined" || avatarUrl === "null") {
+        avatarUrl = defaultAvatarUrl;
+      }
+
+      // Validate that the URL is accessible for external services
+      try {
+        const urlCheck = await fetch(avatarUrl, {
+          method: "HEAD",
+          mode: "cors",
+        });
+        if (!urlCheck.ok) {
+          console.warn(
+            "Avatar URL not publicly accessible, using default:",
+            avatarUrl
+          );
+          avatarUrl = defaultAvatarUrl;
+        }
+      } catch (error) {
+        console.warn("Avatar URL validation failed, using default:", error);
+        avatarUrl = defaultAvatarUrl;
+      }
 
       // Log the audio URL and avatar URL for debugging
       console.log("Audio URL:", audioUrl);
       console.log("Avatar URL:", avatarUrl);
 
       // Verify audio URL accessibility
-      const urlCheck = await fetch(audioUrl, { method: "HEAD" });
-      if (!urlCheck.ok) {
+      const urlCheck2 = await fetch(audioUrl, { method: "HEAD" });
+      if (!urlCheck2.ok) {
         console.error("Audio URL inaccessible:", audioUrl);
         throw new Error("Audio URL is not publicly accessible");
       }
@@ -682,31 +710,47 @@ class VideoAgent {
   }
 
   async createStream() {
-    // Get the current alter's image URL with proper fallback chain
+    // Get the current alter's image URL with proper fallback
     const selectedAlter = window.selectedAlter;
     let avatarUrl;
 
+    // Default fallback URL
+    const defaultAvatarUrl =
+      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+
     if (selectedAlter) {
-      // For premade or customized alters
-      if (
-        selectedAlter.type === "premade" ||
-        selectedAlter.type === "customized"
-      ) {
-        avatarUrl = selectedAlter.avatar_url;
-      }
-      // For new custom alters
-      else if (selectedAlter.type === "custom") {
-        avatarUrl = this.customAvatarUrl;
-      }
-      // Fallback for any other case
-      else {
-        avatarUrl = selectedAlter.avatar_url || this.customAvatarUrl;
-      }
+      // Try multiple possible avatar URL fields
+      avatarUrl =
+        selectedAlter.image ||
+        selectedAlter.avatar_url ||
+        selectedAlter.avatarUrl ||
+        selectedAlter.profile_image ||
+        selectedAlter.profileImage ||
+        this.customAvatarUrl ||
+        defaultAvatarUrl;
     } else {
       // If no selected alter, use custom avatar or default
-      avatarUrl =
-        this.customAvatarUrl ||
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+      avatarUrl = this.customAvatarUrl || defaultAvatarUrl;
+    }
+
+    // Ensure we always have a valid URL
+    if (!avatarUrl || avatarUrl === "undefined" || avatarUrl === "null") {
+      avatarUrl = defaultAvatarUrl;
+    }
+
+    // Validate URL accessibility for external services
+    try {
+      const urlCheck = await fetch(avatarUrl, {
+        method: "HEAD",
+        mode: "cors",
+      });
+      if (!urlCheck.ok) {
+        console.warn("Avatar URL not accessible for streaming, using default");
+        avatarUrl = defaultAvatarUrl;
+      }
+    } catch (error) {
+      console.warn("Avatar URL validation failed, using default:", error);
+      avatarUrl = defaultAvatarUrl;
     }
 
     console.log(
@@ -945,7 +989,7 @@ class VideoAgent {
       this.talkVideo.srcObject = null;
       this.talkVideo.style.display = "none";
 
-      // Get the current alter's image URL with proper fallback chain
+      // Get the current alter's image URL with proper fallback
       const selectedAlter = window.selectedAlter;
       let avatarUrl;
 

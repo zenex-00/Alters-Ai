@@ -113,7 +113,7 @@ class SupabaseSessionStore extends session.Store {
   }
 }
 
-const port = process.env.PORT || 3000; // Use Render.com PORT or default to 3000
+const PORT = process.env.PORT || 5000;
 const app = express();
 
 // Initialize session store with Supabase
@@ -589,7 +589,7 @@ app.post("/create-checkout-session", async (req, res) => {
     const host =
       process.env.NODE_ENV === "production"
         ? req.headers.host
-        : `localhost:${port}`;
+        : `localhost:${PORT}`;
     const baseUrl = `${protocol}://${host}`;
 
     const sessionConfig = {
@@ -634,7 +634,7 @@ app.post("/create-alter-checkout-session", async (req, res) => {
     const host =
       process.env.NODE_ENV === "production"
         ? req.headers.host
-        : `localhost:${port}`;
+        : `localhost:${PORT}`;
     const baseUrl = `${protocol}://${host}`;
 
     const sessionConfig = {
@@ -1465,8 +1465,8 @@ const gracefulShutdown = () => {
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
 
-server.listen(port, () => {
-  console.log(`Server started on port ${port}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
 
 // Handle successful alter purchase
