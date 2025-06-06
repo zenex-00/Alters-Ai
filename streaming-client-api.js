@@ -19,7 +19,7 @@ class VideoAgent {
 
     // Set default avatar URL
     const defaultAvatarUrl =
-      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
 
     // Load custom avatar URL from localStorage or use default
     const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
@@ -110,13 +110,8 @@ class VideoAgent {
     }
   }
 
-  async init(avatarUrl) {
+  async init() {
     try {
-      console.log(
-        "streaming-client-api.js: Initializing with avatar:",
-        avatarUrl
-      );
-
       // Fetch API configuration from server
       const response = await fetch("/api-config");
       if (!response.ok) {
@@ -135,41 +130,8 @@ class VideoAgent {
       this.talkVideo.setAttribute("playsinline", "");
       this.setupEventListeners();
 
-      // Wait for alter data to be loaded and get the proper avatar URL
-      let finalAvatarUrl = avatarUrl;
-
-      // Check if we have alter data loaded
-      if (window.selectedAlter && window.selectedAlter.image) {
-        finalAvatarUrl = window.selectedAlter.image;
-        console.log("Using alter image URL:", finalAvatarUrl);
-      } else {
-        // Wait a bit for alter data to load
-        for (let i = 0; i < 20; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          if (window.selectedAlter && window.selectedAlter.image) {
-            finalAvatarUrl = window.selectedAlter.image;
-            console.log("Found alter image URL after waiting:", finalAvatarUrl);
-            break;
-          }
-        }
-      }
-
-      // Ensure we have a valid avatar URL
-      if (
-        !finalAvatarUrl ||
-        finalAvatarUrl === "undefined" ||
-        finalAvatarUrl === "null"
-      ) {
-        console.warn("No valid avatar URL found, using default");
-        finalAvatarUrl =
-          this.customAvatarUrl ||
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
-      }
-
-      console.log("Final avatar URL for stream creation:", finalAvatarUrl);
-
       // Automatically start the server with retry
-      await this.handleConnectWithRetry(finalAvatarUrl);
+      await this.handleConnectWithRetry();
 
       // Initialize conversation and load history
       await this.initializeConversation();
@@ -316,11 +278,7 @@ class VideoAgent {
     }
   }
 
-  async handleConnectWithRetry(
-    avatarUrl = null,
-    maxRetries = 3,
-    retryDelay = 2000
-  ) {
+  async handleConnectWithRetry(maxRetries = 3, retryDelay = 2000) {
     const enterButton = document.getElementById("enter-button");
     enterButton.classList.add("loading");
 
@@ -472,7 +430,7 @@ class VideoAgent {
         selectedAlter?.image ||
         selectedAlter?.avatar_url ||
         this.customAvatarUrl ||
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
 
       // Log the audio URL and avatar URL for debugging
       console.log("Audio URL:", audioUrl);
@@ -729,35 +687,32 @@ class VideoAgent {
     let avatarUrl;
 
     if (selectedAlter) {
-      // Try to get the image URL from the alter
-      avatarUrl =
-        selectedAlter.image ||
-        selectedAlter.avatar_url ||
-        selectedAlter.avatarUrl;
-
-      // For custom alters, also try customAvatarUrl
-      if (!avatarUrl && selectedAlter.type === "custom") {
+      // For premade or customized alters
+      if (
+        selectedAlter.type === "premade" ||
+        selectedAlter.type === "customized"
+      ) {
+        avatarUrl = selectedAlter.avatar_url;
+      }
+      // For new custom alters
+      else if (selectedAlter.type === "custom") {
         avatarUrl = this.customAvatarUrl;
       }
-    }
-
-    // If no avatar URL found, use fallbacks
-    if (!avatarUrl) {
+      // Fallback for any other case
+      else {
+        avatarUrl = selectedAlter.avatar_url || this.customAvatarUrl;
+      }
+    } else {
+      // If no selected alter, use custom avatar or default
       avatarUrl =
         this.customAvatarUrl ||
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
     }
 
     console.log(
-      `streaming-client-api.js: Creating stream with avatar URL: ${avatarUrl}`
+      "streaming-client-api.js: Creating stream with avatar URL:",
+      avatarUrl
     );
-
-    // Ensure we have a valid avatar URL
-    if (!avatarUrl || avatarUrl === "undefined" || avatarUrl === "null") {
-      console.warn("No valid avatar URL provided, using default");
-      avatarUrl =
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
-    }
 
     // Set the avatar image in the UI
     if (this.avatarImage) {
@@ -1017,7 +972,7 @@ class VideoAgent {
         // If no selected alter, use custom avatar or default
         avatarUrl =
           this.customAvatarUrl ||
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
       }
 
       if (avatarUrl) {

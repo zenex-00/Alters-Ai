@@ -160,17 +160,11 @@ class AlterImageManager {
     }
 
     // If all sources fail, use placeholder
-    this.setImage(
-      avatarImage,
-      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg"
-    );
+    this.setImage(avatarImage, "/placeholder.svg");
   }
 
   getImageSources() {
-    if (!this.alterData)
-      return [
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
-      ];
+    if (!this.alterData) return ["/placeholder.svg"];
 
     // For published alters
     if (this.alterData.type === "published") {
@@ -178,18 +172,12 @@ class AlterImageManager {
         this.getAlterImageKey(this.alterData.id, "published")
       );
       if (persistentImage) {
-        return [
-          persistentImage,
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
-        ];
+        return [persistentImage, "/placeholder.svg"];
       }
 
       const supabaseUrl = this.alterData.avatar_url || this.alterData.image;
       if (supabaseUrl && supabaseUrl.includes("supabase")) {
-        return [
-          supabaseUrl,
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
-        ];
+        return [supabaseUrl, "/placeholder.svg"];
       }
     }
 
@@ -199,10 +187,7 @@ class AlterImageManager {
         this.getAlterImageKey(this.alterData.id, "premade")
       );
       if (persistentImage) {
-        return [
-          persistentImage,
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
-        ];
+        return [persistentImage, "/placeholder.svg"];
       }
     }
 
@@ -212,10 +197,7 @@ class AlterImageManager {
         this.getAlterImageKey(this.alterData.id, "custom")
       );
       if (persistentImage) {
-        return [
-          persistentImage,
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
-        ];
+        return [persistentImage, "/placeholder.svg"];
       }
     }
 
@@ -226,7 +208,7 @@ class AlterImageManager {
       this.alterData.avatarUrl,
       this.alterData.profile_image,
       this.alterData.profileImage,
-      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg",
+      "/placeholder.svg",
     ].filter(Boolean);
   }
 
@@ -236,8 +218,6 @@ class AlterImageManager {
     // Skip verification for Supabase URLs and persistent images
     if (
       url.includes("supabase") ||
-      url ===
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg" ||
       (this.alterData &&
         this.alterData.id &&
         url ===
@@ -269,21 +249,10 @@ class AlterImageManager {
     });
   }
 
-  isValidImageUrl(url) {
-    if (!url || url === "undefined" || url === "null") return false;
-    try {
-      new URL(url);
-      return url.startsWith("http") || url.startsWith("/");
-    } catch {
-      return false;
-    }
-  }
-
   setImage(element, url) {
     if (!url) {
       console.warn("No image URL provided");
-      url =
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg";
+      url = "/placeholder.svg";
     }
 
     // Store the URL before setting it
@@ -298,11 +267,7 @@ class AlterImageManager {
 
     // For published alters, store the image URL persistently for this specific alter
     if (this.alterData && this.alterData.id) {
-      if (
-        imageUrl.includes("supabase") ||
-        imageUrl !==
-          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749108465075-412555846.jpg"
-      ) {
+      if (imageUrl.includes("supabase") || imageUrl !== "/placeholder.svg") {
         localStorage.setItem(
           this.getAlterImageKey(this.alterData.id, this.alterData.type),
           imageUrl
@@ -389,17 +354,8 @@ class AlterImageManager {
     }
   }
 
-  handleAlterImage(alter) {
-    console.log("Handling alter image for:", alter);
-
-    // Check if we have a persisted image first
-    const persistedImage = this.getPersistedImage(alter.id || alter.name);
-    if (persistedImage && this.isValidImageUrl(persistedImage)) {
-      console.log("Using persistent image for alter:", persistedImage);
-      this.setAvatarImage(persistedImage);
-      return persistedImage;
-    }
-
+  // Method to handle both premade and published alters
+  async handleAlterImage(alter) {
     // Ensure we have a type
     if (!alter.type) {
       alter.type = "custom"; // Default to custom if not specified
@@ -453,18 +409,6 @@ class AlterImageManager {
 
     // Set the alter data
     this.setAlterData(alter);
-  }
-
-  setAvatarImage(imageUrl) {
-    console.log("Setting image:", imageUrl);
-    const avatarImage = document.getElementById("avatar-image");
-    if (avatarImage && imageUrl && this.isValidImageUrl(imageUrl)) {
-      avatarImage.src = imageUrl;
-      avatarImage.style.display = "block";
-    } else if (avatarImage) {
-      avatarImage.src = "/placeholder.svg";
-      avatarImage.style.display = "block";
-    }
   }
 }
 
