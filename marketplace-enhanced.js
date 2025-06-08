@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     {
       id: "2",
-      name: "Alex",
+      name: "Business Man",
       description: "Corporate Executive Assistant",
       price: 9.99,
       rating: 4.8,
@@ -89,22 +89,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     {
       id: "3",
-      name: "Brian",
+      name: "Gym Guide",
       description: "Personal Fitness Trainer",
       price: 9.99,
       rating: 4.7,
       category: "fitness",
       creator: "TechAlters",
       creatorAvatar:
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748959618178-685377198.jpg",
+        "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520asian%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=15&orientation=squarish",
       image:
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748959618178-685377198.jpg",
+        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
       verified: true,
       featured: false,
       type: "premade",
       link: "/marketplace/gym-guide-alter.html",
-      voiceId: "nPczCjzI2devNBz1zQrb",
-      voiceName: "Brian",
+      voiceId: "EXAVITQu4vr4xnSDxMaL",
+      voiceName: "Bella",
       personality:
         "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
       prompt:
