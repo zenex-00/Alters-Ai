@@ -1,6 +1,6 @@
 import alterImageManager from "./alter-image-manager.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   console.log("chat-interface.js: DOMContentLoaded fired");
 
   const userInputField = document.getElementById("user-input-field");
@@ -12,73 +12,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let isRecording = false;
   let isSending = false;
 
-  // Function to handle image loading with fallbacks
-  async function loadAlterImage(alter) {
-    const avatarImage = document.getElementById("avatar-image");
-    if (!avatarImage) {
-      console.error("Avatar image element not found");
-      return;
-    }
+  // Image loading is now handled by alterImageManager
 
-    // List of possible image sources in order of preference
-    const imageSources = [
-      alter.image,
-      alter.avatar_url,
-      alter.avatarUrl,
-      alter.profile_image,
-      alter.profileImage,
-      "/placeholder.svg", // Final fallback
-    ].filter(Boolean); // Remove any undefined/null values
+  // Use the alter image manager to get alter data from any storage source
+  const alter = alterImageManager.constructor.getAlterFromStorage();
 
-    // Try each image source until one works
-    for (const imageUrl of imageSources) {
-      try {
-        // Create a promise that resolves when the image loads or rejects after timeout
-        const imageLoadPromise = new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(imageUrl);
-          img.onerror = () =>
-            reject(new Error(`Failed to load image: ${imageUrl}`));
-          img.src = imageUrl;
-        });
-
-        // Wait for image to load with timeout
-        const loadedUrl = await Promise.race([
-          imageLoadPromise,
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Image load timeout")), 5000)
-          ),
-        ]);
-
-        // If we get here, the image loaded successfully
-        avatarImage.src = loadedUrl;
-        avatarImage.style.display = "block";
-        console.log("Successfully loaded alter image:", loadedUrl);
-        return true;
-      } catch (error) {
-        console.warn(`Failed to load image from ${imageUrl}:`, error);
-        continue; // Try next image source
-      }
-    }
-
-    // If we get here, all image sources failed
-    console.error("All image sources failed to load");
-    avatarImage.src = "/placeholder.svg";
-    avatarImage.style.display = "block";
-    return false;
-  }
-
-  // Check for selected alter from marketplace
-  const selectedAlter = localStorage.getItem("selectedAlter");
-  // Check for custom avatar settings from customize page
-  const avatarSettings = localStorage.getItem("avatarSettings");
-
-  if (selectedAlter) {
+  if (alter) {
     try {
-      const alter = JSON.parse(selectedAlter);
+      console.log("Loading alter from storage:", alter);
 
       // Use the image manager to handle the alter image
-      alterImageManager.handleAlterImage(alter);
+      await alterImageManager.handleAlterImage(alter);
 
       // Set chat header name if available
       const chatHeader = document.querySelector(".chat-header h2");
@@ -89,52 +33,35 @@ document.addEventListener("DOMContentLoaded", () => {
       // Store alter data for later use
       window.selectedAlter = alter;
 
-      // Remove from localStorage after loading
-      localStorage.removeItem("selectedAlter");
-    } catch (e) {
-      console.error("Failed to parse selectedAlter from localStorage:", e);
-    }
-  } else if (avatarSettings) {
-    try {
-      const settings = JSON.parse(avatarSettings);
-      console.log("Loading custom avatar settings:", settings);
-
-      // Create alter object from custom settings
-      const customAlter = {
-        name: settings.name,
-        personality: settings.personality,
-        prompt: settings.prompt,
-        knowledge: settings.knowledge,
-        voiceId: settings.voiceId,
-        voiceName: settings.voiceName,
-        documentName: settings.documentName,
-        documentUrl: settings.documentUrl,
-        documentContent: settings.documentContent,
-        type: "custom",
-      };
-
-      console.log("Custom alter voice ID:", customAlter.voiceId);
-
-      // Set chat header name
-      const chatHeader = document.querySelector(".chat-header h2");
-      if (chatHeader && customAlter.name) {
-        chatHeader.textContent = `Chat with ${customAlter.name}`;
+      // For custom alters without images, ensure placeholder is set
+      if (alter.type === "custom") {
+        const avatarImage = document.getElementById("avatar-image");
+        if (avatarImage && !alter.image && !alter.avatar_url) {
+          avatarImage.src = "/placeholder.svg";
+          avatarImage.style.display = "block";
+        }
       }
 
-      // Store alter data for later use
-      window.selectedAlter = customAlter;
-
-      // Handle avatar image for custom alter
+      // Clean up avatar settings after loading custom alter
+      if (alter.type === "custom") {
+        localStorage.removeItem("avatarSettings");
+      }
+    } catch (e) {
+      console.error("Failed to process alter data:", e);
+      // Fallback to placeholder
       const avatarImage = document.getElementById("avatar-image");
       if (avatarImage) {
         avatarImage.src = "/placeholder.svg";
         avatarImage.style.display = "block";
       }
-
-      // Remove from localStorage after loading
-      localStorage.removeItem("avatarSettings");
-    } catch (e) {
-      console.error("Failed to parse avatarSettings from localStorage:", e);
+    }
+  } else {
+    console.log("No alter data found in storage");
+    // Set default placeholder
+    const avatarImage = document.getElementById("avatar-image");
+    if (avatarImage) {
+      avatarImage.src = "/placeholder.svg";
+      avatarImage.style.display = "block";
     }
   }
 
@@ -164,7 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const videoAgent = await waitForVideoAgent();
       const checkConnection = () => {
-        if (videoAgent.isConnecting) {
+        const isConnecting =
+          videoAgent.isConnecting ||
+          !videoAgent.streamId ||
+          !videoAgent.sessionId;
+        if (isConnecting) {
           enterButton.classList.add("loading");
           enterButton.disabled = true;
           enterButton.innerHTML = "";
@@ -278,9 +209,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Function to send a message
   async function sendMessage() {
-    if (isSending || enterButton.classList.contains("loading")) {
+    if (
+      isSending ||
+      enterButton.classList.contains("loading") ||
+      enterButton.disabled
+    ) {
       console.log(
-        "chat-interface.js: Message sending blocked (isSending or loading)"
+        "chat-interface.js: Message sending blocked (isSending:",
+        isSending,
+        ", loading:",
+        enterButton.classList.contains("loading"),
+        ", disabled:",
+        enterButton.disabled,
+        ")"
       );
       return;
     }

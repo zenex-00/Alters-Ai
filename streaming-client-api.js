@@ -12,10 +12,21 @@ class VideoAgent {
     this.messageProcessing = new Set();
     this.isPlayingPromise = false;
     this.currentConversationId = null;
+    this.isConnecting = false;
 
     this.idleVideo = document.getElementById("idle-video");
     this.talkVideo = document.getElementById("talk-video");
     this.avatarImage = document.getElementById("avatar-image");
+
+    // Handle missing video elements gracefully
+    if (this.idleVideo) {
+      this.idleVideo.addEventListener("error", () => {
+        console.warn(
+          "streaming-client-api.js: Idle video failed to load, hiding element"
+        );
+        this.idleVideo.style.display = "none";
+      });
+    }
 
     // Set default avatar URL
     const defaultAvatarUrl =
@@ -280,25 +291,50 @@ class VideoAgent {
 
   async handleConnectWithRetry(maxRetries = 3, retryDelay = 2000) {
     const enterButton = document.getElementById("enter-button");
+    this.isConnecting = true;
     enterButton.classList.add("loading");
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        if (this.peerConnection?.connectionState === "connected") return;
+        if (
+          this.peerConnection?.connectionState === "connected" &&
+          this.streamId &&
+          this.sessionId
+        ) {
+          enterButton.classList.remove("loading");
+          return;
+        }
 
         this.cleanup();
 
         const response = await this.createStream();
         if (!response.ok) {
-          throw new Error("Failed to create stream");
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Stream creation failed:", errorData);
+          throw new Error(`Failed to create stream: ${response.status}`);
         }
-        const { id, offer, ice_servers, session_id } = await response.json();
+
+        const responseData = await response.json();
+        const { id, offer, ice_servers, session_id } = responseData;
+
+        if (!id || !session_id || !offer) {
+          throw new Error("Invalid response data from stream creation");
+        }
+
         this.streamId = id;
         this.sessionId = session_id;
+
+        console.log(
+          `streaming-client-api.js: Stream created successfully - ID: ${this.streamId}, Session: ${this.sessionId}`
+        );
 
         const answer = await this.createPeerConnection(offer, ice_servers);
         await this.sendSDPAnswer(answer);
 
+        // Wait a moment to ensure connection is stable
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        this.isConnecting = false;
         enterButton.classList.remove("loading");
         this.updateUI(true);
         document.getElementById("user-input-field").focus();
@@ -309,6 +345,11 @@ class VideoAgent {
           `streaming-client-api.js: Connection error (attempt ${attempt}):`,
           error
         );
+
+        // Reset IDs on failure
+        this.streamId = null;
+        this.sessionId = null;
+
         if (attempt === maxRetries) {
           if (error.message.includes("rejected")) {
             this.showToast(
@@ -321,6 +362,7 @@ class VideoAgent {
               "error"
             );
           }
+          this.isConnecting = false;
           enterButton.classList.remove("loading");
           this.cleanup();
           throw error;
@@ -331,6 +373,29 @@ class VideoAgent {
   }
 
   async handleTalk(userMessage = null) {
+    // Validate stream is ready before processing
+    if (!this.streamId || !this.sessionId) {
+      console.log(
+        "streaming-client-api.js: Stream not ready, attempting to reconnect..."
+      );
+      try {
+        await this.handleConnectWithRetry();
+        if (!this.streamId || !this.sessionId) {
+          throw new Error("Failed to establish stream connection");
+        }
+      } catch (error) {
+        console.error(
+          "streaming-client-api.js: Failed to establish connection:",
+          error
+        );
+        this.showToast(
+          "Connection failed. Please refresh the page and try again.",
+          "error"
+        );
+        return;
+      }
+    }
+
     const messageId = `${userMessage}-${Date.now()}`;
     if (this.messageProcessing.has(messageId)) {
       console.log(
@@ -437,26 +502,33 @@ class VideoAgent {
         this.customAvatarUrl ||
         defaultAvatarUrl;
 
-      // Ensure we have a valid URL and it's publicly accessible
+      // Ensure we have a valid URL
       if (!avatarUrl || avatarUrl === "undefined" || avatarUrl === "null") {
         avatarUrl = defaultAvatarUrl;
       }
 
-      // Validate that the URL is accessible for external services
+      // Upload the avatar image to our server to get a fresh public URL
       try {
-        const urlCheck = await fetch(avatarUrl, {
-          method: "HEAD",
-          mode: "cors",
-        });
-        if (!urlCheck.ok) {
-          console.warn(
-            "Avatar URL not publicly accessible, using default:",
-            avatarUrl
-          );
-          avatarUrl = defaultAvatarUrl;
+        if (avatarUrl !== defaultAvatarUrl && !avatarUrl.includes("/upload/")) {
+          const freshUrl = await this.uploadAvatarToServer(avatarUrl);
+          if (freshUrl) {
+            avatarUrl = freshUrl;
+            console.log(
+              "Using fresh uploaded avatar URL for streaming:",
+              avatarUrl
+            );
+          } else {
+            console.warn(
+              "Failed to upload avatar for streaming, using default"
+            );
+            avatarUrl = defaultAvatarUrl;
+          }
         }
       } catch (error) {
-        console.warn("Avatar URL validation failed, using default:", error);
+        console.warn(
+          "Avatar upload failed for streaming, using default:",
+          error
+        );
         avatarUrl = defaultAvatarUrl;
       }
 
@@ -559,6 +631,44 @@ class VideoAgent {
           performance.now() - startTime
         }ms`
       );
+    }
+  }
+
+  async uploadAvatarToServer(imageUrl) {
+    try {
+      console.log("Uploading avatar to server:", imageUrl);
+
+      // First, fetch the image from the original URL
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error("Failed to fetch original image");
+      }
+
+      const imageBlob = await imageResponse.blob();
+
+      // Create FormData to upload to our server
+      const formData = new FormData();
+      const fileName = `avatar-${Date.now()}.jpg`;
+      const imageFile = new File([imageBlob], fileName, { type: "image/jpeg" });
+      formData.append("avatar", imageFile);
+
+      // Upload to our server
+      const uploadResponse = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image to server");
+      }
+
+      const uploadData = await uploadResponse.json();
+      console.log("Successfully uploaded avatar:", uploadData.url);
+
+      return uploadData.url;
+    } catch (error) {
+      console.error("Error uploading avatar to server:", error);
+      return null;
     }
   }
 
@@ -738,18 +848,20 @@ class VideoAgent {
       avatarUrl = defaultAvatarUrl;
     }
 
-    // Validate URL accessibility for external services
+    // Upload the avatar image to our server to get a fresh public URL
     try {
-      const urlCheck = await fetch(avatarUrl, {
-        method: "HEAD",
-        mode: "cors",
-      });
-      if (!urlCheck.ok) {
-        console.warn("Avatar URL not accessible for streaming, using default");
-        avatarUrl = defaultAvatarUrl;
+      if (avatarUrl !== defaultAvatarUrl && !avatarUrl.includes("/upload/")) {
+        const freshUrl = await this.uploadAvatarToServer(avatarUrl);
+        if (freshUrl) {
+          avatarUrl = freshUrl;
+          console.log("Using fresh uploaded avatar URL:", avatarUrl);
+        } else {
+          console.warn("Failed to upload avatar, using default");
+          avatarUrl = defaultAvatarUrl;
+        }
       }
     } catch (error) {
-      console.warn("Avatar URL validation failed, using default:", error);
+      console.warn("Avatar upload failed, using default:", error);
       avatarUrl = defaultAvatarUrl;
     }
 
@@ -859,68 +971,88 @@ class VideoAgent {
     this.peerConnection.ontrack = (event) => {
       if (event.track.kind === "video") {
         this.statsIntervalId = setInterval(async () => {
-          const stats = await this.peerConnection.getStats(event.track);
-          stats.forEach((report) => {
-            if (report.type === "inbound-rtp" && report.kind === "video") {
-              const isPlaying = report.bytesReceived > this.lastBytesReceived;
-              if (isPlaying !== this.videoIsPlaying) {
-                this.videoIsPlaying = isPlaying;
-                this.updateStatus(
-                  "streaming",
-                  isPlaying ? "streaming" : "idle"
-                );
-
-                if (isPlaying) {
-                  console.log(
-                    "streaming-client-api.js: Video stream started playing"
+          try {
+            if (
+              !this.peerConnection ||
+              this.peerConnection.connectionState !== "connected"
+            ) {
+              return;
+            }
+            const stats = await this.peerConnection.getStats(event.track);
+            stats.forEach((report) => {
+              if (report.type === "inbound-rtp" && report.kind === "video") {
+                const isPlaying = report.bytesReceived > this.lastBytesReceived;
+                if (isPlaying !== this.videoIsPlaying) {
+                  this.videoIsPlaying = isPlaying;
+                  this.updateStatus(
+                    "streaming",
+                    isPlaying ? "streaming" : "idle"
                   );
-                  this.talkVideo.style.display = "block";
-                  this.avatarImage.style.display = "none";
-                  this.idleVideo.style.display = "none";
-                  this.talkVideo.srcObject = event.streams[0];
-                  this.isPlayingPromise = true;
-                  this.talkVideo
-                    .play()
-                    .then(() => {
-                      this.isPlayingPromise = false;
-                    })
-                    .catch((error) => {
-                      console.error(
-                        "streaming-client-api.js: Video play error:",
-                        error
-                      );
-                      this.isPlayingPromise = false;
-                      this.showToast("Video playback issue. Please try again");
-                    });
-                } else {
-                  console.log("streaming-client-api.js: Video stream stopped");
-                  // Only transition back to avatar if we're not in the middle of playing
-                  if (!this.isPlayingPromise) {
-                    this.talkVideo.pause();
-                    this.talkVideo.srcObject = null;
-                    this.talkVideo.style.display = "none";
 
-                    // Get the current alter's image URL
-                    const selectedAlter = window.selectedAlter;
-                    const avatarUrl =
-                      selectedAlter?.image ||
-                      selectedAlter?.avatar_url ||
-                      this.customAvatarUrl;
+                  if (isPlaying) {
+                    console.log(
+                      "streaming-client-api.js: Video stream started playing"
+                    );
+                    this.talkVideo.style.display = "block";
+                    this.avatarImage.style.display = "none";
+                    this.idleVideo.style.display = "none";
+                    this.talkVideo.srcObject = event.streams[0];
+                    this.isPlayingPromise = true;
+                    this.talkVideo
+                      .play()
+                      .then(() => {
+                        this.isPlayingPromise = false;
+                      })
+                      .catch((error) => {
+                        console.error(
+                          "streaming-client-api.js: Video play error:",
+                          error
+                        );
+                        this.isPlayingPromise = false;
+                        this.showToast(
+                          "Video playback issue. Please try again"
+                        );
+                      });
+                  } else {
+                    console.log(
+                      "streaming-client-api.js: Video stream stopped"
+                    );
+                    // Only transition back to avatar if we're not in the middle of playing
+                    if (!this.isPlayingPromise) {
+                      this.talkVideo.pause();
+                      this.talkVideo.srcObject = null;
+                      this.talkVideo.style.display = "none";
 
-                    if (avatarUrl) {
-                      this.avatarImage.src = avatarUrl;
-                      this.avatarImage.style.display = "block";
-                      this.idleVideo.style.display = "none";
-                    } else {
-                      this.avatarImage.style.display = "none";
-                      this.idleVideo.style.display = "block";
+                      // Get the current alter's image URL
+                      const selectedAlter = window.selectedAlter;
+                      const avatarUrl =
+                        selectedAlter?.image ||
+                        selectedAlter?.avatar_url ||
+                        this.customAvatarUrl;
+
+                      if (avatarUrl) {
+                        this.avatarImage.src = avatarUrl;
+                        this.avatarImage.style.display = "block";
+                        this.idleVideo.style.display = "none";
+                      } else {
+                        this.avatarImage.style.display = "none";
+                        this.idleVideo.style.display = "block";
+                      }
                     }
                   }
                 }
+                this.lastBytesReceived = report.bytesReceived;
               }
-              this.lastBytesReceived = report.bytesReceived;
+            });
+          } catch (error) {
+            // Silently handle stats errors to avoid console spam
+            if (error.name !== "InvalidAccessError") {
+              console.warn(
+                "streaming-client-api.js: Stats collection error:",
+                error
+              );
             }
-          });
+          }
         }, 500);
       }
     };
@@ -958,7 +1090,6 @@ class VideoAgent {
     clearTimeout(timeoutId);
     return response;
   }
-
   async deleteStream() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -983,6 +1114,13 @@ class VideoAgent {
       this.peerConnection.close();
       this.peerConnection = null;
     }
+
+    // Reset connection state
+    this.streamId = null;
+    this.sessionId = null;
+    this.videoIsPlaying = false;
+    this.lastBytesReceived = 0;
+    this.isConnecting = false;
 
     if (!this.isPlayingPromise) {
       this.talkVideo.pause();
