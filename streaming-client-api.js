@@ -639,16 +639,24 @@ class VideoAgent {
       console.log("Uploading avatar to server:", imageUrl);
 
       // First, fetch the image from the original URL
-      const imageResponse = await fetch(imageUrl);
+      const imageResponse = await fetch(imageUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'include',
+        headers: {
+          'Accept': 'image/*'
+        }
+      });
+
       if (!imageResponse.ok) {
-        throw new Error("Failed to fetch original image");
+        throw new Error(`Failed to fetch original image: ${imageResponse.status}`);
       }
 
       const imageBlob = await imageResponse.blob();
 
       // Create FormData to upload to our server
       const formData = new FormData();
-      const fileName = `avatar-${Date.now()}.jpg`;
+      const fileName = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
       const imageFile = new File([imageBlob], fileName, { type: "image/jpeg" });
       formData.append("avatar", imageFile);
 
@@ -656,15 +664,19 @@ class VideoAgent {
       const uploadResponse = await fetch("/upload", {
         method: "POST",
         body: formData,
+        credentials: 'include'
       });
 
       if (!uploadResponse.ok) {
-        throw new Error("Failed to upload image to server");
+        throw new Error(`Failed to upload image to server: ${uploadResponse.status}`);
       }
 
       const uploadData = await uploadResponse.json();
       console.log("Successfully uploaded avatar:", uploadData.url);
 
+      // Store the URL in localStorage for persistence
+      localStorage.setItem('customAvatarUrl', uploadData.url);
+      
       return uploadData.url;
     } catch (error) {
       console.error("Error uploading avatar to server:", error);
@@ -820,108 +832,54 @@ class VideoAgent {
   }
 
   async createStream() {
-    // Get the current alter's image URL with proper fallback
-    const selectedAlter = window.selectedAlter;
-    let avatarUrl;
-
-    // Default fallback URL
-    const defaultAvatarUrl =
-      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
-
-    if (selectedAlter) {
-      // Try multiple possible avatar URL fields
-      avatarUrl =
-        selectedAlter.image ||
-        selectedAlter.avatar_url ||
-        selectedAlter.avatarUrl ||
-        selectedAlter.profile_image ||
-        selectedAlter.profileImage ||
-        this.customAvatarUrl ||
-        defaultAvatarUrl;
-    } else {
-      // If no selected alter, use custom avatar or default
-      avatarUrl = this.customAvatarUrl || defaultAvatarUrl;
-    }
-
-    // Ensure we always have a valid URL
-    if (!avatarUrl || avatarUrl === "undefined" || avatarUrl === "null") {
-      avatarUrl = defaultAvatarUrl;
-    }
-
-    // Upload the avatar image to our server to get a fresh public URL
     try {
-      if (avatarUrl !== defaultAvatarUrl && !avatarUrl.includes("/upload/")) {
-        const freshUrl = await this.uploadAvatarToServer(avatarUrl);
-        if (freshUrl) {
-          avatarUrl = freshUrl;
-          console.log("Using fresh uploaded avatar URL:", avatarUrl);
-        } else {
-          console.warn("Failed to upload avatar, using default");
-          avatarUrl = defaultAvatarUrl;
+      let avatarUrl = this.customAvatarUrl;
+
+      // If we have a custom avatar, try to upload it
+      if (avatarUrl) {
+        try {
+          const uploadedUrl = await this.uploadAvatarToServer(avatarUrl);
+          if (uploadedUrl) {
+            avatarUrl = uploadedUrl;
+          } else {
+            console.warn("Failed to upload avatar, using default");
+            avatarUrl = null;
+          }
+        } catch (error) {
+          console.error("Error handling custom avatar:", error);
+          avatarUrl = null;
         }
       }
-    } catch (error) {
-      console.warn("Avatar upload failed, using default:", error);
-      avatarUrl = defaultAvatarUrl;
-    }
 
-    console.log(
-      "streaming-client-api.js: Creating stream with avatar URL:",
-      avatarUrl
-    );
+      console.log("Creating stream with avatar URL:", avatarUrl);
 
-    // Set the avatar image in the UI
-    if (this.avatarImage) {
-      this.avatarImage.src = avatarUrl;
-      this.avatarImage.style.display = "block";
-      this.idleVideo.style.display = "none";
-      this.talkVideo.style.display = "none";
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(`${this.DID_API_URL}/talks/streams`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        source_url: avatarUrl,
-        driver_url: "bank://lively/",
-        config: {
-          stitch: true,
-          client_fps: 30,
-          streaming_mode: "web",
-          reduced_latency: true,
-          video_quality: "medium",
-          optimize_network_bandwidth: true,
-          auto_match: true,
-          stream_warmup: true,
+      // Create the stream with or without custom avatar
+      const response = await fetch("/create-stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+        body: JSON.stringify({
+          avatarUrl: avatarUrl,
+          voiceId: this.voiceId,
+        }),
+        credentials: 'include'
+      });
 
-    if (!response.ok) {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch {
-        errorData = { message: "Failed to parse error response" };
+      if (!response.ok) {
+        throw new Error(`Failed to create stream: ${response.status}`);
       }
-      console.error(
-        "streaming-client-api.js: Stream creation error:",
-        JSON.stringify(errorData, null, 2)
-      );
-      if (response.status === 400 || response.status === 422) {
-        throw new Error("Avatar image not supported");
-      }
-      throw new Error("Failed to create video stream");
+
+      const data = await response.json();
+      this.streamId = data.streamId;
+      this.sessionId = data.sessionId;
+
+      console.log("Stream created successfully - ID:", this.streamId, "Session:", document.cookie);
+      return data;
+    } catch (error) {
+      console.error("Error creating stream:", error);
+      throw error;
     }
-
-    return response;
   }
 
   async createPeerConnection(offer, iceServers) {

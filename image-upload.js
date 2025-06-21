@@ -157,12 +157,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const data = await response.json();
+      
+      // Normalize the image URL
+      let imageUrl = data.url;
+      if (imageUrl.startsWith('/')) {
+        imageUrl = `${window.location.origin}${imageUrl}`;
+      }
+      
+      // Add cache busting
+      const timestamp = Date.now();
+      imageUrl = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_=${timestamp}`;
+      
       try {
         const videoAgent = await waitForVideoAgent();
-        await videoAgent.setCustomAvatar(data.url);
+        await videoAgent.setCustomAvatar(imageUrl);
         // Restart the stream to apply the new avatar
         await videoAgent.handleDestroy(); // Clean up existing stream
         await videoAgent.handleConnectWithRetry(); // Create new stream with custom avatar
+        
+        // Store the alter data with the normalized image URL
+        if (window.AlterStorageManager) {
+          window.AlterStorageManager.setSelectedAlter({
+            image: imageUrl,
+            name: "Custom Avatar",
+            type: "custom"
+          });
+        }
+        
         // Set button to uploaded state
         confirmButton.textContent = "Uploaded";
         confirmButton.classList.remove("uploading");

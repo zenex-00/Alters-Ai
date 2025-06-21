@@ -1,8 +1,23 @@
 // Utility for managing alter data storage across the application
 class AlterStorageManager {
+  static normalizeImageUrl(imageUrl) {
+    if (!imageUrl) return `${window.location.origin}/placeholder.svg`;
+    
+    // Ensure absolute URL
+    if (imageUrl.startsWith('/')) {
+      imageUrl = `${window.location.origin}${imageUrl}`;
+    }
+    
+    // Add cache busting
+    const timestamp = Date.now();
+    return `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_=${timestamp}`;
+  }
+
   static setSelectedAlter(alter, useSessionStorage = true) {
+    // Normalize image URL before storage
     const alterData = {
       ...alter,
+      image: this.normalizeImageUrl(alter.image),
       timestamp: Date.now(),
     };
 
@@ -25,6 +40,8 @@ class AlterStorageManager {
         const parsed = JSON.parse(alterData);
         // Check if data is not too old (24 hours)
         if (Date.now() - parsed.timestamp < 86400000) {
+          // Ensure image URL is still valid
+          parsed.image = this.normalizeImageUrl(parsed.image);
           return parsed;
         }
       } catch (e) {
@@ -39,6 +56,8 @@ class AlterStorageManager {
         const parsed = JSON.parse(alterData);
         // Check if data is not too old (7 days)
         if (Date.now() - parsed.timestamp < 604800000) {
+          // Ensure image URL is still valid
+          parsed.image = this.normalizeImageUrl(parsed.image);
           return parsed;
         }
       } catch (e) {
