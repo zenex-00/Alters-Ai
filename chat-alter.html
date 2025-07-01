@@ -1310,11 +1310,9 @@
           }
 
           // Function to initialize alter data
-          function initializeAlter() {
-            // Get alter data from localStorage (marketplace uses 'selectedAlter')
-            const alterData =
-              localStorage.getItem("selectedAlter") ||
-              localStorage.getItem("alterSelectedAlter");
+          async function initializeAlter() {
+            // Get alter data from localStorage only (no session storage)
+            const alterData = localStorage.getItem("selectedAlter");
             if (alterData) {
               try {
                 const alter = JSON.parse(alterData);
@@ -1324,87 +1322,64 @@
                 let initializedAlter = { ...alter };
 
                 if (alter.type === "premade") {
-                  // Use hardcoded premade alter properties
-                  const premadeAlters = {
-                    1: {
-                      name: "Doctor Emma",
-                      description: "Professional Medical Consultant",
-                      personality:
-                        "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
-                      prompt:
-                        "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
-                      knowledge:
-                        "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
-                      category: "professional",
-                      image:
-                        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748638972837-112725298.jpg",
-                      price: 9.99,
-                      voiceId: "21m00Tcm4TlvDq8ikWAM", // Rachel voice
-                      voiceName: "Rachel",
-                      type: "premade",
-                    },
-                    2: {
-                      name: "Business Man",
-                      description: "Corporate Executive Assistant",
-                      personality:
-                        "Professional, strategic, and results-oriented business executive who provides expert advice on corporate matters, leadership, and business strategy.",
-                      prompt:
-                        "You are a Corporate Executive Assistant. You are professional, strategic, and results-oriented. You provide expert advice on corporate matters, leadership, and business strategy while maintaining a professional demeanor.",
-                      knowledge:
-                        "Business strategy, corporate management, leadership, finance, marketing",
-                      category: "professional",
-                      image:
-                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish",
-                      price: 9.99,
-                      voiceId: "29vD33N1CtxCmqQRPOHJ", // Drew voice
-                      voiceName: "Drew",
-                      type: "premade",
-                    },
-                    3: {
-                      name: "Gym Guide",
-                      description: "Personal Fitness Trainer",
-                      personality:
-                        "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
-                      prompt:
-                        "You are a Personal Fitness Trainer. You are motivating, energetic, and encouraging. You provide expert guidance on workouts, nutrition, and healthy lifestyle choices while keeping users motivated and focused on their fitness goals.",
-                      knowledge:
-                        "Fitness training, workout routines, nutrition, health and wellness, exercise science",
-                      category: "fitness",
-                      image:
-                        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520fitness%2520trainer%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
-                      price: 9.99,
-                      voiceId: "EXAVITQu4vr4xnSDxMaL", // Bella voice
-                      voiceName: "Bella",
-                      type: "premade",
-                    },
-                  };
+                  // For premade alters, get clean ID and fetch from database
+                  const cleanId = alter.originalId || alter.id.toString().replace(/^premade_/, "");
+                  
+                  try {
+                    const response = await fetch("/api/premade-alters");
+                    if (response.ok) {
+                      const premadeAlters = await response.json();
+                      const premadeData = premadeAlters.find(p => p.id.toString() === cleanId);
 
-                  const premadeData =
-                    premadeAlters[alter.id] ||
-                    premadeAlters[alter.id.replace("premade_", "")];
-                  if (premadeData) {
+                      if (premadeData) {
+                        initializedAlter = {
+                          ...alter,
+                          name: premadeData.name,
+                          description: premadeData.description,
+                          personality: premadeData.personality,
+                          prompt: premadeData.prompt,
+                          knowledge: premadeData.knowledge,
+                          category: premadeData.category,
+                          image: premadeData.image_url || premadeData.image,
+                          avatar_url: premadeData.image_url || premadeData.image,
+                          price: premadeData.price || 9.99,
+                          voiceId: premadeData.voice_id,
+                          voice_id: premadeData.voice_id, // Ensure both formats
+                          voiceName: premadeData.voice_name,
+                          voice_name: premadeData.voice_name, // Ensure both formats
+                          type: "premade",
+                          originalId: cleanId
+                        };
+                      } else {
+                        // Use fallback data with preserved image
+                        console.warn("Premade alter not found in database, using fallback data");
+                        initializedAlter = {
+                          ...alter,
+                          image: alter.image || "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1751111755802-739010682.jpg",
+                          avatar_url: alter.image || "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1751111755802-739010682.jpg"
+                        };
+                      }
+                    } else {
+                      throw new Error(`Failed to fetch premade alters: ${response.status}`);
+                    }
+                  } catch (error) {
+                    console.error("Error fetching premade alter data:", error);
+                    // Preserve original image data on error
                     initializedAlter = {
                       ...alter,
-                      ...premadeData,
-                      id: alter.id,
-                      type: "premade",
+                      image: alter.image || "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1751111755802-739010682.jpg",
+                      avatar_url: alter.image || "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1751111755802-739010682.jpg"
                     };
                   }
                 } else if (alter.type === "published") {
-                  // For published alters, the data should already be complete from the marketplace
-                  // But ensure we have all required fields
+                  // For published alters, preserve all existing data
                   initializedAlter = {
                     ...alter,
-                    personality:
-                      alter.personality ||
-                      "Helpful and knowledgeable AI assistant",
-                    prompt:
-                      alter.prompt ||
-                      `You are ${alter.name}. ${
-                        alter.description || ""
-                      } Be helpful and engaging in your responses.`,
-                    knowledge:
-                      alter.knowledge || "General knowledge and assistance",
+                    personality: alter.personality || "Helpful and knowledgeable AI assistant",
+                    prompt: alter.prompt || `You are ${alter.name}. ${alter.description || ""} Be helpful and engaging in your responses.`,
+                    knowledge: alter.knowledge || "General knowledge and assistance",
+                    image: alter.image || alter.avatar_url,
+                    avatar_url: alter.avatar_url || alter.image,
                     type: "published",
                   };
                 }
@@ -1412,7 +1387,9 @@
                 // Ensure voice ID is available for all alter types
                 initializedAlter = ensureVoiceIdForAlter(initializedAlter);
 
+                // Store in window and backup in sessionStorage for persistence
                 window.selectedAlter = initializedAlter;
+                sessionStorage.setItem("selectedAlter", JSON.stringify(initializedAlter));
 
                 // Update chat header with alter name
                 if (chatHeader && initializedAlter.name) {
@@ -1421,69 +1398,65 @@
 
                 // Handle alter image using image manager
                 if (initializedAlter.image || initializedAlter.avatar_url) {
-                  alterImageManager.setAlterData(initializedAlter);
+                  // For premade alters, let image manager handle database fetching
+                  if (initializedAlter.type === "premade") {
+                    alterImageManager.setAlterData(initializedAlter);
+                  } else {
+                    // For other types, set image directly
+                    const avatarImage = document.getElementById('avatar-image');
+                    if (avatarImage) {
+                      avatarImage.src = initializedAlter.image || initializedAlter.avatar_url;
+                      avatarImage.style.display = 'block';
+                    }
+                  }
                 }
 
-                // Store in sessionStorage for persistence
-                sessionStorage.setItem(
-                  "alterCurrentAlter",
-                  JSON.stringify(initializedAlter)
-                );
+                // Set the avatar URL for the video agent
+                if (window.videoAgent && (initializedAlter.image || initializedAlter.avatar_url)) {
+                  const avatarUrl = initializedAlter.image || initializedAlter.avatar_url;
+                  console.log("Setting avatar URL for video agent:", avatarUrl);
+                  window.videoAgent.customAvatarUrl = avatarUrl;
+                }
 
-                // Clear the localStorage after loading
-                localStorage.removeItem("selectedAlter");
-                localStorage.removeItem("alterSelectedAlter");
-
-                console.log(
-                  "Successfully initialized alter:",
-                  initializedAlter
-                );
+                // Don't clear localStorage immediately - keep it for refresh scenarios
+                console.log("Successfully initialized alter:", initializedAlter);
               } catch (error) {
                 console.error("Error initializing alter:", error);
-                showToast(
-                  "Failed to load alter data. Please try again.",
-                  "error"
-                );
+                showToast("Failed to load alter data. Please try again.", "error");
               }
             } else {
-              // Check sessionStorage for existing alter data
-              const currentAlter = sessionStorage.getItem("alterCurrentAlter");
-              if (currentAlter) {
+              // Check sessionStorage as backup
+              const sessionAlterData = sessionStorage.getItem("selectedAlter");
+              if (sessionAlterData) {
                 try {
-                  const alter = JSON.parse(currentAlter);
-                  // Ensure voice ID is available
-                  const enhancedAlter = ensureVoiceIdForAlter(alter);
-                  window.selectedAlter = enhancedAlter;
-
-                  // Update chat header
+                  const alter = JSON.parse(sessionAlterData);
+                  window.selectedAlter = alter;
+                  
+                  // Update UI
                   if (chatHeader && alter.name) {
                     chatHeader.textContent = `Chat with ${alter.name}`;
                   }
-
-                  // Update image using image manager
+                  
                   if (alter.image || alter.avatar_url) {
-                    alterImageManager.setAlterData(alter);
+                    const avatarImage = document.getElementById('avatar-image');
+                    if (avatarImage) {
+                      avatarImage.src = alter.image || alter.avatar_url;
+                      avatarImage.style.display = 'block';
+                    }
                   }
-
+                  
                   console.log("Loaded alter from sessionStorage:", alter);
+                  return;
                 } catch (error) {
-                  console.error(
-                    "Error loading alter from sessionStorage:",
-                    error
-                  );
+                  console.error("Error loading from sessionStorage:", error);
                 }
-              } else {
-                console.warn(
-                  "No alter data found in localStorage or sessionStorage"
-                );
-                showToast(
-                  "No alter selected. Redirecting to marketplace...",
-                  "warning"
-                );
-                setTimeout(() => {
-                  window.location.href = "/marketplace";
-                }, 2000);
               }
+              
+              console.warn("No alter data found in localStorage or sessionStorage");
+              showToast("No alter selected. Redirecting to marketplace...", "warning");
+              setTimeout(() => {
+                window.location.href = "/marketplace";
+              }, 2000);
             }
           }
 
@@ -1885,41 +1858,21 @@
                 return;
               }
 
-              // Get alter data from localStorage (set by marketplace)
-              const alterData =
-                localStorage.getItem("selectedAlter") ||
-                localStorage.getItem("alterSelectedAlter");
+              // Get alter data from localStorage or sessionStorage
+              let alterData = localStorage.getItem("selectedAlter") || sessionStorage.getItem("selectedAlter");
 
               if (!alterData) {
-                console.log("No alter data found, checking sessionStorage");
-                const sessionAlter =
-                  sessionStorage.getItem("alterCurrentAlter");
-                if (!sessionAlter) {
-                  console.log(
-                    "No alter data in session either, redirecting to marketplace"
+                console.log("No alter data found, redirecting to marketplace");
+                if (window.showToast) {
+                  window.showToast(
+                    "No alter selected. Please select an alter from marketplace.",
+                    "warning"
                   );
-                  if (window.showToast) {
-                    window.showToast(
-                      "No alter selected. Please select an alter from marketplace.",
-                      "warning"
-                    );
-                  }
-                  setTimeout(() => {
-                    window.location.href = "/marketplace";
-                  }, 2000);
-                  return;
                 }
-                // Use session data if localStorage is empty
-                try {
-                  const alter = JSON.parse(sessionAlter);
-                  console.log("Using alter data from sessionStorage:", alter);
-                  initializeChat(alter);
-                  return;
-                } catch (error) {
-                  console.error("Error parsing session alter data:", error);
+                setTimeout(() => {
                   window.location.href = "/marketplace";
-                  return;
-                }
+                }, 2000);
+                return;
               }
 
               try {
@@ -1929,7 +1882,7 @@
                 // Extract the correct alter ID based on type
                 if (alter.type === "premade") {
                   // For premade alters, use the clean ID (without 'premade_' prefix)
-                  alterId = alter.id.toString().replace("premade_", "");
+                  alterId = alter.originalId || alter.id.toString().replace(/^premade_/, "");
                 } else if (alter.type === "published") {
                   // For published alters, use originalId or id
                   alterId = alter.originalId || alter.id;
@@ -2039,16 +1992,14 @@
 
           function initializeChat(alter) {
             console.log("Initializing chat with alter:", alter);
-            // Store alter data for use by other scripts
+            // Store alter data for use by other scripts and preserve in sessionStorage
             window.selectedAlter = alter;
-            sessionStorage.setItem("alterCurrentAlter", JSON.stringify(alter));
-
-            // Clear localStorage after successful initialization
-            localStorage.removeItem("selectedAlter");
-            localStorage.removeItem("alterSelectedAlter");
+            sessionStorage.setItem("selectedAlter", JSON.stringify(alter));
+            
+            // Don't clear localStorage immediately - keep for refresh scenarios
           }
         });
       </script>
     </main>
   </body>
-</html>
+</html> 

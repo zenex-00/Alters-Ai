@@ -2,22 +2,28 @@
 class AlterStorageManager {
   static normalizeImageUrl(imageUrl) {
     if (!imageUrl) return `${window.location.origin}/placeholder.svg`;
-    
+
     // Ensure absolute URL
-    if (imageUrl.startsWith('/')) {
+    if (imageUrl.startsWith("/")) {
       imageUrl = `${window.location.origin}${imageUrl}`;
     }
-    
+
     // Add cache busting
     const timestamp = Date.now();
-    return `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_=${timestamp}`;
+    return `${imageUrl}${imageUrl.includes("?") ? "&" : "?"}_=${timestamp}`;
   }
 
   static setSelectedAlter(alter, useSessionStorage = true) {
-    // Normalize image URL before storage
+    // For premade alters, don't normalize/cache bust the image URL
+    // Let the alter-image-manager handle fresh database fetching
+    let imageUrl = alter.image;
+    if (alter.type !== "premade") {
+      imageUrl = this.normalizeImageUrl(alter.image);
+    }
+
     const alterData = {
       ...alter,
-      image: this.normalizeImageUrl(alter.image),
+      image: imageUrl,
       timestamp: Date.now(),
     };
 
@@ -80,3 +86,4 @@ class AlterStorageManager {
 }
 
 export default AlterStorageManager;
+q;

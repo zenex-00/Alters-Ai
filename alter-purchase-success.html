@@ -77,7 +77,7 @@
             Start Chatting
           </button>
           <a
-            href="/marketplace"
+            href="/marketplace?purchase_success=true&alter_id=${alterId}"
             class="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all"
           >
             <i class="ri-store-2-line mr-2"></i>
@@ -103,8 +103,83 @@
               const isNumericId = /^\d+$/.test(alterId);
               
               if (isNumericId) {
-                // Handle premade alters
-                const premadeAlters = {
+                // Handle premade alters - fetch from database
+                try {
+                  const response = await fetch('/api/premade-alters');
+                  if (response.ok) {
+                    const premadeAlters = await response.json();
+                    alter = premadeAlters.find(a => a.id.toString() === alterId);
+                    
+                    if (alter) {
+                      // Map database fields to expected format
+                      alter = {
+                        id: alter.id.toString(),
+                        name: alter.name,
+                        description: alter.description,
+                        category: alter.category,
+                        image: alter.image_url,
+                        voiceId: alter.voice_id,
+                        voiceName: alter.voice_name,
+                        personality: alter.personality,
+                        prompt: alter.prompt,
+                        knowledge: alter.knowledge,
+                        price: alter.price || 9.99,
+                        type: "premade"
+                      };
+                    } else {
+                      // Fallback to hardcoded data if not found in database
+                      console.warn("Premade alter not found in database, using fallback data");
+                      const fallbackAlters = {
+                        "1": {
+                          id: "1",
+                          name: "Doctor Emma",
+                          description: "Professional Medical Consultant",
+                          category: "professional",
+                          image: "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520woman%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=10&orientation=squarish",
+                          voiceId: "21m00Tcm4TlvDq8ikWAM",
+                          voiceName: "Rachel",
+                          personality: "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
+                          prompt: "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
+                          knowledge: "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
+                          type: "premade"
+                        },
+                        "2": {
+                          id: "2",
+                          name: "Business Man",
+                          description: "Corporate Executive Assistant",
+                          category: "professional",
+                          image: "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish",
+                          voiceId: "29vD33N1CtxCmqQRPOHJ",
+                          voiceName: "Drew",
+                          personality: "Professional, strategic, and results-oriented business executive who provides expert advice on corporate matters, leadership, and business strategy.",
+                          prompt: "You are a Corporate Executive Assistant. You are professional, strategic, and results-oriented. You provide expert advice on corporate matters, leadership, and business strategy while maintaining a professional demeanor.",
+                          knowledge: "Business strategy, corporate management, leadership, finance, marketing",
+                          type: "premade"
+                        },
+                        "3": {
+                          id: "3",
+                          name: "Gym Guide",
+                          description: "Personal Fitness Trainer",
+                          category: "fitness",
+                          image: "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
+                          voiceId: "EXAVITQu4vr4xnSDxMaL",
+                          voiceName: "Bella",
+                          personality: "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
+                          prompt: "You are a Personal Fitness Trainer. You are motivating, energetic, and encouraging. You provide expert guidance on workouts, nutrition, and healthy lifestyle choices while keeping users motivated and focused on their fitness goals.",
+                          knowledge: "Fitness training, workout routines, nutrition, health and wellness, exercise science",
+                          type: "premade"
+                        }
+                      };
+                      
+                      alter = fallbackAlters[alterId];
+                    }
+                  } else {
+                    throw new Error(`Failed to fetch premade alters: ${response.status}`);
+                  }
+                } catch (error) {
+                  console.error("Error fetching premade alter data:", error);
+                  // Use fallback hardcoded data
+                  const fallbackAlters = {
                   "1": {
                     id: "1",
                     name: "Doctor Emma",
@@ -146,7 +221,8 @@
                   }
                 };
                 
-                alter = premadeAlters[alterId];
+                  alter = fallbackAlters[alterId];
+                }
               } else {
                 // Handle published alters - fetch from API
                 const response = await fetch(`/api/published-alters`);

@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("image-upload.js: Attempting upload to /upload");
       const response = await fetch("/upload", {
         method: "POST",
-        body: formData,
+        body: formData
       });
 
       if (!response.ok) {

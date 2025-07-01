@@ -1136,6 +1136,78 @@ app.get("/api/published-alters", async (req, res) => {
   }
 });
 
+// API route to get premade alters from database
+app.get("/api/premade-alters", async (req, res) => {
+  try {
+    console.log("Fetching premade alters from database...");
+    
+    // Fetch all premade alters from the database
+    const { data, error } = await supabaseAdmin
+      .from("premade_alters")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch premade alters", details: error });
+    }
+
+    console.log("Found", data?.length || 0, "premade alters");
+
+    // Map the data to match the expected format
+    const alters = data.map((alter) => ({
+      id: alter.id.toString(),
+      name: alter.name,
+      description: alter.description,
+      category: alter.category,
+      image: alter.image_url,
+      voiceId: alter.voice_id,
+      voiceName: alter.voice_name,
+      personality: alter.personality,
+      prompt: alter.prompt,
+      knowledge: alter.knowledge,
+      price: alter.price || 9.99,
+      rating: alter.rating || 4.5,
+      verified: true,
+      featured: alter.featured || false,
+      type: "premade",
+      creator: "AlterStudio",
+      creatorAvatar: "/placeholder.svg",
+      link: `/marketplace/premade-${alter.id}.html`,
+    }));
+
+    res.json(alters);
+  } catch (err) {
+    console.error("Fetch premade alters error:", err);
+    res.status(500).json({ error: "Internal server error", details: err.message });
+  }
+});
+
+// Test endpoint to check database connection
+app.get("/api/test-db", async (req, res) => {
+  try {
+    console.log("Testing database connection...");
+    
+    const { data, error } = await supabaseAdmin
+      .from("premade_alters")
+      .select("count")
+      .limit(1);
+
+    if (error) {
+      console.error("Database test error:", error);
+      return res.status(500).json({ error: "Database connection failed", details: error });
+    }
+
+    res.json({ success: true, message: "Database connection working", data });
+  } catch (err) {
+    console.error("Database test error:", err);
+    res.status(500).json({ error: "Database test failed", details: err.message });
+  }
+});
+
 // API route to delete a published alter
 app.delete("/api/published-alters/:alterId", async (req, res) => {
   try {
@@ -1273,7 +1345,7 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
       return res.json({ purchased: false });
     }
 
-    const alterId = req.params.alterId;
+    let alterId = req.params.alterId;
     console.log("Checking purchase for alter ID:", alterId);
 
     // Get the user's Supabase ID
@@ -1290,17 +1362,22 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
 
     const userId = userData[0].id;
 
+    // Handle premade alter IDs (both prefixed and numeric)
+    if (alterId.startsWith('premade_')) {
+      alterId = alterId.replace('premade_', '');
+    }
+
     // For premade alters (numeric IDs), check if user has purchased it
     const isNumericId = /^\d+$/.test(alterId);
 
     if (isNumericId) {
-      console.log("Premade alter detected, checking purchase status");
+      console.log("Premade alter detected, checking purchase status for ID:", alterId);
 
       // First verify it's a valid premade alter
-      const premadeAlterIds = ["1", "2", "3"]; // Add all valid premade alter IDs
+      const premadeAlterIds = ["1", "2", "3", "4"]; // Add all valid premade alter IDs
 
       if (!premadeAlterIds.includes(alterId)) {
-        console.log("Invalid premade alter ID");
+        console.log("Invalid premade alter ID:", alterId);
         return res.json({ purchased: false });
       }
 
@@ -1742,5 +1819,63 @@ app.post("/generate-audio", async (req, res) => {
   } catch (error) {
     console.error("Audio generation error:", error);
     res.status(500).json({ error: "Failed to generate audio" });
+  }
+});
+
+// Create stream endpoint for D-ID video streaming
+app.post("/create-stream", async (req, res) => {
+  try {
+    const { avatarUrl, voiceId } = req.body;
+    
+    console.log("Creating stream with:", { avatarUrl, voiceId });
+
+    // D-ID API configuration
+    const DID_API_URL = "https://api.d-id.com";
+    const API_KEY = process.env.DID_API_KEY;
+    
+    if (!API_KEY) {
+      console.error("D-ID API key not configured");
+      return res.status(500).json({ error: "D-ID API not configured" });
+    }
+
+    // Create stream with D-ID
+    const response = await fetch(`${DID_API_URL}/talks/streams`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${Buffer.from(API_KEY + ":").toString("base64")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_url: avatarUrl,
+        voice: {
+          provider: "11labs",
+          voice_id: voiceId || "EXAVITQu4vr4xnSDxMaL" // Default to Bella voice
+        },
+        config: {
+          stitch: true,
+          result_format: "mp4"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("D-ID API error:", response.status, errorText);
+      return res.status(response.status).json({ 
+        error: "Failed to create stream", 
+        details: errorText 
+      });
+    }
+
+    const data = await response.json();
+    console.log("Stream created successfully:", data.id);
+    
+    res.json({
+      streamId: data.id,
+      sessionId: data.session_id
+    });
+  } catch (error) {
+    console.error("Create stream error:", error);
+    res.status(500).json({ error: "Failed to create stream" });
   }
 });

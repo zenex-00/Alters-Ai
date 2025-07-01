@@ -35,84 +35,150 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Initialize premade alters data
-  const mockPremadeAlters = [
-    {
-      id: "1",
-      name: "Doctor Emma",
-      description: "Professional Medical Consultant",
-      price: 9.99,
-      rating: 4.9,
-      category: "professional",
-      creator: "AlterStudio",
-      creatorAvatar:
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748638972837-112725298.jpg",
-      image:
-        "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1748638972837-112725298.jpg",
-      verified: true,
-      featured: true,
+  // Load premade alters from database
+  async function loadPremadeAlters() {
+    try {
+      console.log("Loading premade alters from database...");
+      showLoading(true);
+
+      const response = await fetch("/api/premade-alters");
+      console.log("Premade alters API response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(
+          `Failed to fetch premade alters: ${response.status} ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Raw premade alters data count:", data.length);
+
+      premadeAlters = data.map((alter) => ({
+        ...alter,
+        id: `premade_${alter.id}`, // Prefix to ensure unique IDs
+        type: "premade",
+        price: alter.price || 9.99,
+        rating: alter.rating || 4.5,
+        verified: true,
+        featured: alter.featured || false,
+        image: alter.image || "/placeholder.svg",
+        name: alter.name || "Unnamed Alter",
+        description: alter.description || "No description available",
+        creator: alter.creator_name || "AlterStudio",
+        category: alter.category || "Other",
+        originalId: alter.id, // Keep original ID for API calls
+      }));
+
+      console.log("Processed premade alters count:", premadeAlters.length);
+
+      if (currentTab === "premade") {
+        filterAndDisplayCurrentTab();
+      }
+    } catch (error) {
+      console.error("Error loading premade alters:", error);
+      showError("Failed to load premade alters: " + error.message);
+      
+      // Fallback to hardcoded data
+      console.log("Falling back to hardcoded premade alters...");
+      loadHardcodedPremadeAlters();
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // Fallback hardcoded premade alters
+  function loadHardcodedPremadeAlters() {
+    const mockPremadeAlters = [
+      {
+        id: "1",
+        name: "Doctor Emma",
+        description: "Professional Medical Consultant",
+        price: 9.99,
+        rating: 4.9,
+        category: "professional",
+        creator: "AlterStudio",
+        creatorAvatar:
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1751111755802-739010682.jpg",
+        image:
+          "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1751111755802-739010682.jpg",
+        verified: true,
+        featured: true,
+        type: "premade",
+        link: "/marketplace/doctor-alter.html",
+        voiceId: "21m00Tcm4TlvDq8ikWAM",
+        voiceName: "Rachel",
+        personality:
+          "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
+        prompt:
+          "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
+        knowledge:
+          "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
+      },
+      {
+        id: "2",
+        name: "Business Man",
+        description: "Corporate Executive Assistant",
+        price: 9.99,
+        rating: 4.8,
+        category: "professional",
+        creator: "DigitalTwins",
+        creatorAvatar:
+          "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=13&orientation=squarish",
+        image:
+          "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish",
+        verified: true,
+        featured: true,
+        type: "premade",
+        link: "/marketplace/business-alter.html",
+        voiceId: "29vD33N1CtxCmqQRPOHJ",
+        voiceName: "Drew",
+        personality:
+          "Professional, strategic, and results-oriented business executive who provides expert advice on corporate matters, leadership, and business strategy.",
+        prompt:
+          "You are a Corporate Executive Assistant. You are professional, strategic, and results-oriented. You provide expert advice on corporate matters, leadership, and business strategy while maintaining a professional demeanor.",
+        knowledge:
+          "Business strategy, corporate management, leadership, finance, marketing",
+      },
+      {
+        id: "3",
+        name: "Gym Guide",
+        description: "Personal Fitness Trainer",
+        price: 9.99,
+        rating: 4.7,
+        category: "fitness",
+        creator: "TechAlters",
+        creatorAvatar:
+          "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520asian%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=15&orientation=squarish",
+        image:
+          "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
+        verified: true,
+        featured: false,
+        type: "premade",
+        link: "/marketplace/gym-guide-alter.html",
+        voiceId: "EXAVITQu4vr4xnSDxMaL",
+        voiceName: "Bella",
+        personality:
+          "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
+        prompt:
+          "You are a Personal Fitness Trainer. You are motivating, energetic, and encouraging. You provide expert guidance on workouts, nutrition, and healthy lifestyle choices while keeping users motivated and focused on their fitness goals.",
+        knowledge:
+          "Fitness training, workout routines, nutrition, health and wellness, exercise science",
+      },
+    ];
+
+    premadeAlters = mockPremadeAlters.map((alter) => ({
+      ...alter,
+      id: `premade_${alter.id}`,
       type: "premade",
-      link: "/marketplace/doctor-alter.html",
-      voiceId: "21m00Tcm4TlvDq8ikWAM",
-      voiceName: "Rachel",
-      personality:
-        "Professional, knowledgeable, caring, and helpful medical consultant who provides accurate health information and guidance.",
-      prompt:
-        "You are Doctor Emma, a professional medical consultant. You are knowledgeable, caring, and helpful. You provide accurate health information and guidance while being empathetic and professional. Always remind users to consult with their healthcare provider for serious medical concerns.",
-      knowledge:
-        "Medical knowledge, healthcare guidance, wellness advice, symptom assessment",
-    },
-    {
-      id: "2",
-      name: "Business Man",
-      description: "Corporate Executive Assistant",
-      price: 9.99,
-      rating: 4.8,
-      category: "professional",
-      creator: "DigitalTwins",
-      creatorAvatar:
-        "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520man%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=13&orientation=squarish",
-      image:
-        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520business%2520man%2520with%2520suit%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=12&orientation=squarish",
-      verified: true,
-      featured: true,
-      type: "premade",
-      link: "/marketplace/business-alter.html",
-      voiceId: "29vD33N1CtxCmqQRPOHJ",
-      voiceName: "Drew",
-      personality:
-        "Professional, strategic, and results-oriented business executive who provides expert advice on corporate matters, leadership, and business strategy.",
-      prompt:
-        "You are a Corporate Executive Assistant. You are professional, strategic, and results-oriented. You provide expert advice on corporate matters, leadership, and business strategy while maintaining a professional demeanor.",
-      knowledge:
-        "Business strategy, corporate management, leadership, finance, marketing",
-    },
-    {
-      id: "3",
-      name: "Gym Guide",
-      description: "Personal Fitness Trainer",
-      price: 9.99,
-      rating: 4.7,
-      category: "fitness",
-      creator: "TechAlters",
-      creatorAvatar:
-        "https://readdy.ai/api/search-image?query=professional%2520headshot%2520of%2520young%2520asian%2520woman%2520with%2520neutral%2520expression%2520on%2520dark%2520background%2520high%2520quality%2520portrait&width=100&height=100&seq=15&orientation=squarish",
-      image:
-        "https://readdy.ai/api/search-image?query=professional%2520looking%2520digital%2520avatar%2520of%2520tech%2520specialist%2520woman%2520on%2520dark%2520background%2520high%2520quality%2520realistic%25203D%2520render%2520with%2520perfect%2520lighting%2520and%2520textures&width=400&height=400&seq=14&orientation=squarish",
-      verified: true,
-      featured: false,
-      type: "premade",
-      link: "/marketplace/gym-guide-alter.html",
-      voiceId: "EXAVITQu4vr4xnSDxMaL",
-      voiceName: "Bella",
-      personality:
-        "Motivating, energetic, and encouraging fitness trainer who provides expert guidance on workouts, nutrition, and healthy lifestyle choices.",
-      prompt:
-        "You are a Personal Fitness Trainer. You are motivating, energetic, and encouraging. You provide expert guidance on workouts, nutrition, and healthy lifestyle choices while keeping users motivated and focused on their fitness goals.",
-      knowledge:
-        "Fitness training, workout routines, nutrition, health and wellness, exercise science",
-    },
-  ];
+      originalId: alter.id,
+    }));
+
+    if (currentTab === "premade") {
+      filterAndDisplayCurrentTab();
+    }
+  }
 
   // Add styles for buy button loading state
   const style = document.createElement("style");
@@ -132,6 +198,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   `;
   document.head.appendChild(style);
+
+  // Initialize by loading premade alters
+  await loadPremadeAlters();
 
   // Tab switching functionality
   premadeTab.addEventListener("click", () => {
@@ -835,12 +904,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Find the alter in the appropriate array
       let alter;
       if (alterType === "premade") {
-        // For premade alters, match against the clean ID (without prefix)
+        // For premade alters, we need to handle the premade_ prefix
+        console.log("Looking for premade alter with ID:", alterId);
+        console.log("Available premade alters:", premadeAlters.map(a => ({ id: a.id, originalId: a.originalId, name: a.name })));
+        
+        // Clean the ID if it has the premade_ prefix
+        const cleanId = alterId.replace(/^premade_/, '');
+        console.log("Clean ID:", cleanId);
+        
         alter = premadeAlters.find(
           (a) =>
-            a.id.replace(/^premade_/, "") === alterId ||
-            a.id === `premade_${alterId}`
+            a.originalId === cleanId ||
+            a.id === alterId ||
+            a.id.replace(/^premade_/, "") === cleanId
         );
+        
+        console.log("Found alter:", alter);
       } else {
         alter = publishedAlters.find((a) => a.originalId === alterId);
       }
@@ -925,35 +1004,104 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => toast.remove(), 5000);
   }
 
-  // Initialize arrays and load initial data
-  premadeAlters = mockPremadeAlters;
-  publishedAlters = [];
-
-  // Initialize with loading state
-  showLoading(true);
-  console.log("Starting marketplace initialization...");
-
-  try {
-    // Start with premade alters immediately
-    filterAndDisplayCurrentTab();
-
-    // Load published alters in parallel
-    await loadPublishedAlters();
-
-    console.log("Initial data load complete");
-  } catch (error) {
-    console.error("Error during initialization:", error);
-    showError("Some content failed to load. Please refresh the page.");
-  } finally {
-    showLoading(false);
-    console.log("Marketplace Enhanced: Initialization complete");
-  }
-
   // Debug helper
   window.debugMarketplace = {
     getPremadeAlters: () => premadeAlters,
     getPublishedAlters: () => publishedAlters,
     getCurrentTab: () => currentTab,
     refreshPublished: () => loadPublishedAlters(),
+    findAlter: (alterId, alterType) => {
+      console.log("Debug: Looking for alter with ID:", alterId, "Type:", alterType);
+      if (alterType === "premade") {
+        const cleanId = alterId.replace(/^premade_/, '');
+        console.log("Debug: Clean ID:", cleanId);
+        console.log("Debug: Available premade alters:", premadeAlters.map(a => ({ id: a.id, originalId: a.originalId, name: a.name })));
+        
+        const found = premadeAlters.find(a => 
+          a.originalId === cleanId ||
+          a.id === alterId ||
+          a.id.replace(/^premade_/, "") === cleanId
+        );
+        console.log("Debug: Found alter:", found);
+        return found;
+      }
+      return null;
+    }
   };
+
+  // Function to refresh the current tab and update button states
+  async function refreshCurrentTab() {
+    console.log("Refreshing current tab:", currentTab);
+    
+    if (currentTab === "premade") {
+      await loadPremadeAlters();
+      await displayPremadeAlters();
+    } else if (currentTab === "published") {
+      await loadPublishedAlters();
+      await displayPublishedAlters();
+    }
+    
+    // Update button states for all alter cards
+    const alterCards = document.querySelectorAll('.alter-card');
+    alterCards.forEach(async (card) => {
+      const alterId = card.dataset.alterId;
+      const alterType = card.dataset.alterType;
+      
+      if (alterId) {
+        try {
+          const response = await fetch(`/api/check-purchase/${alterId}`);
+          if (response.ok) {
+            const { purchased } = await response.json();
+            
+            const buyButton = card.querySelector('.buy-alter-btn');
+            if (buyButton) {
+              const buttonText = buyButton.querySelector('.button-text');
+              const buttonIcon = buyButton.querySelector('i');
+              
+              if (purchased) {
+                buttonText.textContent = "Chat Now";
+                buttonIcon.className = "ri-chat-3-line mr-2";
+                buyButton.title = `Chat with ${card.querySelector('h3').textContent}`;
+              } else {
+                buttonText.textContent = "Buy Now";
+                buttonIcon.className = "ri-shopping-cart-line mr-2";
+                buyButton.title = `Buy ${card.querySelector('h3').textContent}`;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error checking purchase status for refresh:", error);
+        }
+      }
+    });
+  }
+
+  // Initialize the marketplace
+  document.addEventListener("DOMContentLoaded", async function () {
+    console.log("Marketplace initializing...");
+
+    // Check if user is returning from a successful purchase
+    const urlParams = new URLSearchParams(window.location.search);
+    const purchaseSuccess = urlParams.get('purchase_success');
+    const purchasedAlterId = urlParams.get('alter_id');
+    
+    if (purchaseSuccess === 'true' && purchasedAlterId) {
+      console.log("Detected successful purchase for alter:", purchasedAlterId);
+      // Clear the URL parameters to avoid showing the message again on refresh
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Show success message
+      showSuccess("Purchase successful! You can now chat with your alter.");
+      
+      // Refresh the marketplace to update button states
+      setTimeout(() => {
+        refreshCurrentTab();
+      }, 1000);
+    }
+
+    // Load initial data
+    await loadPremadeAlters();
+    await loadPublishedAlters();
+  });
 });

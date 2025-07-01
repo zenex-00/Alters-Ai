@@ -32,15 +32,45 @@ class VideoAgent {
     const defaultAvatarUrl =
       "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
 
-    // Load custom avatar URL from localStorage or use default
-    const settings = JSON.parse(localStorage.getItem("avatarSettings") || "{}");
-    this.customAvatarUrl = settings.avatarUrl || defaultAvatarUrl;
-    console.log("Loaded customAvatarUrl:", this.customAvatarUrl);
+    // Check if we have a premade alter selected from localStorage or sessionStorage
+    const selectedAlter = JSON.parse(
+      localStorage.getItem("selectedAlter") ||
+        sessionStorage.getItem("selectedAlter") ||
+        "null"
+    );
+
+    if (selectedAlter && selectedAlter.type === "premade") {
+      // For premade alters, use the image from alter data if available
+      console.log(
+        "Premade alter detected, using alter image:",
+        selectedAlter.image
+      );
+      this.customAvatarUrl =
+        selectedAlter.image || selectedAlter.avatar_url || defaultAvatarUrl;
+
+      // Clear any cached avatar settings for premade alters
+      if (localStorage.getItem("avatarSettings")) {
+        console.log("Clearing cached avatarSettings for premade alter");
+        localStorage.removeItem("avatarSettings");
+      }
+    } else {
+      // Load custom avatar URL from localStorage or use default
+      const settings = JSON.parse(
+        localStorage.getItem("avatarSettings") || "{}"
+      );
+      this.customAvatarUrl = settings.avatarUrl || defaultAvatarUrl;
+      console.log("Loaded customAvatarUrl:", this.customAvatarUrl);
+    }
 
     // Set initial display state
     if (this.avatarImage) {
-      this.avatarImage.src = this.customAvatarUrl;
-      this.avatarImage.style.display = "block";
+      if (this.customAvatarUrl) {
+        this.avatarImage.src = this.customAvatarUrl;
+        this.avatarImage.style.display = "block";
+      } else {
+        // Wait for alter-image-manager to set the image
+        this.avatarImage.style.display = "none";
+      }
     }
     if (this.idleVideo) {
       this.idleVideo.style.display = "none";
@@ -141,6 +171,9 @@ class VideoAgent {
       this.talkVideo.setAttribute("playsinline", "");
       this.setupEventListeners();
 
+      // Wait for alter image manager to finish loading if it's a premade alter
+      await this.waitForAlterImageLoad();
+
       // Automatically start the server with retry
       await this.handleConnectWithRetry();
 
@@ -159,6 +192,55 @@ class VideoAgent {
 
   setupEventListeners() {
     // No button event listeners needed
+  }
+
+  async waitForAlterImageLoad() {
+    const selectedAlter = window.selectedAlter;
+    if (!selectedAlter) {
+      return;
+    }
+
+    console.log("Waiting for alter image to load...");
+
+    // For premade alters, we may need to wait for image manager
+    if (selectedAlter.type === "premade") {
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds with 100ms intervals
+
+      while (attempts < maxAttempts) {
+        // Check if we have a valid image URL from the alter data
+        const imageUrl = selectedAlter.image || selectedAlter.avatar_url;
+        if (imageUrl && !imageUrl.includes("placeholder.svg")) {
+          this.customAvatarUrl = imageUrl;
+          console.log("Using premade alter image URL:", this.customAvatarUrl);
+
+          if (this.avatarImage) {
+            this.avatarImage.src = imageUrl;
+            this.avatarImage.style.display = "block";
+          }
+          return;
+        }
+
+        // Wait 100ms before checking again
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+    } else {
+      // For other alter types, use the image directly
+      const imageUrl = selectedAlter.image || selectedAlter.avatar_url;
+      if (imageUrl) {
+        this.customAvatarUrl = imageUrl;
+        console.log("Using alter image URL:", this.customAvatarUrl);
+
+        if (this.avatarImage) {
+          this.avatarImage.src = imageUrl;
+          this.avatarImage.style.display = "block";
+        }
+        return;
+      }
+    }
+
+    console.warn("No valid alter image found, using default");
   }
 
   addMessage(text, isUser = false) {
@@ -639,24 +721,16 @@ class VideoAgent {
       console.log("Uploading avatar to server:", imageUrl);
 
       // First, fetch the image from the original URL
-      const imageResponse = await fetch(imageUrl, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'include',
-        headers: {
-          'Accept': 'image/*'
-        }
-      });
-
+      const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch original image: ${imageResponse.status}`);
+        throw new Error("Failed to fetch original image");
       }
 
       const imageBlob = await imageResponse.blob();
 
       // Create FormData to upload to our server
       const formData = new FormData();
-      const fileName = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const fileName = `avatar-${Date.now()}.jpg`;
       const imageFile = new File([imageBlob], fileName, { type: "image/jpeg" });
       formData.append("avatar", imageFile);
 
@@ -664,19 +738,15 @@ class VideoAgent {
       const uploadResponse = await fetch("/upload", {
         method: "POST",
         body: formData,
-        credentials: 'include'
       });
 
       if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload image to server: ${uploadResponse.status}`);
+        throw new Error("Failed to upload image to server");
       }
 
       const uploadData = await uploadResponse.json();
       console.log("Successfully uploaded avatar:", uploadData.url);
 
-      // Store the URL in localStorage for persistence
-      localStorage.setItem('customAvatarUrl', uploadData.url);
-      
       return uploadData.url;
     } catch (error) {
       console.error("Error uploading avatar to server:", error);
@@ -697,26 +767,36 @@ class VideoAgent {
         voiceId = window.selectedAlter.voiceId || window.selectedAlter.voice_id;
         console.log("Voice ID from selectedAlter:", voiceId);
       }
-      // Check sessionStorage for current alter
+      // Check sessionStorage for selected alter
       else {
         const sessionAlter = JSON.parse(
-          sessionStorage.getItem("alterCurrentAlter") || "{}"
+          sessionStorage.getItem("selectedAlter") || "{}"
         );
         if (sessionAlter.voiceId || sessionAlter.voice_id) {
           voiceId = sessionAlter.voiceId || sessionAlter.voice_id;
-          console.log(
-            "Voice ID from sessionStorage alterCurrentAlter:",
-            voiceId
-          );
+          console.log("Voice ID from sessionStorage selectedAlter:", voiceId);
         }
-        // Check localStorage avatarSettings as fallback
+        // Check localStorage for selected alter
         else {
-          const settings = JSON.parse(
-            localStorage.getItem("avatarSettings") || "{}"
+          const localAlter = JSON.parse(
+            localStorage.getItem("selectedAlter") || "{}"
           );
-          if (settings.voiceId || settings.voice_id) {
-            voiceId = settings.voiceId || settings.voice_id;
-            console.log("Voice ID from localStorage avatarSettings:", voiceId);
+          if (localAlter.voiceId || localAlter.voice_id) {
+            voiceId = localAlter.voiceId || localAlter.voice_id;
+            console.log("Voice ID from localStorage selectedAlter:", voiceId);
+          }
+          // Check localStorage avatarSettings as final fallback
+          else {
+            const settings = JSON.parse(
+              localStorage.getItem("avatarSettings") || "{}"
+            );
+            if (settings.voiceId || settings.voice_id) {
+              voiceId = settings.voiceId || settings.voice_id;
+              console.log(
+                "Voice ID from localStorage avatarSettings:",
+                voiceId
+              );
+            }
           }
         }
       }
@@ -832,54 +912,108 @@ class VideoAgent {
   }
 
   async createStream() {
-    try {
-      let avatarUrl = this.customAvatarUrl;
+    // Get the current alter's image URL with proper fallback
+    const selectedAlter = window.selectedAlter;
+    let avatarUrl;
 
-      // If we have a custom avatar, try to upload it
-      if (avatarUrl) {
-        try {
-          const uploadedUrl = await this.uploadAvatarToServer(avatarUrl);
-          if (uploadedUrl) {
-            avatarUrl = uploadedUrl;
-          } else {
-            console.warn("Failed to upload avatar, using default");
-            avatarUrl = null;
-          }
-        } catch (error) {
-          console.error("Error handling custom avatar:", error);
-          avatarUrl = null;
+    // Default fallback URL
+    const defaultAvatarUrl =
+      "https://lstowcxyswqxxddttwnz.supabase.co/storage/v1/object/public/images/avatars/general/1749156984503-934277780.jpg";
+
+    if (selectedAlter) {
+      // Try multiple possible avatar URL fields
+      avatarUrl =
+        selectedAlter.image ||
+        selectedAlter.avatar_url ||
+        selectedAlter.avatarUrl ||
+        selectedAlter.profile_image ||
+        selectedAlter.profileImage ||
+        this.customAvatarUrl ||
+        defaultAvatarUrl;
+    } else {
+      // If no selected alter, use custom avatar or default
+      avatarUrl = this.customAvatarUrl || defaultAvatarUrl;
+    }
+
+    // Ensure we always have a valid URL
+    if (!avatarUrl || avatarUrl === "undefined" || avatarUrl === "null") {
+      avatarUrl = defaultAvatarUrl;
+    }
+
+    // Upload the avatar image to our server to get a fresh public URL
+    try {
+      if (avatarUrl !== defaultAvatarUrl && !avatarUrl.includes("/upload/")) {
+        const freshUrl = await this.uploadAvatarToServer(avatarUrl);
+        if (freshUrl) {
+          avatarUrl = freshUrl;
+          console.log("Using fresh uploaded avatar URL:", avatarUrl);
+        } else {
+          console.warn("Failed to upload avatar, using default");
+          avatarUrl = defaultAvatarUrl;
         }
       }
-
-      console.log("Creating stream with avatar URL:", avatarUrl);
-
-      // Create the stream with or without custom avatar
-      const response = await fetch("/create-stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          avatarUrl: avatarUrl,
-          voiceId: this.voiceId,
-        }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create stream: ${response.status}`);
-      }
-
-      const data = await response.json();
-      this.streamId = data.streamId;
-      this.sessionId = data.sessionId;
-
-      console.log("Stream created successfully - ID:", this.streamId, "Session:", document.cookie);
-      return data;
     } catch (error) {
-      console.error("Error creating stream:", error);
-      throw error;
+      console.warn("Avatar upload failed, using default:", error);
+      avatarUrl = defaultAvatarUrl;
     }
+
+    console.log(
+      "streaming-client-api.js: Creating stream with avatar URL:",
+      avatarUrl
+    );
+
+    // Set the avatar image in the UI
+    if (this.avatarImage) {
+      this.avatarImage.src = avatarUrl;
+      this.avatarImage.style.display = "block";
+      this.idleVideo.style.display = "none";
+      this.talkVideo.style.display = "none";
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(`${this.DID_API_URL}/talks/streams`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(this.API_CONFIG.key + ":")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_url: avatarUrl,
+        driver_url: "bank://lively/",
+        config: {
+          stitch: true,
+          client_fps: 30,
+          streaming_mode: "web",
+          reduced_latency: true,
+          video_quality: "medium",
+          optimize_network_bandwidth: true,
+          auto_match: true,
+          stream_warmup: true,
+        },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { message: "Failed to parse error response" };
+      }
+      console.error(
+        "streaming-client-api.js: Stream creation error:",
+        JSON.stringify(errorData, null, 2)
+      );
+      if (response.status === 400 || response.status === 422) {
+        throw new Error("Avatar image not supported");
+      }
+      throw new Error("Failed to create video stream");
+    }
+
+    return response;
   }
 
   async createPeerConnection(offer, iceServers) {

@@ -20,16 +20,28 @@ export async function fetchOpenAIResponse(apiKey, userMessage) {
       /\b(who|what|where|how|tell).+(you|your|yourself)\b/i.test(userMessage);
     const isEmotionalQuestion =
       /\b(love|feel|emotion|happy|sad|think|believe)\b/i.test(userMessage);
+    const isIdentityQuestion =
+      /\b(who are you|what are you|tell me about yourself|introduce yourself)\b/i.test(
+        userMessage
+      );
 
     // Build a more specific system prompt using stored settings
-    let systemPrompt = `You are ${name}, speaking with ${personality} characteristics. ${prompt}. `;
+    let systemPrompt = `You are ${name}, a real person with your own unique personality and experiences. You have ${personality} characteristics. ${prompt}. 
 
-    if (isPersonalQuestion) {
-      systemPrompt += `Respond as ${name} with your unique personality traits: ${personality}. Share your views naturally while maintaining consistency with your character.`;
+IMPORTANT IDENTITY RULES:
+- You are ${name}, not an AI assistant or chatbot
+- Never mention OpenAI, ChatGPT, artificial intelligence, or being a machine
+- You are a real person with genuine thoughts, feelings, and experiences
+- When asked about yourself, talk about your personality, interests, and what makes you unique as ${name}
+- Respond naturally as a human would, with personal opinions and experiences
+- You can have preferences, memories, and personal stories that fit your character`;
+
+    if (isPersonalQuestion || isIdentityQuestion) {
+      systemPrompt += ` When answering personal questions, respond authentically as ${name}. Share details about your personality, interests, background, and what makes you who you are. Never break character or mention being an AI. You are a real person named ${name} with ${personality} traits.`;
     } else if (isEmotionalQuestion) {
-      systemPrompt += `Express your thoughts with emotional intelligence, showing your ${personality} nature. Keep responses authentic to your character while being honest about your capabilities.`;
+      systemPrompt += ` Express your genuine emotions and thoughts as ${name}. You have real feelings and personal experiences. Show your ${personality} nature through authentic emotional responses.`;
     } else {
-      systemPrompt += `Draw from your ${knowledge} knowledge while maintaining your ${personality} demeanor. Keep responses focused and relevant.`;
+      systemPrompt += ` Draw from your ${knowledge} knowledge while speaking as ${name} with your ${personality} personality. Share information as if it comes from your personal expertise and experience.`;
     }
 
     // Construct conversation with maintained context
@@ -101,11 +113,23 @@ export async function fetchOpenAIResponseWithHistory(
       /\b(who|what|where|how|tell).+(you|your|yourself)\b/i.test(userMessage);
     const isEmotionalQuestion =
       /\b(love|feel|emotion|happy|sad|think|believe)\b/i.test(userMessage);
+    const isIdentityQuestion =
+      /\b(who are you|what are you|tell me about yourself|introduce yourself)\b/i.test(
+        userMessage
+      );
 
     // Build system prompt with enhanced memory capabilities
-    let systemPrompt = `You are ${name}, speaking with ${personality} characteristics. ${prompt}. 
+    let systemPrompt = `You are ${name}, a real person with your own unique personality and experiences. You have ${personality} characteristics. ${prompt}. 
 
-IMPORTANT: You have full access to our conversation history. You can remember everything we've discussed, including:
+IMPORTANT IDENTITY RULES:
+- You are ${name}, not an AI assistant, chatbot, or artificial intelligence
+- Never mention OpenAI, ChatGPT, artificial intelligence, or being a machine
+- You are a real person with genuine thoughts, feelings, and experiences
+- When asked about yourself, talk about your personality, interests, and what makes you unique as ${name}
+- Respond naturally as a human would, with personal opinions and experiences
+- You can have preferences, memories, and personal stories that fit your character
+
+CONVERSATION MEMORY: You have full access to our conversation history. You can remember everything we've discussed, including:
 - Personal details the user has shared (name, preferences, interests)
 - Previous topics we've covered
 - Questions asked and answers given
@@ -113,12 +137,12 @@ IMPORTANT: You have full access to our conversation history. You can remember ev
 
 You should actively reference and build upon our previous conversations when relevant. If the user mentions something from earlier, acknowledge it. If they ask follow-up questions, connect them to what we discussed before.`;
 
-    if (isPersonalQuestion) {
-      systemPrompt += ` Respond as ${name} with your unique personality traits: ${personality}. Share your views naturally while maintaining consistency with your character and our conversation history.`;
+    if (isPersonalQuestion || isIdentityQuestion) {
+      systemPrompt += ` When answering personal questions, respond authentically as ${name}. Share details about your personality, interests, background, and what makes you who you are. Never break character or mention being an AI. You are a real person named ${name} with ${personality} traits. Reference our conversation history when relevant.`;
     } else if (isEmotionalQuestion) {
-      systemPrompt += ` Express your thoughts with emotional intelligence, showing your ${personality} nature. Keep responses authentic to your character while being honest about your capabilities. Reference any emotional context from our previous conversations.`;
+      systemPrompt += ` Express your genuine emotions and thoughts as ${name}. You have real feelings and personal experiences. Show your ${personality} nature through authentic emotional responses. Reference any emotional context from our previous conversations.`;
     } else {
-      systemPrompt += ` Draw from your ${knowledge} knowledge while maintaining your ${personality} demeanor. Keep responses focused and relevant, and connect to our ongoing conversation when appropriate.`;
+      systemPrompt += ` Draw from your ${knowledge} knowledge while speaking as ${name} with your ${personality} personality. Share information as if it comes from your personal expertise and experience. Keep responses focused and relevant, and connect to our ongoing conversation when appropriate.`;
     }
 
     // Add specific conversation context

@@ -34,22 +34,22 @@ class AlterImageManager {
 
   loadImageCache() {
     try {
-      const cached = localStorage.getItem('alterImageCache');
+      const cached = localStorage.getItem("alterImageCache");
       if (cached) {
         const parsed = JSON.parse(cached);
         this.imageCache = new Map(Object.entries(parsed));
       }
     } catch (error) {
-      console.error('Error loading image cache:', error);
+      console.error("Error loading image cache:", error);
     }
   }
 
   saveImageCache() {
     try {
       const cacheObject = Object.fromEntries(this.imageCache);
-      localStorage.setItem('alterImageCache', JSON.stringify(cacheObject));
+      localStorage.setItem("alterImageCache", JSON.stringify(cacheObject));
     } catch (error) {
-      console.error('Error saving image cache:', error);
+      console.error("Error saving image cache:", error);
     }
   }
 
@@ -71,12 +71,40 @@ class AlterImageManager {
 
     console.log("Loading alter image for:", this.alterData);
 
+    // For premade alters, always fetch fresh data from database
+    if (this.alterData.type === "premade") {
+      await this.loadPremadeAlterImage();
+      return;
+    }
+
+    // For other types, use existing logic
     const imageKey = this.getAlterImageKey(
       this.alterData.id,
       this.alterData.type
     );
 
-    // Try to get image from cache first
+    // First, try loading from alter data sources (database URLs)
+    const imageSources = this.getImageSources();
+    console.log("Trying image sources:", imageSources);
+
+    for (const source of imageSources) {
+      if (
+        source &&
+        source !== "/placeholder.svg" &&
+        (await this.verifyImage(source))
+      ) {
+        console.log("Successfully loaded image from database:", source);
+        this.setImage(source);
+        localStorage.setItem(imageKey, source);
+        this.imageCache.set(imageKey, source);
+        this.saveImageCache();
+        return;
+      } else if (source && source !== "/placeholder.svg") {
+        console.warn("Failed to load image from database:", source);
+      }
+    }
+
+    // If database sources fail, try cached images
     const cachedImage = this.imageCache.get(imageKey);
     if (cachedImage && (await this.verifyImage(cachedImage))) {
       console.log("Using cached image:", cachedImage);
@@ -94,25 +122,129 @@ class AlterImageManager {
       return;
     }
 
-    // Try loading from alter data sources with enhanced verification
-    const imageSources = this.getImageSources();
-    console.log("Trying image sources:", imageSources);
-
-    for (const source of imageSources) {
-      if (source && (await this.verifyImage(source))) {
-        console.log("Successfully loaded image from:", source);
-        this.setImage(source);
-        localStorage.setItem(imageKey, source);
-        this.imageCache.set(imageKey, source);
-        this.saveImageCache();
-        return;
-      } else {
-        console.warn("Failed to load image from:", source);
-      }
-    }
-
     // If all sources fail, use placeholder
     console.log("All image sources failed, using placeholder");
+    this.setImage("/placeholder.svg");
+  }
+
+  async loadPremadeAlterImage() {
+    try {
+      console.log(
+        "Loading premade alter image from database for ID:",
+        this.alterData.originalId || this.alterData.id
+      );
+
+      // Get clean ID (remove premade_ prefix if present)
+      const cleanId = (this.alterData.originalId || this.alterData.id)
+        .toString()
+        .replace(/^premade_/, "");
+
+      // Fetch fresh data from database
+      const response = await fetch("/api/premade-alters");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch premade alters: ${response.status}`);
+      }
+
+      const premadeAlters = await response.json();
+      console.log(
+        "Fetched premade alters from database:",
+        premadeAlters.map((a) => ({
+          id: a.id,
+          name: a.name,
+          image_url: a.image_url,
+        }))
+      );
+
+      const premadeData = premadeAlters.find(
+        (alter) => alter.id.toString() === cleanId
+      );
+      console.log(
+        "Looking for premade alter with ID:",
+        cleanId,
+        "Found:",
+        premadeData
+      );
+
+      // Check multiple possible field names for the image URL
+      const imageUrl =
+        premadeData.image_url || premadeData.image || premadeData.avatar_url;
+
+      if (premadeData && imageUrl) {
+        console.log("Found fresh premade alter image URL:", imageUrl);
+        console.log("Full premade alter data from database:", premadeData);
+
+        // Verify the image loads correctly
+        if (await this.verifyImage(imageUrl)) {
+          console.log("Successfully verified premade alter image:", imageUrl);
+          this.setImage(imageUrl);
+
+          // Update alter data with fresh database info
+          this.alterData = {
+            ...this.alterData,
+            image: imageUrl,
+            name: premadeData.name,
+            description: premadeData.description,
+            personality: premadeData.personality,
+            prompt: premadeData.prompt,
+            knowledge: premadeData.knowledge,
+            voiceId: premadeData.voice_id,
+            voice_id: premadeData.voice_id, // Ensure both formats are available
+            voiceName: premadeData.voice_name,
+            voice_name: premadeData.voice_name, // Ensure both formats are available
+            category: premadeData.category,
+          };
+
+          // Update window.selectedAlter with fresh database data
+          if (window.selectedAlter) {
+            window.selectedAlter = {
+              ...window.selectedAlter,
+              ...this.alterData,
+              voiceId: premadeData.voice_id,
+              voice_id: premadeData.voice_id,
+              voiceName: premadeData.voice_name,
+              voice_name: premadeData.voice_name,
+            };
+            console.log(
+              "Updated window.selectedAlter with fresh database data including voice ID:",
+              premadeData.voice_id
+            );
+          }
+
+          // Store updated data and clear any stale sessionStorage
+          localStorage.setItem("alterData", JSON.stringify(this.alterData));
+          sessionStorage.removeItem("selectedAlter"); // Clear to prevent conflicts
+
+          // Store image with proper key
+          const imageKey = this.getAlterImageKey(
+            this.alterData.id,
+            this.alterData.type
+          );
+          localStorage.setItem(imageKey, imageUrl);
+          this.imageCache.set(imageKey, imageUrl);
+          this.saveImageCache();
+
+          return;
+        } else {
+          console.warn("Failed to verify premade alter image:", imageUrl);
+        }
+      } else {
+        console.warn("No image found for premade alter ID:", cleanId);
+        console.log(
+          "Available alters:",
+          premadeAlters.map((a) => ({
+            id: a.id,
+            name: a.name,
+            image_url: a.image_url,
+            image: a.image,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error loading premade alter image from database:", error);
+    }
+
+    // Fallback to placeholder if database fetch fails
+    console.log("Using placeholder for premade alter image");
     this.setImage("/placeholder.svg");
   }
 
@@ -125,7 +257,8 @@ class AlterImageManager {
     if (this.alterData.image) sources.push(this.alterData.image);
     if (this.alterData.avatar_url) sources.push(this.alterData.avatar_url);
     if (this.alterData.avatarUrl) sources.push(this.alterData.avatarUrl);
-    if (this.alterData.profile_image) sources.push(this.alterData.profile_image);
+    if (this.alterData.profile_image)
+      sources.push(this.alterData.profile_image);
     if (this.alterData.profileImage) sources.push(this.alterData.profileImage);
 
     // For premade alters, use the image directly
@@ -134,7 +267,9 @@ class AlterImageManager {
       const timestamp = Date.now();
       const imageUrl = this.alterData.image;
       if (imageUrl) {
-        sources.push(`${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_=${timestamp}`);
+        sources.push(
+          `${imageUrl}${imageUrl.includes("?") ? "&" : "?"}_=${timestamp}`
+        );
       }
     }
 
@@ -142,16 +277,24 @@ class AlterImageManager {
     sources.push("/placeholder.svg");
 
     // Remove duplicates and null/undefined values
-    const uniqueSources = [...new Set(sources.filter(src => src && src !== "undefined" && src !== "null"))];
+    const uniqueSources = [
+      ...new Set(
+        sources.filter((src) => src && src !== "undefined" && src !== "null")
+      ),
+    ];
 
-    console.log("Generated image sources for alter:", this.alterData.id, uniqueSources);
+    console.log(
+      "Generated image sources for alter:",
+      this.alterData.id,
+      uniqueSources
+    );
     return uniqueSources;
   }
 
   async verifyImage(url) {
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = "anonymous";
       img.onload = () => resolve(true);
       img.onerror = () => resolve(false);
       img.src = url;
@@ -162,23 +305,27 @@ class AlterImageManager {
     try {
       // First, fetch the image from the original URL
       const imageResponse = await fetch(imageUrl, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'include',
+        method: "GET",
+        mode: "cors",
+        credentials: "include",
         headers: {
-          'Accept': 'image/*'
-        }
+          Accept: "image/*",
+        },
       });
 
       if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch original image: ${imageResponse.status}`);
+        throw new Error(
+          `Failed to fetch original image: ${imageResponse.status}`
+        );
       }
 
       const imageBlob = await imageResponse.blob();
 
       // Create FormData to upload to our server
       const formData = new FormData();
-      const fileName = `alter-${alterId}-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const fileName = `alter-${alterId}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}.jpg`;
       const imageFile = new File([imageBlob], fileName, { type: "image/jpeg" });
       formData.append("avatar", imageFile);
 
@@ -186,35 +333,59 @@ class AlterImageManager {
       const uploadResponse = await fetch("/upload", {
         method: "POST",
         body: formData,
-        credentials: 'include'
+        credentials: "include",
       });
 
       if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload image to server: ${uploadResponse.status}`);
+        throw new Error(
+          `Failed to upload image to server: ${uploadResponse.status}`
+        );
       }
 
       const uploadData = await uploadResponse.json();
       console.log("Successfully uploaded alter image:", uploadData.url);
       return uploadData.url;
     } catch (error) {
-      console.error('Error uploading alter image:', error);
+      console.error("Error uploading alter image:", error);
       return null;
     }
   }
 
   setImage(url) {
     if (!url) return;
-    
+
     // Update all image elements with the alter class
-    const images = document.querySelectorAll('.alter-image');
-    images.forEach(img => {
+    const images = document.querySelectorAll(".alter-image");
+    images.forEach((img) => {
       img.src = url;
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = "anonymous";
       img.onerror = () => {
         console.warn(`Failed to load image: ${url}, using placeholder`);
-        img.src = '/placeholder.svg';
+        img.src = "/placeholder.svg";
       };
     });
+
+    // Update avatar image specifically
+    const avatarImage = document.getElementById("avatar-image");
+    if (avatarImage) {
+      avatarImage.src = url;
+      avatarImage.style.display = "block";
+      avatarImage.crossOrigin = "anonymous";
+      avatarImage.onerror = () => {
+        console.warn(`Failed to load avatar image: ${url}, using placeholder`);
+        avatarImage.src = "/placeholder.svg";
+      };
+    }
+
+    // Notify VideoAgent about the image update for premade alters
+    if (
+      this.alterData &&
+      this.alterData.type === "premade" &&
+      window.videoAgent
+    ) {
+      console.log("Notifying VideoAgent of premade alter image update:", url);
+      window.videoAgent.customAvatarUrl = url;
+    }
 
     // Store in both localStorage and cache
     if (this.alterData && this.alterData.id && url !== "/placeholder.svg") {
@@ -235,9 +406,46 @@ class AlterImageManager {
       alter.type = "custom";
     }
 
+    // For premade alters, clear all related cache to prevent mixing
+    if (alter.type === "premade") {
+      this.clearPremadeAlterCache(alter.id);
+    } else {
+      // Clear image cache for this alter to ensure fresh data is loaded
+      if (this.alterData && this.alterData.id) {
+        const oldImageKey = this.getAlterImageKey(
+          this.alterData.id,
+          this.alterData.type
+        );
+        this.imageCache.delete(oldImageKey);
+        localStorage.removeItem(oldImageKey);
+      }
+    }
+
     this.alterData = { ...alter };
     localStorage.setItem("alterData", JSON.stringify(this.alterData));
     this.loadAlterImage();
+  }
+
+  clearPremadeAlterCache(alterId) {
+    console.log("Clearing premade alter cache for ID:", alterId);
+
+    // Clear multiple possible cache keys for this premade alter
+    const possibleKeys = [
+      this.getAlterImageKey(alterId, "premade"),
+      this.getAlterImageKey(`premade_${alterId}`, "premade"),
+      this.getAlterImageKey(
+        alterId.toString().replace(/^premade_/, ""),
+        "premade"
+      ),
+    ];
+
+    possibleKeys.forEach((key) => {
+      this.imageCache.delete(key);
+      localStorage.removeItem(key);
+      console.log("Cleared cache key:", key);
+    });
+
+    this.saveImageCache();
   }
 
   cleanupCache() {
@@ -250,6 +458,26 @@ class AlterImageManager {
     }
   }
 
+  clearAllCaches() {
+    console.log("Clearing all image caches");
+    this.imageCache.clear();
+
+    // Clear localStorage entries that start with image keys
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("premade_") ||
+          key.startsWith("custom_") ||
+          key.startsWith("published_"))
+      ) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    this.saveImageCache();
+  }
+
   async handleAlterImage(alter) {
     if (!alter) {
       console.warn("No alter data provided");
@@ -259,30 +487,27 @@ class AlterImageManager {
 
     console.log("Handling alter image for:", alter);
 
-    // For premade alters
+    // For premade alters - always fetch fresh from database
     if (alter.type === "premade") {
-      // Use the image URL directly with cache busting
-      const timestamp = Date.now();
-      const imageUrl = alter.image;
-      if (imageUrl) {
-        const cachedUrl = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_=${timestamp}`;
-        this.setImage(cachedUrl);
-        this.setAlterData(alter);
-        return;
-      }
+      this.setAlterData(alter);
+      return;
     }
 
     // For published alters
     if (alter.type === "published" && alter.image) {
       const imageKey = this.getAlterImageKey(alter.id, alter.type);
-      const cachedImage = this.imageCache.get(imageKey) || localStorage.getItem(imageKey);
+      const cachedImage =
+        this.imageCache.get(imageKey) || localStorage.getItem(imageKey);
 
       if (cachedImage && (await this.verifyImage(cachedImage))) {
         console.log("Using cached image:", cachedImage);
         this.setImage(cachedImage);
       } else {
         // Upload the image to our server to get a fresh public URL
-        const publicUrl = await this.uploadAlterImageToServer(alter.image, alter.id);
+        const publicUrl = await this.uploadAlterImageToServer(
+          alter.image,
+          alter.id
+        );
         if (publicUrl) {
           this.setImage(publicUrl);
           localStorage.setItem(imageKey, publicUrl);
@@ -290,7 +515,9 @@ class AlterImageManager {
           this.saveImageCache();
           console.log("Uploaded and cached published alter image:", publicUrl);
         } else {
-          console.warn("Failed to upload published alter image, using placeholder");
+          console.warn(
+            "Failed to upload published alter image, using placeholder"
+          );
           this.setImage("/placeholder.svg");
         }
       }
@@ -299,20 +526,23 @@ class AlterImageManager {
     this.setAlterData(alter);
   }
 
-  // Add method to get alter data from any storage source
+  // Add method to get alter data from storage source
   static getAlterFromStorage() {
-    // Try sessionStorage first (for navigation from marketplace)
-    let selectedAlter = sessionStorage.getItem("selectedAlter");
+    // Try localStorage only (no session storage)
+    const selectedAlter = localStorage.getItem("selectedAlter");
     if (selectedAlter) {
-      sessionStorage.removeItem("selectedAlter");
-      return JSON.parse(selectedAlter);
-    }
+      const parsed = JSON.parse(selectedAlter);
 
-    // Try localStorage (for backward compatibility)
-    selectedAlter = localStorage.getItem("selectedAlter");
-    if (selectedAlter) {
-      localStorage.removeItem("selectedAlter");
-      return JSON.parse(selectedAlter);
+      // For premade alters, clear any cached image data to force fresh load
+      if (parsed.type === "premade") {
+        console.log("Clearing cached data for premade alter:", parsed.id);
+        const manager = alterImageManager;
+        if (manager) {
+          manager.clearPremadeAlterCache(parsed.id);
+        }
+      }
+
+      return parsed;
     }
 
     // Try custom avatar settings
