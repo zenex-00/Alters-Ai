@@ -113,19 +113,30 @@ const hasPurchasedAlter = async (req, res, next) => {
     if (/^\d+$/.test(alterId)) {
       console.log(`Premade alter ${alterId} - checking purchase status`);
 
-      // Check if the user has purchased this premade alter
+      // Check if the user has purchased this premade alter - handle both old and new purchase records
       const { data: purchaseData, error: purchaseError } = await supabaseAdmin
         .from("purchases")
-        .select("id")
+        .select("id, alter_identifier, type, is_premade")
         .eq("user_id", userId)
-        .eq("alter_identifier", alterId)
-        .eq("type", "premade_alter")
+        .eq("alter_identifier", alterId.toString())
+        .in("type", ["premade_alter", "premade"]) // Handle both type values
         .limit(1);
 
       if (purchaseError) {
         console.error("Error checking premade alter purchase:", purchaseError);
         return res.status(500).json({ error: "Error checking purchase" });
       }
+
+      console.log(
+        "Middleware purchase check for alterId",
+        alterId,
+        "result:",
+        purchaseData
+      );
+      console.log("Middleware query parameters:", {
+        userId,
+        alterId: alterId.toString(),
+      });
 
       if (!purchaseData || purchaseData.length === 0) {
         console.log(

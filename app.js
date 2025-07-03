@@ -165,87 +165,31 @@ app.post(
     if (event.type === "checkout.session.completed") {
       console.log("Processing checkout.session.completed event");
       const session = event.data.object;
-      console.log("Session data:", {
-        clientReferenceId: session.client_reference_id,
-        customerId: session.customer,
-        paymentStatus: session.payment_status,
-        metadata: session.metadata,
-        amount: session.amount_total,
-      });
+      console.log("[WEBHOOK] Session data:", JSON.stringify(session, null, 2));
 
       try {
         // Get the Firebase UID from the client_reference_id
         const firebaseUid = session.client_reference_id;
-        console.log("Firebase UID from session:", firebaseUid);
+        console.log("[WEBHOOK] Firebase UID from session:", firebaseUid);
 
         if (!firebaseUid) {
-          console.error("No Firebase UID found in session");
+          console.error("[WEBHOOK] No Firebase UID found in session");
           return res.status(400).json({ error: "No Firebase UID found" });
-        }
-
-        // Check if this is a Creator Studio package purchase (amount is $50.00 = 5000 cents)
-        if (session.amount_total === 5000) {
-          console.log("Processing Creator Studio package purchase");
-
-          // First, get the user's Supabase ID
-          const { data: userData, error: userError } = await supabaseAdmin
-            .from("users")
-            .select("id")
-            .eq("firebase_uid", firebaseUid)
-            .limit(1);
-
-          if (userError) {
-            console.error("Supabase user query error:", userError);
-            return res.status(500).json({ error: "Failed to find user" });
-          }
-
-          if (!userData || userData.length === 0) {
-            console.error("No user found in Supabase");
-            return res.status(404).json({ error: "User not found" });
-          }
-
-          const userId = userData[0].id;
-          console.log("Found Supabase user ID:", userId);
-
-          // Create or update creator record
-          const { error: creatorError } = await supabaseAdmin
-            .from("creatorsuser")
-            .upsert(
-              [
-                {
-                  user_id: userId,
-                  is_creator: true,
-                  created_at: new Date().toISOString(),
-                },
-              ],
-              {
-                onConflict: "user_id",
-              }
-            );
-
-          if (creatorError) {
-            console.error("Error creating creator record:", creatorError);
-            return res
-              .status(500)
-              .json({ error: "Failed to create creator record" });
-          }
-
-          console.log("Creator record successfully created/updated");
-          return res.json({ received: true });
         }
 
         // Get the alter ID from metadata (for alter purchases)
         const alterId = session.metadata?.alter_id;
+        console.log("[WEBHOOK] alterId from session.metadata:", alterId);
         if (!alterId) {
           console.error(
-            "No alter ID found in session metadata and not a creator package"
+            "[WEBHOOK] No alter ID found in session metadata and not a creator package"
           );
           return res.status(400).json({ error: "No alter ID found" });
         }
 
         // First, get the user's Supabase ID
         console.log(
-          "Querying Supabase for user with Firebase UID:",
+          "[WEBHOOK] Querying Supabase for user with Firebase UID:",
           firebaseUid
         );
         const { data: userData, error: userError } = await supabaseAdmin
@@ -253,51 +197,117 @@ app.post(
           .select("id")
           .eq("firebase_uid", firebaseUid)
           .limit(1);
-
         if (userError) {
-          console.error("Supabase user query error:", userError);
+          console.error("[WEBHOOK] Supabase user query error:", userError);
           return res.status(500).json({ error: "Failed to find user" });
         }
-
-        console.log("Supabase user query result:", userData);
-
+        console.log("[WEBHOOK] Supabase user query result:", userData);
         if (!userData || userData.length === 0) {
-          console.error("No user found in Supabase");
+          console.error("[WEBHOOK] No user found in Supabase");
           return res.status(404).json({ error: "User not found" });
         }
-
         const userId = userData[0].id;
-        console.log("Found Supabase user ID:", userId);
+        console.log("[WEBHOOK] Found Supabase user ID:", userId);
 
         // Get the admin user ID
         const adminId = await ensureAdminUser();
-        console.log("Using admin ID:", adminId);
+        console.log("[WEBHOOK] Using admin ID:", adminId);
 
-        // Check if alterId is numeric (premade alter) or UUID (published alter)
-        const isNumericId = /^\d+$/.test(alterId);
-        console.log(
-          "Alter ID type:",
-          isNumericId ? "numeric (premade)" : "UUID (published)"
-        );
+        // Clean the alter ID and determine type
+        let cleanAlterId = alterId;
+        let alterType;
+
+        console.log("[WEBHOOK] Processing alter ID:", alterId);
+
+        if (alterId.startsWith("premade_")) {
+          cleanAlterId = alterId.replace("premade_", "");
+          alterType = "premade_alter";
+          console.log(
+            "[WEBHOOK] Alter ID type: Premade (from prefix), clean ID:",
+            cleanAlterId
+          );
+        } else if (/^\d+$/.test(alterId)) {
+          cleanAlterId = alterId;
+          alterType = "premade_alter";
+          console.log(
+            "[WEBHOOK] Alter ID type: Premade (numeric), clean ID:",
+            cleanAlterId
+          );
+        } else if (
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            alterId
+          )
+        ) {
+          cleanAlterId = alterId;
+          alterType = "published_alter";
+          console.log("[WEBHOOK] Alter ID type: Published (UUID)");
+        } else {
+          console.error("[WEBHOOK] Invalid alter ID format:", alterId);
+          return res.status(400).json({ error: "Invalid alter ID format" });
+        }
+
+        let alterData;
+
+        if (alterType === "premade_alter") {
+          console.log(
+            "[WEBHOOK] Processing premade alter with ID:",
+            cleanAlterId
+          );
+          // Fetch premade alter from database instead of using hardcoded data
+          const { data: premadeAlter, error: alterError } = await supabaseAdmin
+            .from("premade_alters")
+            .select("*")
+            .eq("id", parseInt(cleanAlterId))
+            .single();
+          if (alterError || !premadeAlter) {
+            console.error(
+              "[WEBHOOK] Error fetching premade alter:",
+              alterError
+            );
+            // Fallback to basic data if alter not found in database
+            alterData = {
+              id: cleanAlterId,
+              name: `Premade Alter ${cleanAlterId}`,
+              type: "premade",
+              description: "AI Digital Twin",
+              category: "general",
+            };
+          } else {
+            alterData = {
+              id: premadeAlter.id.toString(),
+              name: premadeAlter.name,
+              type: "premade",
+              description: premadeAlter.description,
+              category: premadeAlter.category,
+            };
+          }
+          console.log("[WEBHOOK] Using premade alter data:", alterData);
+        } else {
+          console.log(
+            "[WEBHOOK] Processing published alter with UUID:",
+            cleanAlterId
+          );
+          // For published alters, fetch from published_alters table
+          const { data: publishedAlter, error: alterError } =
+            await supabaseAdmin
+              .from("published_alters")
+              .select("*")
+              .eq("id", cleanAlterId)
+              .single();
+          if (alterError) {
+            console.error(
+              "[WEBHOOK] Error fetching published alter:",
+              alterError
+            );
+            return res.status(500).json({ error: "Error processing purchase" });
+          }
+          alterData = { ...publishedAlter, type: "published" };
+          console.log("[WEBHOOK] Using published alter data:", alterData);
+        }
 
         let creatorId = adminId; // Default to admin for premade alters
-
-        if (!isNumericId) {
-          // Only query published_alters for UUIDs
-          const { data: alterData, error: alterError } = await supabaseAdmin
-            .from("published_alters")
-            .select("user_id")
-            .eq("id", alterId)
-            .limit(1);
-
-          if (alterError) {
-            console.error("Error fetching alter:", alterError);
-            return res.status(500).json({ error: "Failed to fetch alter" });
-          }
-
-          if (alterData && alterData.length > 0) {
-            creatorId = alterData[0].user_id;
-          }
+        if (alterType === "published_alter") {
+          creatorId = alterData.user_id;
         }
 
         // Get the creatorsuser.id for the creator
@@ -306,45 +316,56 @@ app.post(
           .select("id")
           .eq("user_id", creatorId)
           .limit(1);
-
         if (creatorError) {
-          console.error("Error fetching creator:", creatorError);
+          console.error("[WEBHOOK] Error fetching creator:", creatorError);
           return res.status(500).json({ error: "Failed to fetch creator" });
         }
-
         if (!creatorData || creatorData.length === 0) {
-          console.error("No creator found for user ID:", creatorId);
+          console.error("[WEBHOOK] No creator found for user ID:", creatorId);
           return res.status(500).json({ error: "Creator not found" });
         }
-
         const creatorUserId = creatorData[0].id;
-        console.log("Using creator ID:", creatorUserId);
+        console.log("[WEBHOOK] Using creator ID:", creatorUserId);
 
-        // Store the purchase in the database
+        // Store the purchase in the database - ensure cleanAlterId is stored as string
+        const isPremadeAlter = alterType === "premade_alter";
+        console.log("[WEBHOOK] Creating purchase record:", {
+          user_id: userId,
+          creator_id: creatorUserId,
+          alter_identifier: cleanAlterId.toString(),
+          type: alterType,
+          is_premade: isPremadeAlter,
+          purchase_date: new Date().toISOString(),
+          payment_id: session.payment_intent,
+          amount: session.amount_total / 100,
+          created_at: new Date().toISOString(),
+        });
         const { error: purchaseError } = await supabaseAdmin
           .from("purchases")
           .insert([
             {
               user_id: userId,
               creator_id: creatorUserId,
-              alter_identifier: alterId,
-              type: isNumericId ? "premade_alter" : "published_alter",
+              alter_identifier: cleanAlterId.toString(),
+              type: alterType,
+              is_premade: isPremadeAlter,
               purchase_date: new Date().toISOString(),
               payment_id: session.payment_intent,
               amount: session.amount_total / 100,
               created_at: new Date().toISOString(),
             },
           ]);
-
         if (purchaseError) {
-          console.error("Error storing purchase:", purchaseError);
+          console.error("[WEBHOOK] Error storing purchase:", purchaseError);
           return res.status(500).json({ error: "Failed to store purchase" });
         }
-
-        console.log("Purchase successfully recorded in database");
+        console.log(
+          "[WEBHOOK] Purchase successfully recorded in database with alter_identifier:",
+          cleanAlterId.toString()
+        );
         return res.json({ received: true });
       } catch (error) {
-        console.error("Webhook processing error:", error);
+        console.error("[WEBHOOK] Webhook processing error:", error);
         return res.status(500).json({ error: "Internal server error" });
       }
     }
@@ -977,7 +998,7 @@ app.post("/auth/signout", (req, res) => {
   });
 });
 
-//```tool_code
+////```tool_code
 // This commit fixes an issue where the creator status wasn't being properly saved after a Stripe checkout, and updates the webhook handler to correctly process creator package purchases.
 // API configuration endpoint
 app.get("/api-config", (req, res) => {
@@ -1140,7 +1161,7 @@ app.get("/api/published-alters", async (req, res) => {
 app.get("/api/premade-alters", async (req, res) => {
   try {
     console.log("Fetching premade alters from database...");
-    
+
     // Fetch all premade alters from the database
     const { data, error } = await supabaseAdmin
       .from("premade_alters")
@@ -1182,7 +1203,9 @@ app.get("/api/premade-alters", async (req, res) => {
     res.json(alters);
   } catch (err) {
     console.error("Fetch premade alters error:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
@@ -1190,7 +1213,7 @@ app.get("/api/premade-alters", async (req, res) => {
 app.get("/api/test-db", async (req, res) => {
   try {
     console.log("Testing database connection...");
-    
+
     const { data, error } = await supabaseAdmin
       .from("premade_alters")
       .select("count")
@@ -1198,13 +1221,50 @@ app.get("/api/test-db", async (req, res) => {
 
     if (error) {
       console.error("Database test error:", error);
-      return res.status(500).json({ error: "Database connection failed", details: error });
+      return res
+        .status(500)
+        .json({ error: "Database connection failed", details: error });
     }
 
     res.json({ success: true, message: "Database connection working", data });
   } catch (err) {
     console.error("Database test error:", err);
-    res.status(500).json({ error: "Database test failed", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Database test failed", details: err.message });
+  }
+});
+
+// Debug endpoint to check purchases table
+app.get("/api/debug/purchases/:userId?", async (req, res) => {
+  try {
+    let query = supabaseAdmin
+      .from("purchases")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (req.params.userId) {
+      query = query.eq("user_id", req.params.userId);
+    }
+
+    const { data, error } = await query.limit(10);
+
+    if (error) {
+      console.error("Debug purchases error:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch purchases", details: error });
+    }
+
+    res.json({
+      success: true,
+      purchases: data,
+      count: data?.length || 0,
+      message: "Recent purchases data",
+    });
+  } catch (err) {
+    console.error("Debug purchases error:", err);
+    res.status(500).json({ error: "Debug failed", details: err.message });
   }
 });
 
@@ -1340,13 +1400,15 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
   try {
     // Get Firebase UID from session
     const firebaseUid = req.session.userId;
+    console.log("[DEBUG] /api/check-purchase/:alterId called");
+    console.log("[DEBUG] Session firebaseUid:", firebaseUid);
     if (!firebaseUid) {
       console.log("No Firebase UID in session for purchase check");
       return res.json({ purchased: false });
     }
 
     let alterId = req.params.alterId;
-    console.log("Checking purchase for alter ID:", alterId);
+    console.log("[DEBUG] Checking purchase for alter ID:", alterId);
 
     // Get the user's Supabase ID
     const { data: userData, error: userError } = await supabaseAdmin
@@ -1361,33 +1423,42 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
     }
 
     const userId = userData[0].id;
+    console.log("[DEBUG] Resolved Supabase userId:", userId);
 
     // Handle premade alter IDs (both prefixed and numeric)
-    if (alterId.startsWith('premade_')) {
-      alterId = alterId.replace('premade_', '');
+    if (alterId.startsWith("premade_")) {
+      alterId = alterId.replace("premade_", "");
     }
 
     // For premade alters (numeric IDs), check if user has purchased it
     const isNumericId = /^\d+$/.test(alterId);
 
     if (isNumericId) {
-      console.log("Premade alter detected, checking purchase status for ID:", alterId);
+      console.log(
+        "[DEBUG] Premade alter detected, checking purchase status for ID:",
+        alterId
+      );
 
-      // First verify it's a valid premade alter
-      const premadeAlterIds = ["1", "2", "3", "4"]; // Add all valid premade alter IDs
+      // First verify it's a valid premade alter by checking the database
+      const { data: premadeAlter, error: premadeError } = await supabaseAdmin
+        .from("premade_alters")
+        .select("id")
+        .eq("id", parseInt(alterId))
+        .eq("is_active", true)
+        .limit(1);
 
-      if (!premadeAlterIds.includes(alterId)) {
-        console.log("Invalid premade alter ID:", alterId);
+      if (premadeError || !premadeAlter || premadeAlter.length === 0) {
+        console.log("Invalid or inactive premade alter ID:", alterId);
         return res.json({ purchased: false });
       }
 
-      // Check if the user has purchased this premade alter
+      // Check if the user has purchased this premade alter - handle both old and new purchase records
       const { data: purchaseData, error: purchaseError } = await supabaseAdmin
         .from("purchases")
-        .select("id")
+        .select("id, alter_identifier, type, is_premade")
         .eq("user_id", userId)
-        .eq("alter_identifier", alterId)
-        .eq("type", "premade_alter")
+        .eq("alter_identifier", alterId.toString())
+        .in("type", ["premade_alter", "premade"]) // Handle both type values
         .limit(1);
 
       if (purchaseError) {
@@ -1395,13 +1466,28 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
         return res.json({ purchased: false });
       }
 
-      const purchased = purchaseData && purchaseData.length > 0;
-      console.log("Premade alter purchase check result:", purchased);
-      return res.json({ purchased });
+      console.log(
+        "[DEBUG] Purchase query result for alterId",
+        alterId,
+        ":",
+        purchaseData
+      );
+      console.log("[DEBUG] Query parameters:", {
+        userId,
+        alterId: alterId.toString(),
+      });
+
+      if (purchaseData && purchaseData.length > 0) {
+        console.log("[DEBUG] User has purchased premade alter:", alterId);
+        return res.json({ purchased: true });
+      } else {
+        console.log("[DEBUG] User has not purchased premade alter:", alterId);
+        return res.json({ purchased: false });
+      }
     }
 
     // For published alters (UUIDs), check actual purchase
-    console.log("Published alter detected, checking purchase records");
+    console.log("[DEBUG] Published alter detected, checking purchase records");
 
     // Check if the alter has been purchased using the purchases table
     const { data: purchaseData, error: purchaseError } = await supabaseAdmin
@@ -1416,13 +1502,50 @@ app.get("/api/check-purchase/:alterId", async (req, res) => {
       return res.json({ purchased: false });
     }
 
-    const purchased = purchaseData && purchaseData.length > 0;
-    console.log("Purchase check result:", purchased);
-
-    res.json({ purchased });
+    if (purchaseData && purchaseData.length > 0) {
+      console.log("[DEBUG] User has purchased published alter:", alterId);
+      return res.json({ purchased: true });
+    } else {
+      console.log("[DEBUG] User has not purchased published alter:", alterId);
+      return res.json({ purchased: false });
+    }
   } catch (error) {
     console.error("Error in check-purchase:", error);
     res.json({ purchased: false });
+  }
+});
+
+// Debug endpoint: List all purchases for the current user
+app.get("/api/debug-purchases", async (req, res) => {
+  try {
+    const firebaseUid = req.session.userId;
+    console.log("[DEBUG] /api/debug-purchases called");
+    console.log("[DEBUG] Session firebaseUid:", firebaseUid);
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "No Firebase UID in session" });
+    }
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+    if (userError || !userData || userData.length === 0) {
+      return res.status(401).json({ error: "User not found in Supabase" });
+    }
+    const userId = userData[0].id;
+    const { data: purchases, error: purchasesError } = await supabaseAdmin
+      .from("purchases")
+      .select(
+        "id, alter_identifier, type, is_premade, payment_id, amount, purchase_date"
+      )
+      .eq("user_id", userId);
+    if (purchasesError) {
+      return res.status(500).json({ error: "Failed to fetch purchases" });
+    }
+    res.json({ userId, purchases });
+  } catch (error) {
+    console.error("[DEBUG] Error in /api/debug-purchases:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -1553,7 +1676,7 @@ app.get("/alter-purchase-success", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     if (session.payment_status === "paid") {
-      // Serve the success page
+      // Serve the success page with alter_id parameter
       res.sendFile(path.join(__dirname, "alter-purchase-success.html"));
     } else {
       res.redirect("/marketplace");
@@ -1561,6 +1684,58 @@ app.get("/alter-purchase-success", async (req, res) => {
   } catch (error) {
     console.error("Error handling successful purchase:", error);
     res.redirect("/marketplace");
+  }
+});
+
+// API endpoint to refresh purchase status (for debugging)
+app.post("/api/refresh-purchase-status", async (req, res) => {
+  try {
+    const { alterId, alterType } = req.body;
+    const firebaseUid = req.session.userId;
+
+    if (!firebaseUid) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Get user's Supabase ID
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("firebase_uid", firebaseUid)
+      .limit(1);
+
+    if (userError || !userData || userData.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const userId = userData[0].id;
+    let checkId = alterId;
+
+    // For premade alters, use clean numeric ID for API call
+    if (alterType === "premade") {
+      if (alterId.startsWith("premade_")) {
+        checkId = alterId.replace("premade_", "");
+      }
+    }
+
+    // Check purchase status
+    const response = await fetch(
+      `${req.protocol}://${req.get("host")}/api/check-purchase/${checkId}`
+    );
+    if (response.ok) {
+      const { purchased } = await response.json();
+      return res.json({
+        purchased,
+        alterId: checkId,
+        alterType,
+        originalId: alterId,
+      });
+    } else {
+      return res.status(500).json({ error: "Failed to check purchase status" });
+    }
+  } catch (error) {
+    console.error("Error refreshing purchase status:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -1826,13 +2001,13 @@ app.post("/generate-audio", async (req, res) => {
 app.post("/create-stream", async (req, res) => {
   try {
     const { avatarUrl, voiceId } = req.body;
-    
+
     console.log("Creating stream with:", { avatarUrl, voiceId });
 
     // D-ID API configuration
     const DID_API_URL = "https://api.d-id.com";
     const API_KEY = process.env.DID_API_KEY;
-    
+
     if (!API_KEY) {
       console.error("D-ID API key not configured");
       return res.status(500).json({ error: "D-ID API not configured" });
@@ -1842,37 +2017,37 @@ app.post("/create-stream", async (req, res) => {
     const response = await fetch(`${DID_API_URL}/talks/streams`, {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${Buffer.from(API_KEY + ":").toString("base64")}`,
+        Authorization: `Basic ${Buffer.from(API_KEY + ":").toString("base64")}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         source_url: avatarUrl,
         voice: {
           provider: "11labs",
-          voice_id: voiceId || "EXAVITQu4vr4xnSDxMaL" // Default to Bella voice
+          voice_id: voiceId || "EXAVITQu4vr4xnSDxMaL", // Default to Bella voice
         },
         config: {
           stitch: true,
-          result_format: "mp4"
-        }
-      })
+          result_format: "mp4",
+        },
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("D-ID API error:", response.status, errorText);
-      return res.status(response.status).json({ 
-        error: "Failed to create stream", 
-        details: errorText 
+      return res.status(response.status).json({
+        error: "Failed to create stream",
+        details: errorText,
       });
     }
 
     const data = await response.json();
     console.log("Stream created successfully:", data.id);
-    
+
     res.json({
       streamId: data.id,
-      sessionId: data.session_id
+      sessionId: data.session_id,
     });
   } catch (error) {
     console.error("Create stream error:", error);

@@ -76,50 +76,57 @@
             <i class="ri-chat-3-line mr-2"></i>
             Start Chatting
           </button>
-          <a
-            href="/marketplace?purchase_success=true&alter_id=${alterId}"
+          <button
+            id="back-to-marketplace-btn"
             class="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-opacity-90 transition-all"
           >
             <i class="ri-store-2-line mr-2"></i>
             Back to Marketplace
-          </a>
+          </button>
         </div></div>
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         const startChatBtn = document.getElementById('start-chat-btn');
-        
+        const backToMarketplaceBtn = document.getElementById('back-to-marketplace-btn');
+
         // Get alter_id from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const alterId = urlParams.get('alter_id');
-        
+
         startChatBtn.addEventListener('click', async () => {
           if (alterId) {
             try {
               // Fetch alter data based on the purchased alter ID
               let alter = null;
-              
+
+              // Clean the alter ID - remove premade_ prefix if present
+              let cleanAlterId = alterId;
+              if (alterId.startsWith('premade_')) {
+                cleanAlterId = alterId.replace('premade_', '');
+              }
+
               // Check if it's a numeric ID (premade alter)
-              const isNumericId = /^\d+$/.test(alterId);
-              
+              const isNumericId = /^\d+$/.test(cleanAlterId);
+
               if (isNumericId) {
                 // Handle premade alters - fetch from database
                 try {
                   const response = await fetch('/api/premade-alters');
                   if (response.ok) {
                     const premadeAlters = await response.json();
-                    alter = premadeAlters.find(a => a.id.toString() === alterId);
-                    
+                    alter = premadeAlters.find(a => a.id.toString() === cleanAlterId);
+
                     if (alter) {
                       // Map database fields to expected format
                       alter = {
-                        id: alter.id.toString(),
+                        id: cleanAlterId, // Use clean ID without prefix
                         name: alter.name,
                         description: alter.description,
                         category: alter.category,
-                        image: alter.image_url,
-                        voiceId: alter.voice_id,
-                        voiceName: alter.voice_name,
+                        image: alter.image_url || alter.image,
+                        voiceId: alter.voice_id || alter.voiceId,
+                        voiceName: alter.voice_name || alter.voiceName,
                         personality: alter.personality,
                         prompt: alter.prompt,
                         knowledge: alter.knowledge,
@@ -170,8 +177,8 @@
                           type: "premade"
                         }
                       };
-                      
-                      alter = fallbackAlters[alterId];
+
+                      alter = fallbackAlters[cleanAlterId];
                     }
                   } else {
                     throw new Error(`Failed to fetch premade alters: ${response.status}`);
@@ -220,8 +227,8 @@
                     type: "premade"
                   }
                 };
-                
-                  alter = fallbackAlters[alterId];
+
+                  alter = fallbackAlters[cleanAlterId];
                 }
               } else {
                 // Handle published alters - fetch from API
@@ -234,14 +241,14 @@
                   }
                 }
               }
-              
+
               if (alter) {
                 // Ensure voice data is properly formatted
                 if (alter.voiceId || alter.voice_id) {
                   alter.voiceId = alter.voiceId || alter.voice_id;
                   alter.voiceName = alter.voiceName || alter.voice_name;
                 }
-                
+
                 // Store the alter data in localStorage for the chat page
                 localStorage.setItem('selectedAlter', JSON.stringify(alter));
                 // Redirect to chat page
@@ -260,6 +267,10 @@
             // No alter ID, redirect to marketplace
             window.location.href = '/marketplace';
           }
+        });
+
+        backToMarketplaceBtn.addEventListener('click', () => {
+            window.location.href = `/marketplace?purchase_success=true&alter_id=${alterId}`;
         });
       });
     </script>

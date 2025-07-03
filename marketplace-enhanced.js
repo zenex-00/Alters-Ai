@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
       console.error("Error loading premade alters:", error);
       showError("Failed to load premade alters: " + error.message);
-      
+
       // Fallback to hardcoded data
       console.log("Falling back to hardcoded premade alters...");
       loadHardcodedPremadeAlters();
@@ -429,11 +429,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Check if alter is purchased
     let isPurchased = false;
     try {
-      // For premade alters, use the ID as-is (should be clean already)
-      const response = await fetch(`/api/check-purchase/${alter.id}`);
+      // For premade alters, use the original numeric ID for API call
+      let checkId = alter.originalId || alter.id;
+      if (checkId && checkId.toString().startsWith("premade_")) {
+        checkId = checkId.replace("premade_", "");
+      }
+
+      console.log("Checking purchase for premade alter:", {
+        alterId: alter.id,
+        originalId: alter.originalId,
+        checkId: checkId,
+      });
+
+      const response = await fetch(`/api/check-purchase/${checkId}`, {
+        method: "GET",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
       if (response.ok) {
         const { purchased } = await response.json();
         isPurchased = purchased;
+        console.log(
+          "Purchase status for premade alter",
+          checkId,
+          ":",
+          purchased
+        );
+      } else {
+        console.error("Purchase check failed with status:", response.status);
       }
     } catch (error) {
       console.error("Error checking purchase status:", error);
@@ -669,23 +695,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function generatePromptFromAlter(alter) {
-    let prompt = `You are ${alter.name}`;
+    let prompt = `You are ${alter.name}, a real person with your own unique identity and experiences`;
 
     if (alter.description) {
-      prompt += `, ${alter.description}`;
+      prompt += `. ${alter.description}`;
     }
 
-    prompt += `. You are ${generatePersonalityFromCategory(
+    prompt += `. You have a ${generatePersonalityFromCategory(
       alter.category,
       alter.description
-    )}`;
+    )} personality`;
 
     if (alter.category) {
-      prompt += ` You specialize in ${alter.category} topics.`;
+      prompt += ` and you have expertise in ${alter.category}`;
     }
 
     prompt +=
-      " Respond in character, be engaging, and provide helpful information. Keep your responses conversational and maintain your unique personality.";
+      ". You are not an AI or assistant - you are a real person named " +
+      alter.name +
+      ". Never mention being artificial, an AI, or from OpenAI. Respond authentically as yourself, sharing your genuine thoughts, experiences, and personality. Be engaging and helpful while staying true to who you are as " +
+      alter.name +
+      ".";
 
     return prompt;
   }
@@ -906,19 +936,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (alterType === "premade") {
         // For premade alters, we need to handle the premade_ prefix
         console.log("Looking for premade alter with ID:", alterId);
-        console.log("Available premade alters:", premadeAlters.map(a => ({ id: a.id, originalId: a.originalId, name: a.name })));
-        
+        console.log(
+          "Available premade alters:",
+          premadeAlters.map((a) => ({
+            id: a.id,
+            originalId: a.originalId,
+            name: a.name,
+          }))
+        );
+
         // Clean the ID if it has the premade_ prefix
-        const cleanId = alterId.replace(/^premade_/, '');
+        const cleanId = alterId.replace(/^premade_/, "");
         console.log("Clean ID:", cleanId);
-        
+
         alter = premadeAlters.find(
           (a) =>
             a.originalId === cleanId ||
             a.id === alterId ||
             a.id.replace(/^premade_/, "") === cleanId
         );
-        
+
         console.log("Found alter:", alter);
       } else {
         alter = publishedAlters.find((a) => a.originalId === alterId);
@@ -946,6 +983,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const { id: sessionId } = await response.json();
+
+      // Store the alter info for post-purchase button update
+      sessionStorage.setItem(
+        "pendingPurchase",
+        JSON.stringify({
+          alterId: alterType === "premade" ? alterId : alter.originalId,
+          alterType: alterType,
+          timestamp: Date.now(),
+        })
+      );
 
       // Redirect to Stripe Checkout
       const result = await stripe.redirectToCheckout({
@@ -1004,35 +1051,157 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => toast.remove(), 5000);
   }
 
-  // Debug helper
+  // Debug helper and global access
   window.debugMarketplace = {
     getPremadeAlters: () => premadeAlters,
     getPublishedAlters: () => publishedAlters,
     getCurrentTab: () => currentTab,
     refreshPublished: () => loadPublishedAlters(),
+    refreshButtonState: refreshAlterButtonState,
+    refreshCurrentTab: refreshCurrentTab,
     findAlter: (alterId, alterType) => {
-      console.log("Debug: Looking for alter with ID:", alterId, "Type:", alterType);
+      console.log(
+        "Debug: Looking for alter with ID:",
+        alterId,
+        "Type:",
+        alterType
+      );
       if (alterType === "premade") {
-        const cleanId = alterId.replace(/^premade_/, '');
+        const cleanId = alterId.replace(/^premade_/, "");
         console.log("Debug: Clean ID:", cleanId);
-        console.log("Debug: Available premade alters:", premadeAlters.map(a => ({ id: a.id, originalId: a.originalId, name: a.name })));
-        
-        const found = premadeAlters.find(a => 
-          a.originalId === cleanId ||
-          a.id === alterId ||
-          a.id.replace(/^premade_/, "") === cleanId
+        console.log(
+          "Debug: Available premade alters:",
+          premadeAlters.map((a) => ({
+            id: a.id,
+            originalId: a.originalId,
+            name: a.name,
+          }))
+        );
+
+        const found = premadeAlters.find(
+          (a) =>
+            a.originalId === cleanId ||
+            a.id === alterId ||
+            a.id.replace(/^premade_/, "") === cleanId
         );
         console.log("Debug: Found alter:", found);
         return found;
       }
       return null;
-    }
+    },
   };
+
+  // Make refresh functions globally available
+  window.refreshAlterButtonState = refreshAlterButtonState;
+  window.refreshCurrentTab = refreshCurrentTab;
+
+  // Function to refresh button states for a specific alter
+  async function refreshAlterButtonState(alterId, alterType) {
+    console.log(
+      "Refreshing button state for alter:",
+      alterId,
+      "Type:",
+      alterType
+    );
+
+    try {
+      // Use the correct ID format for the API call
+      let checkId = alterId;
+
+      // For premade alters, use clean numeric ID for API call
+      if (alterType === "premade") {
+        if (alterId.startsWith("premade_")) {
+          checkId = alterId.replace("premade_", "");
+        }
+        // If it's already numeric, use as-is
+      }
+
+      console.log("Making API call with ID:", checkId);
+
+      const response = await fetch(`/api/check-purchase/${checkId}`, {
+        method: "GET",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (response.ok) {
+        const { purchased } = await response.json();
+        console.log("Purchase status for", checkId, ":", purchased);
+
+        // Find the specific alter card and update its button
+        // Try all possible ID formats for robustness
+        let alterCard = document.querySelector(
+          `.alter-card[data-alter-id="${alterId}"][data-alter-type="${alterType}"]`
+        );
+        if (!alterCard && alterType === "premade") {
+          // Try without premade_ prefix
+          alterCard = document.querySelector(
+            `.alter-card[data-alter-id="${checkId}"][data-alter-type="${alterType}"]`
+          );
+          // Try with premade_ prefix if checkId is numeric
+          if (!alterCard && /^\d+$/.test(checkId)) {
+            alterCard = document.querySelector(
+              `.alter-card[data-alter-id="premade_${checkId}"][data-alter-type="${alterType}"]`
+            );
+          }
+        }
+        if (!alterCard) {
+          console.warn("❌ Alter card not found for:", alterId, alterType);
+          return false; // Card not found
+        }
+        const buyButton = alterCard.querySelector(".buy-alter-btn");
+        if (buyButton) {
+          const buttonText = buyButton.querySelector(".button-text");
+          const buttonIcon = buyButton.querySelector("i");
+          const spinner = buyButton.querySelector(".spinner");
+
+          if (purchased) {
+            buttonText.textContent = "Chat Now";
+            buttonIcon.className = "ri-chat-3-line mr-2";
+            buyButton.title = `Chat with ${
+              alterCard.querySelector("h3").textContent
+            }`;
+            console.log(
+              "✅ Button updated to 'Chat Now' for alter:",
+              alterId
+            );
+          } else {
+            buttonText.textContent = "Buy Now";
+            buttonIcon.className = "ri-shopping-cart-line mr-2";
+            buyButton.title = `Buy ${
+              alterCard.querySelector("h3").textContent
+            }`;
+            console.log("❌ Button remains 'Buy Now' for alter:", alterId);
+          }
+
+          // Reset button state
+          if (spinner) spinner.classList.add("hidden");
+          buyButton.disabled = false;
+
+          console.log(
+            "Button updated for alter:",
+            alterId,
+            "Purchased:",
+            purchased
+          );
+          return true; // Success
+        }
+      } else {
+        console.error("API call failed with status:", response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error in refreshAlterButtonState:", error);
+      return false;
+    }
+  }
 
   // Function to refresh the current tab and update button states
   async function refreshCurrentTab() {
     console.log("Refreshing current tab:", currentTab);
-    
+
     if (currentTab === "premade") {
       await loadPremadeAlters();
       await displayPremadeAlters();
@@ -1040,68 +1209,120 @@ document.addEventListener("DOMContentLoaded", async () => {
       await loadPublishedAlters();
       await displayPublishedAlters();
     }
-    
+
     // Update button states for all alter cards
-    const alterCards = document.querySelectorAll('.alter-card');
-    alterCards.forEach(async (card) => {
+    const alterCards = document.querySelectorAll(".alter-card");
+    for (const card of alterCards) {
       const alterId = card.dataset.alterId;
       const alterType = card.dataset.alterType;
-      
-      if (alterId) {
-        try {
-          const response = await fetch(`/api/check-purchase/${alterId}`);
-          if (response.ok) {
-            const { purchased } = await response.json();
-            
-            const buyButton = card.querySelector('.buy-alter-btn');
-            if (buyButton) {
-              const buttonText = buyButton.querySelector('.button-text');
-              const buttonIcon = buyButton.querySelector('i');
-              
-              if (purchased) {
-                buttonText.textContent = "Chat Now";
-                buttonIcon.className = "ri-chat-3-line mr-2";
-                buyButton.title = `Chat with ${card.querySelector('h3').textContent}`;
-              } else {
-                buttonText.textContent = "Buy Now";
-                buttonIcon.className = "ri-shopping-cart-line mr-2";
-                buyButton.title = `Buy ${card.querySelector('h3').textContent}`;
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error checking purchase status for refresh:", error);
-        }
+
+      if (alterId && alterType) {
+        await refreshAlterButtonState(alterId, alterType);
       }
-    });
+    }
   }
 
-  // Initialize the marketplace
-  document.addEventListener("DOMContentLoaded", async function () {
+  // Initialize the marketplace - make this a separate function
+  async function initializeMarketplace() {
     console.log("Marketplace initializing...");
+
+    // Load initial data first
+    await loadPremadeAlters();
 
     // Check if user is returning from a successful purchase
     const urlParams = new URLSearchParams(window.location.search);
-    const purchaseSuccess = urlParams.get('purchase_success');
-    const purchasedAlterId = urlParams.get('alter_id');
-    
-    if (purchaseSuccess === 'true' && purchasedAlterId) {
+    const purchaseSuccess = urlParams.get("purchase_success");
+    const purchasedAlterId = urlParams.get("alter_id");
+
+    if (purchaseSuccess === "true" && purchasedAlterId) {
       console.log("Detected successful purchase for alter:", purchasedAlterId);
+
+      // Determine alter type and clean ID
+      let alterType = "published";
+      let cleanId = purchasedAlterId;
+      let displayId = purchasedAlterId;
+
+      if (purchasedAlterId.startsWith("premade_")) {
+        alterType = "premade";
+        cleanId = purchasedAlterId.replace("premade_", "");
+        displayId = `premade_${cleanId}`;
+      } else if (/^\d+$/.test(purchasedAlterId)) {
+        alterType = "premade";
+        cleanId = purchasedAlterId;
+        displayId = `premade_${cleanId}`;
+      }
+
       // Clear the URL parameters to avoid showing the message again on refresh
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
-      
+
       // Show success message
       showSuccess("Purchase successful! You can now chat with your alter.");
-      
-      // Refresh the marketplace to update button states
-      setTimeout(() => {
-        refreshCurrentTab();
+
+      // Switch to premade tab if it's a premade alter
+      if (alterType === "premade") {
+        switchTab("premade");
+      }
+
+      // Wait for DOM and alters to be ready, then refresh button state with multiple attempts
+      setTimeout(async () => {
+        console.log(
+          "Refreshing button state for purchased alter:",
+          cleanId,
+          "Type:",
+          alterType
+        );
+
+        // Wait for alters to be loaded (try up to 10 times)
+        let found = false;
+        for (let i = 0; i < 10; i++) {
+          let card = document.querySelector(
+            `.alter-card[data-alter-id="${displayId}"][data-alter-type="${alterType}"]`
+          );
+          if (card) {
+            found = true;
+            break;
+          }
+          console.log(`Waiting for alter card to load (attempt ${i + 1}/10)...`);
+          await new Promise((res) => setTimeout(res, 500));
+        }
+        if (!found) {
+          console.warn("Alter card not found after waiting. The button may not update immediately.");
+        }
+
+        // Multiple attempts to update button state
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          setTimeout(async () => {
+            await refreshAlterButtonState(displayId, alterType);
+
+            // Verify the button was updated
+            const button = document.querySelector(
+              `.buy-alter-btn[data-alter-id="${displayId}"][data-alter-type="${alterType}"]`
+            );
+            if (button) {
+              const buttonText =
+                button.querySelector(".button-text")?.textContent;
+              console.log(
+                `Attempt ${attempt}: Button text is now "${buttonText}"`
+              );
+              if (buttonText === "Chat Now") {
+                console.log("Button successfully updated to Chat Now");
+                // Optionally scroll into view
+                button.scrollIntoView({ behavior: "smooth", block: "center" });
+                return; // Stop trying if successful
+              }
+            }
+          }, attempt * 1000);
+        }
       }, 1000);
     }
 
-    // Load initial data
-    await loadPremadeAlters();
-    await loadPublishedAlters();
-  });
+    // Load published alters if not already loaded
+    if (currentTab === "published" && publishedAlters.length === 0) {
+      await loadPublishedAlters();
+    }
+  }
+
+  // Initialize when DOM is ready
+  document.addEventListener("DOMContentLoaded", initializeMarketplace);
 });
