@@ -180,11 +180,74 @@ app.post(
         // Get the alter ID from metadata (for alter purchases)
         const alterId = session.metadata?.alter_id;
         console.log("[WEBHOOK] alterId from session.metadata:", alterId);
+
         if (!alterId) {
-          console.error(
-            "[WEBHOOK] No alter ID found in session metadata and not a creator package"
+          // This is a Creator Studio package purchase
+          console.log(
+            "[WEBHOOK] No alter ID found, treating as Creator Studio package purchase"
           );
-          return res.status(400).json({ error: "No alter ID found" });
+
+          // Get the user's Supabase ID
+          const { data: userData, error: userError } = await supabaseAdmin
+            .from("users")
+            .select("id, isCreator")
+            .eq("firebase_uid", firebaseUid)
+            .limit(1);
+
+          if (userError) {
+            console.error("[WEBHOOK] Supabase user query error:", userError);
+            return res.status(500).json({ error: "Failed to find user" });
+          }
+          if (!userData || userData.length === 0) {
+            console.error("[WEBHOOK] No user found in Supabase");
+            return res.status(404).json({ error: "User not found" });
+          }
+          const userId = userData[0].id;
+
+          // Update user to isCreator: true
+          const { error: updateError } = await supabaseAdmin
+            .from("users")
+            .update({ isCreator: true })
+            .eq("id", userId);
+
+          if (updateError) {
+            console.error(
+              "[WEBHOOK] Error updating user to creator:",
+              updateError
+            );
+            return res
+              .status(500)
+              .json({ error: "Failed to update user as creator" });
+          }
+
+          // Optionally, add to creatorsuser table if not already present
+          const { data: creatorRows, error: creatorError } = await supabaseAdmin
+            .from("creatorsuser")
+            .select("id")
+            .eq("user_id", userId)
+            .limit(1);
+
+          if (!creatorRows || creatorRows.length === 0) {
+            const { error: insertError } = await supabaseAdmin
+              .from("creatorsuser")
+              .insert([
+                {
+                  user_id: userId,
+                  is_creator: true,
+                  created_at: new Date().toISOString(),
+                },
+              ]);
+            if (insertError) {
+              console.error(
+                "[WEBHOOK] Error inserting into creatorsuser:",
+                insertError
+              );
+              // Not fatal, continue
+            }
+          }
+
+          console.log("[WEBHOOK] User upgraded to creator successfully");
+          return res.json({ received: true });
         }
 
         // First, get the user's Supabase ID
