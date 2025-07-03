@@ -190,7 +190,7 @@ app.post(
           // Get the user's Supabase ID
           const { data: userData, error: userError } = await supabaseAdmin
             .from("users")
-            .select("id, isCreator")
+            .select("id")
             .eq("firebase_uid", firebaseUid)
             .limit(1);
 
@@ -204,30 +204,25 @@ app.post(
           }
           const userId = userData[0].id;
 
-          // Update user to isCreator: true
-          const { error: updateError } = await supabaseAdmin
-            .from("users")
-            .update({ isCreator: true })
-            .eq("id", userId);
-
-          if (updateError) {
-            console.error(
-              "[WEBHOOK] Error updating user to creator:",
-              updateError
-            );
-            return res
-              .status(500)
-              .json({ error: "Failed to update user as creator" });
-          }
-
-          // Optionally, add to creatorsuser table if not already present
+          // Check if already a creator
           const { data: creatorRows, error: creatorError } = await supabaseAdmin
             .from("creatorsuser")
             .select("id")
             .eq("user_id", userId)
             .limit(1);
 
+          if (creatorError) {
+            console.error(
+              "[WEBHOOK] Error checking creatorsuser:",
+              creatorError
+            );
+            return res
+              .status(500)
+              .json({ error: "Failed to check creator status" });
+          }
+
           if (!creatorRows || creatorRows.length === 0) {
+            // Insert new creator row
             const { error: insertError } = await supabaseAdmin
               .from("creatorsuser")
               .insert([
@@ -235,6 +230,8 @@ app.post(
                   user_id: userId,
                   is_creator: true,
                   created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  earnings: 0,
                 },
               ]);
             if (insertError) {
@@ -242,11 +239,36 @@ app.post(
                 "[WEBHOOK] Error inserting into creatorsuser:",
                 insertError
               );
-              // Not fatal, continue
+              return res
+                .status(500)
+                .json({ error: "Failed to insert creator row" });
             }
+            console.log(
+              "[WEBHOOK] User upgraded to creator successfully (new row)"
+            );
+          } else {
+            // Already a creator, or update if needed
+            const { error: updateError } = await supabaseAdmin
+              .from("creatorsuser")
+              .update({
+                is_creator: true,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", userId);
+            if (updateError) {
+              console.error(
+                "[WEBHOOK] Error updating creatorsuser:",
+                updateError
+              );
+              return res
+                .status(500)
+                .json({ error: "Failed to update creator row" });
+            }
+            console.log(
+              "[WEBHOOK] User upgraded to creator successfully (updated row)"
+            );
           }
 
-          console.log("[WEBHOOK] User upgraded to creator successfully");
           return res.json({ received: true });
         }
 
