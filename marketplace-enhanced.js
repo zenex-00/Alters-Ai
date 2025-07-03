@@ -588,6 +588,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       ? `Chat with ${alter.name}`
       : `Buy ${alter.name}`;
 
+    // Get creator image and name from flat fields
+    const creatorImage = alter.creator_avatar || "/placeholder.svg";
+    const creatorName = alter.creator_name || "Unknown Creator";
+
     return `
       <div class="alter-card fade-in" data-alter-id="${
         alter.id
@@ -633,13 +637,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           }</p>
 
           <div class="flex items-center mb-4">
-            <img src="${
-              alter.creatorAvatar || alter.creator_avatar || "/placeholder.svg"
-            }" 
-                 alt="${alter.creator}" 
-                 class="w-6 h-6 rounded-full mr-2">
+            <img src="${creatorImage}" alt="${creatorName}" class="w-6 h-6 rounded-full mr-2" onerror="this.src='/placeholder.svg'">
             <span class="text-sm text-gray-400">
-              by <span class="text-primary">${alter.creator || "Unknown"}</span>
+              by <span class="text-primary">${creatorName}</span>
             </span>
             ${
               alter.verified
@@ -890,7 +890,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (navigator.share) {
       navigator.share({
         title: `Check out ${alterName} on Alters.ai`,
-        text: `Discover this amazing AI alter: ${alterName}`,
+        text: `Discover this   AI alter: ${alterName}`,
         url: window.location.href,
       });
     } else {
@@ -1163,10 +1163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             buyButton.title = `Chat with ${
               alterCard.querySelector("h3").textContent
             }`;
-            console.log(
-              "✅ Button updated to 'Chat Now' for alter:",
-              alterId
-            );
+            console.log("✅ Button updated to 'Chat Now' for alter:", alterId);
           } else {
             buttonText.textContent = "Buy Now";
             buttonIcon.className = "ri-shopping-cart-line mr-2";
@@ -1283,11 +1280,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             found = true;
             break;
           }
-          console.log(`Waiting for alter card to load (attempt ${i + 1}/10)...`);
+          console.log(
+            `Waiting for alter card to load (attempt ${i + 1}/10)...`
+          );
           await new Promise((res) => setTimeout(res, 500));
         }
         if (!found) {
-          console.warn("Alter card not found after waiting. The button may not update immediately.");
+          console.warn(
+            "Alter card not found after waiting. The button may not update immediately."
+          );
         }
 
         // Multiple attempts to update button state

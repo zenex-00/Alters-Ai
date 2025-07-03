@@ -1196,7 +1196,7 @@ app.get("/api/premade-alters", async (req, res) => {
       featured: alter.featured || false,
       type: "premade",
       creator: "AlterStudio",
-      creatorAvatar: "/placeholder.svg",
+      creatorAvatar: alter.image_url || alter.image || "/placeholder.svg",
       link: `/marketplace/premade-${alter.id}.html`,
     }));
 
